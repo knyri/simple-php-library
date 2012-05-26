@@ -1,0 +1,31 @@
+.highlight{
+	border:thin solid yellow;
+	background-color:#EFE300;
+}
+.tip{
+	border:medium solid #3B3B8B;
+}
+.fleft{
+	float:left;
+}
+.fright{
+	float:right;
+}
+.clear{
+	clear:both;
+	line-height:0px;
+}
+.cleft{
+	clear:left;
+	line-height:0px;
+}
+.cright{
+	clear:right;
+	line-height:0px;
+}
+.error{
+	border:medium solid red;
+}
+#container{
+	margin:0 auto 0 auto;
+}

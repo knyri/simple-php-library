@@ -1,0 +1,6 @@
+switch($uagent[1]){
+switch($uagent[2]){
+	$match_f=
+startsWith($short1,'')||
+startsWith($short2,'')||
+startsWith($short3,'')||

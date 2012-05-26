@@ -1,0 +1,128 @@
+=== WHAT IS IT? ===
+
+foocache is a simple caching system for PHP4 which optionally uses HTML-tidy
+to clean up the generated HTML Code.
+Instead of processing the whole page a cachefile is loaded if it exists, is
+younger than a defined age, a given reference file and the calling PHP file
+it self.
+The name of the cache file is generated with the MD5 sum of the Request URI
+and the HTML post variables.
+foocache can highlight (search)strings in the output, too.
+
+
+=== QUICKSTART ===
+
+1. edit the variables at top of foocache.inc
+2. Make sure the cachedirectory is writable and the referencefile exists
+3. add the following at top most of your PHP file:
+  <?
+    require "foocache.inc";
+    foocache_start();
+  ?>
+4. add the following at the very end of your PHP file:
+  <?
+    foocache_stop();
+  ?>
+5. try it
+
+
+=== CONFIGURATION ===
+
+At top of the foocache.inc file you find some variables you have to adjust:
+
+$foocache[cachedir] contains the directory where cachefiles will be stored
+                    you have to make sure it is writable by the webserver
+                    
+$foocache[maxage]   contains the age a cachefile may have before it is
+                    replaced by a new one
+                    
+$foocache[reffile]  This is the full path to a referencefile. If a
+                    cachefile is older than this file it will be replaced
+                    wether the maxage has been reached or not.
+                    This file should be writable by the webserver and
+                    should not contain any data. This file has to exist!
+                    
+$foocache[tidy]     This is the optional path to the tidy binary. Check
+                    http://tidy.sourceforge.net/ for binaries and sources.
+
+$foocache[tidyopt]  Here you can set additional options for tidy
+
+$foocache[hi_in]    These variables define the open and end tags which 
+$foocache[hi_out]   are used for highlighting search queries in a page
+                    if you don't like CSS you could set it to <b> and </b>
+                    or anything else you like.
+
+$foocache[query]    This variable should NOT be set in the foocache.inc
+                    file but in your PHP page before you call
+                    foocache_start(). See infos about string higlighting
+                    in the usage section below
+
+=== USAGE ===
+
+The first thing in your PHP files should be to include the foocache.inc
+file with
+  require "/full/path/to/foocache.inc";
+
+There are two main functions to use the caching system:
+
+foocache_start()
+  This should go at top of your file before any output is done. It will
+  either load an existing cachefile or start the outputbuffering for
+  creating the cachefile.
+
+foocache_end()
+  This should go at the end of your file after everything else. It will
+  stop the outputbuffer, save the cachfile, run tidy on it an print the
+  tidyied results. It will also call foocache_cleanup() to remove old
+  cachefiles.
+
+There are three additional functions which may be of use to you:
+
+foocache_cleanup()
+  This cleans the cachedirectory from outdated cachefiles. It is called
+  from foocache_end(); so you don't need to call it yourself.
+
+foocache_touch()
+  This opens the referencefile writes the string "touched" to it and closes
+  it again. This forces all cachefiles to be outdated.
+
+foocache_time()
+  This returns the current UNIX time with microseconds. It is used to print
+  a loadtime statistic and the end of every file (as HTML comment)
+
+foocache_hilight($data)
+  This will highlight all words given in $foocache[query] (whitespace
+  seperated) in $data ignoring all HTML tags. It is called from
+  foocache_start() and foocache_end() when $foocache[query] is not empty.
+  Configure your internal site search engine to append the query string
+  to every hit (eg. search). Then set init $foocache[query] with this
+  query befor calling foocache_start() like this:
+  
+  <?
+    $foocache[query] = $_GET[search];
+    foocache_start();
+  ?>
+  
+  Note: The highlighting is done after cacheing.
+  
+
+If you want to disable foocache for a site you can define the constant
+NOFOOCACHE. This will disable the foocache_start and foocach_stop functions
+completely:
+  <?
+    define("NOFOOCACHE",1);
+    foocache_start();
+  ?>  
+    This Site gets never cached or modified by tidy.
+  <?
+    foocache_stop();
+  ?>
+  
+=== PROBLEMS/FEEDBACK ===
+
+Visit http://www.splitbrain.org for newer versions or mail me at
+a.gohr@web.de
+
+=== LICENSE ===
+
+This is free Software! See COPYING

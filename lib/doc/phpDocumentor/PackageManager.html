@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+		<head>
+			<!-- template designed by Marco Von Ballmoos -->
+			<title>Docs For Class PackageManager</title>
+			<link rel="stylesheet" href="../media/stylesheet.css" />
+			<meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1'/>
+		</head>
+		<body>
+			<div class="page-body">			
+<h2 class="class-name">Class PackageManager</h2>
+
+<a name="sec-description"></a>
+<div class="info-box">
+	<div class="info-box-title">Description</div>
+	<div class="nav-bar">
+					<span class="disabled">Description</span> |
+													<a href="#sec-var-summary">Vars</a> (<a href="#sec-vars">details</a>)
+						|											<a href="#sec-method-summary">Methods</a> (<a href="#sec-methods">details</a>)
+						
+					</div>
+	<div class="info-box-body">
+        		<!-- ========== Info from phpDoc block ========= -->
+		<p class="notes">
+			Located in <a class="field" href="_lib---packagemanager.class.php.html">/lib/packagemanager.class.php</a> (line <span class="field">2</span>)
+		</p>
+		
+				
+		<pre></pre>
+	
+			</div>
+</div>
+
+
+
+	<a name="sec-var-summary"></a>
+	<div class="info-box">
+		<div class="info-box-title">Variable Summary</span></div>
+		<div class="nav-bar">
+			<a href="#sec-description">Description</a> |
+						<span class="disabled">Vars</span> (<a href="#sec-vars">details</a>)
+							| 
+									<a href="#sec-method-summary">Methods</a> (<a href="#sec-methods">details</a>)
+							
+								</div>
+		<div class="info-box-body">
+			<div class="var-summary">
+												<div class="var-title">
+					static <span class="var-type">mixed</span>
+					<a href="#$paths" title="details" class="var-name">$paths</a>
+				</div>
+																							</div>
+		</div>
+	</div>
+
+	<a name="sec-method-summary"></a>
+	<div class="info-box">
+		<div class="info-box-title">Method Summary</span></div>
+		<div class="nav-bar">
+			<a href="#sec-description">Description</a> |
+																		<a href="#sec-var-summary">Vars</a> (<a href="#sec-vars">details</a>)
+				 
+				|
+						<span class="disabled">Methods</span> (<a href="#sec-methods">details</a>)
+		</div>
+		<div class="info-box-body">			
+			<div class="method-summary">
+												<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#addPath" title="details" class="method-name">addPath</a>
+											(<span class="var-type">string</span>&nbsp;<span class="var-name">$path</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#getPaths" title="details" class="method-name">getPaths</a>
+										()
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeClass" title="details" class="method-name">includeClass</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeClassOnce" title="details" class="method-name">includeClassOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeFile" title="details" class="method-name">includeFile</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeFileOnce" title="details" class="method-name">includeFileOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeFunction" title="details" class="method-name">includeFunction</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#includeFunctionOnce" title="details" class="method-name">includeFunctionOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireClass" title="details" class="method-name">requireClass</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireClassOnce" title="details" class="method-name">requireClassOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireFile" title="details" class="method-name">requireFile</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireFileOnce" title="details" class="method-name">requireFileOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireFunction" title="details" class="method-name">requireFunction</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+																<div class="method-definition">
+					static 						<span class="method-result">void</span>
+										<a href="#requireFunctionOnce" title="details" class="method-name">requireFunctionOnce</a>
+											(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+									</div>
+								
+																																																																																																																				</div>
+		</div>
+	</div>		
+
+	<a name="sec-vars"></a>
+	<div class="info-box">
+		<div class="info-box-title">Variables</div>
+		<div class="nav-bar">
+			<a href="#sec-description">Description</a> |
+										<a href="#sec-var-summary">Vars</a> (<span class="disabled">details</span>)
+						
+			
+										| 
+									<a href="#sec-method-summary">Methods</a> (<a href="#sec-methods">details</a>)
+							
+					</div>
+		<div class="info-box-body">
+			<a name="var$paths" id="$paths"><!-- --></A>
+<div class="oddrow">
+
+	<div class="var-header">
+		<span class="var-title">
+			static <span class="var-type">mixed</span>
+			<span class="var-name">$paths</span>
+			 = <span class="var-default">array()</span>			(line <span class="line-number">3</span>)
+		</span>
+	</div>
+
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> private</li>
+			</ul>
+	
+	
+		
+		
+
+</div>
+						
+		</div>
+	</div>
+	
+	<a name="sec-methods"></a>
+	<div class="info-box">
+		<div class="info-box-title">Methods</div>
+		<div class="nav-bar">
+			<a href="#sec-description">Description</a> |
+															<a href="#sec-var-summary">Vars</a> (<a href="#sec-vars">details</a>)
+																	<a href="#sec-method-summary">Methods</a> (<span class="disabled">details</span>)
+						
+		</div>
+		<div class="info-box-body">
+			<A NAME='method_detail'></A>
+<a name="methodaddPath" id="addPath"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method addPath</span> (line <span class="line-number">8</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+<p class="short-description">Adds a path to search for files.</p>
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			addPath
+		</span>
+					(<span class="var-type">string</span>&nbsp;<span class="var-name">$path</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type">string</span>
+				<span class="var-name">$path</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodgetPaths" id="getPaths"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method getPaths</span> (line <span class="line-number">49</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> private</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			getPaths
+		</span>
+				()
+			</div>
+	
+		
+			
+	</div>
+<a name="methodincludeClass" id="includeClass"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeClass</span> (line <span class="line-number">56</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeClass
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodincludeClassOnce" id="includeClassOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeClassOnce</span> (line <span class="line-number">59</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeClassOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodincludeFile" id="includeFile"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeFile</span> (line <span class="line-number">11</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeFile
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$file</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodincludeFileOnce" id="includeFileOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeFileOnce</span> (line <span class="line-number">20</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeFileOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$file</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodincludeFunction" id="includeFunction"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeFunction</span> (line <span class="line-number">68</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeFunction
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodincludeFunctionOnce" id="includeFunctionOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method includeFunctionOnce</span> (line <span class="line-number">71</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			includeFunctionOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireClass" id="requireClass"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireClass</span> (line <span class="line-number">62</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireClass
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireClassOnce" id="requireClassOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireClassOnce</span> (line <span class="line-number">65</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireClassOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireFile" id="requireFile"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireFile</span> (line <span class="line-number">29</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireFile
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$file</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireFileOnce" id="requireFileOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireFileOnce</span> (line <span class="line-number">39</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireFileOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$file</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$file</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireFunction" id="requireFunction"><!-- --></a>
+<div class="evenrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireFunction</span> (line <span class="line-number">74</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireFunction
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+<a name="methodrequireFunctionOnce" id="requireFunctionOnce"><!-- --></a>
+<div class="oddrow">
+	
+	<div class="method-header">
+		<span class="method-title">static method requireFunctionOnce</span> (line <span class="line-number">77</span>)
+	</div> 
+	
+	<!-- ========== Info from phpDoc block ========= -->
+	<ul class="tags">
+				<li><span class="field">access:</span> public</li>
+			</ul>
+	
+	<div class="method-signature">
+	    static
+		<span class="method-result">void</span>
+		<span class="method-name">
+			requireFunctionOnce
+		</span>
+					(<span class="var-type"></span>&nbsp;<span class="var-name">$package</span>)
+			</div>
+	
+			<ul class="parameters">
+					<li>
+				<span class="var-type"></span>
+				<span class="var-name">$package</span>			</li>
+				</ul>
+		
+			
+	</div>
+
+						
+		</div>
+	</div>
+
+
+	<p class="notes" id="credit">
+		Documentation generated on Tue, 10 Jan 2012 22:23:55 -0500 by <a href="http://www.phpdoc.org" target="_blank">phpDocumentor 1.4.3</a>
+	</p>
+	</div></body>
+</html>
