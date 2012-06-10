@@ -28,7 +28,7 @@ function db_get_connection($forcenew = false) {
 	if ($forcenew){db_close_connection();}
 	if (!$_DB_OPEN_CON || $_DB = null) {
 		$_DB = mysql_connect($conf['host'], $conf['user'], $conf['password']);
-		mysql_select_db($conf['database']);
+		mysql_select_db($conf['dbname']);
 	}
 	return $_DB;
 }
