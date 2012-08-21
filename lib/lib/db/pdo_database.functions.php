@@ -20,15 +20,21 @@ function db_isDebug(){
  * creates a connection to the database if none exists
  * or returns one already created.
  * @param boolean $forcenew Forces the creation of a new connection.
- * @return Ambigous <NULL, resource>
+ * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
 function db_get_connection($forcenew = false) {
 	global $_DB, $_DB_OPEN_CON;
 	$conf = $GLOBALS['simple']['lib']['db'];
 	if ($forcenew){db_close_connection();}
 	if (!$_DB_OPEN_CON || $_DB = null) {
-		$_DB = mysql_connect($conf['host'], $conf['user'], $conf['password']);
-		mysql_select_db($conf['dbname']);
+		try{
+		$_DB = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
+		}catch(PDOException $e){
+			if(db_isDebug())
+				throw $e;
+			else
+				return null;
+		}
 	}
 	return $_DB;
 }
@@ -37,7 +43,7 @@ function db_get_connection($forcenew = false) {
  */
 function db_close_connection() {
 	global $_DB, $_DB_OPEN_CON;
-	@mysql_close($_DB);
+	$_DB=null;
 	$_DB_OPEN_CON = false;
 }
 /** Logs a database error.
@@ -48,10 +54,21 @@ function db_close_connection() {
  * @param string $qry The query that caused it. Optional.
  * @return string $msg
  */
-function db_log_error($msg, $qry = '') {
+function db_log_error($statement,$args) {
 	$db = db_get_connection();
-	mysql_query('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(), \''.clean_text($msg).'\', \''.clean_text($qry).'\')', $db);
-	return $msg;
+	$err=$statement->errorInfo();
+	$params=array(
+		':query'=>$statement->queryString,
+		':message'=>"SQLSTATE=$err[0]\nDVR ERR=$err[1]\nDVR MSG='$err[2]'\nARGS:".var_export($args,true)
+	);
+	try{
+		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
+		$stm->execute();
+	}catch(PDOException $e){
+		if(db_isDebug())throw $e;
+	}
+
+	return $params[':message'];
 }
 /** Checks to see if a record exists that matches the conditions.
  * @param resource $db mysql database link. Set to null to use the default settings.
@@ -59,71 +76,31 @@ function db_log_error($msg, $qry = '') {
  * @param string $condition required
  * @return mixed boolean on success or a string containing the error message.
  */
-function db_record_exist($db, $table, $condition) {
+function db_record_exist($db, $table, array $condition) {
 	if ($db===null)
 		$db = db_get_connection();
 	if ($condition) {
-		$res = mysql_query("SELECT * FROM $table WHERE $condition", $db);
-		if (!$res) {
-			return db_log_error(mysql_error(), "SELECT * FROM $table WHERE $condition");
-		}
-		$ret = (mysql_num_rows($res) > 0);
-		mysql_free_result($res);
-		return $ret;
+		$ret = db_num_rows($db,$table,$condition);
+		if(is_numeric($ret))return $ret;
+		return $ret>0;
 	} else {
 		throw new IllegalArgumentException('$condition MUST be set.');
 	}
-}
-/**
- * Alias of mysql_real_escape_string(...)
- * @param string $string
- * @return string
- */
-function clean_text($string) {
-	return mysql_real_escape_string($string, db_get_connection());
-}
-function db_do_operation($db, $operation, $default = null) {
-	if ($db===null)
-		$db= db_get_connection();
-	$res = mysql_query("SELECT $operation", $db);
-	if (!$res) {
-		db_log_error(mysql_error(), "SELECT $operation");
-		return $default;
-	}
-	$row = mysql_fetch_array($res);
-	mysql_free_result($res);
-	return $row[0];
 }
 /** Fetches a single column value from the database.
  * @param resource $db mysql database link. Set to null to use the default settings.
  * @param string $table
  * @param string $column
- * @param string $condition
+ * @param array $condition see _db_build_where
  * @param mixed $default Default value if the query failed or no value was found.
  * @return mixed The found value or $default
  */
-function db_get_column($db, $table, $column, $condition = null, $default = null, $cache = false) {
+function db_get_column($db, $table, $column, array $condition = null, $default = null) {
 	if ($db===null)
 		$db = db_get_connection();
-	if ($condition) {
-		if(is_array($condition))
-			$condition=substr(_db_build_where($condition),6);
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1", $db);
-		if (!$res) {
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1");
-			return $default;
-		}
-	} else {
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1", $db);
-		if (!$res) {
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1");
-			return $default;
-		}
-	}
-	$row = mysql_fetch_array($res);
-	mysql_free_result($res);
-	if ($row[$column] == null) return $default;
-	return $row[$column];
+	$row=db_get_row($db,$table,$condition,$column,PDO::FETCH_NUM);
+	if(!is_array($row)||count($row)===0)return $default;
+	return $row[0];
 }
 /**
  * Alias of db_get_column(..)
@@ -132,11 +109,10 @@ function db_get_column($db, $table, $column, $condition = null, $default = null,
  * @param string $column
  * @param string $condition
  * @param mixed $default
- * @param boolean $cache
  * @return mixed The found value or $default
  */
-function db_get_field($db, $table, $column, $condition = '1=1', $default = null, $cache = false) {
-	return db_get_column($db, $table, $column, $condition, $default, $cache);
+function db_get_field($db, $table, $column, array $condition = null, $default = null) {
+	return db_get_column($db, $table, $column, $condition, $default);
 }
 /**
  * Shortcut for db_get_row($db,$table,$condition,$columns,$cache,MYSQL_ASSOC);
@@ -147,36 +123,46 @@ function db_get_field($db, $table, $column, $condition = '1=1', $default = null,
  * @param boolean $cache
  * @return array the resulting array or null.
  */
-function db_get_row_assoc($db, $table, $condition = null, $columns = '*', $cache = false) {
-	return db_get_row($db, $table, $condition, $columns, $cache, MYSQL_ASSOC);
+function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
+	return db_get_row($db, $table, $condition, $columns, PDO::FETCH_ASSOC);
 }
 /** Fetches a single row from the database.
  * @param resource $db mysql database link. Set to null to use the default settings.
  * @param string $table
  * @param string $condition
  * @param string $columns
- * @param boolean $cache
- * @param int $type MYSQL_ASSOC, MYSQL_NUM, or MYSQL_BOTH. Defaults to MYSQL_BOTH.
+ * @param int $type one (or more with && or +) of PDO::FETCH_*
  * @return array the resulting array or null.
  */
-function db_get_row($db, $table, $condition=null, $columns='*', $cache=false, $type=MYSQL_BOTH) {
+function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO::FETCH_BOTH) {
 	if ($db===null)
 		$db = db_get_connection();
-	if ($condition) {
-		if(is_array($condition))
-			$condition=substr(_db_build_where($condition),6);
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1", $db);
-		if (!$res)
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1");
-	} else {
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1", $db);
-		if (!$res)
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1");
+
+	if($conditions===null){
+		$stm = "SELECT :columns FROM :table LIMIT 0,1";
+		$conditions=array();
+	}else{
+		$conditions=_db_build_where($conditions);
+		$stm = "SELECT :columns FROM :table ".$conditions[0].' LIMIT 0,1';
 	}
-	if (!$res || mysql_num_rows($res)==0) return null;
-	$row = mysql_fetch_array($res, $type);
-	mysql_free_result($res);
-	return $row;
+	$conditions[1][':table']=$table;
+	$conditions[1][':columns']=$columns;
+	try{
+		$stm = $db->prepare($stm);
+	}catch(PDOException $e){
+		if(db_isdebug()){
+			throw $e;
+		}else{
+			return 'Could not prepare the statement.';
+		}
+	}
+	if (!$stm->execute($conditions[1])) {
+		return db_log_error($stm,$conditions[1]);
+	}else{
+		$row=$stm->fetch($type);
+		$stm->closeCursor();
+		return $row;
+	}
 }
 
 /**
@@ -237,37 +223,56 @@ function _db_validate_value($var) {
  *		+array(column, 'BETWEEN', lower, upper, negate, ['AND'|'OR'])
  *		+array(column, 'LIKE', string value, negate, ['AND'|'OR'])
  *		+array('LITERAL', literal, ['AND'|'OR'])
- * @return string the resulting condition
+ * @return array the resulting where string and array of values for a PDOStatement
  */
-function _db_build_where($where) {
-	if (is_array($where)) {
-		$where_2 = array();
-		foreach($where as $arg) {
-			if (count($arg) > 3) {
-				if ($arg[1] == 'IN') {
-					$where_2[] = $arg[0] . ($arg[3]?' NOT IN (':' IN (') . $arg[2] . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
-				} else if ($arg[1] == 'LIKE') {
-					$where_2[] = $arg[0] . ($arg[3]?' NOT LIKE ':' LIKE ') . '\'' . $arg[2] . '\'' . ((count($arg)==5)?' '.$arg[4].' ' : '');
-				} else if ($arg[1] == 'BETWEEN') {
-					$where_2[] = $arg[0] . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . _db_validate_value($arg[2]) . ' AND ' . _db_validate_value($arg[3]) . ((count($arg)==6)?' '.$arg[5].' ' : '');
+function _db_build_where(array $where) {
+	$ret=array();
+	$wcount=0;
+	$where_2 = array();
+	$wpart='';
+	foreach($where as $arg){
+		if(count($arg) > 3){
+			if($arg[1] == 'IN'){
+				$ret[1][':where'.($wcount)]=$arg[0];
+				$ret[1][':where'.($wcount+1)]=$arg[2];
+				$where_2[]= ':where'.($wcount) . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount+1) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$wcount+=2;
+			}elseif($arg[1] == 'LIKE'){
+				$ret[1][':where'.($wcount)]=$arg[0];
+				$ret[1][':where'.($wcount+1)]=$arg[2];
+				$where_2[] = ':where'.($wcount) . ($arg[3]?' NOT LIKE ':' LIKE ') . '\'' . ':where'.($wcount+1) . '\'' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$wcount+=2;
+			}elseif($arg[1] == 'BETWEEN'){
+				$ret[1][':where'.($wcount)]=$arg[0];
+				$ret[1][':where'.($wcount+1)]=$arg[2];
+				$ret[1][':where'.($wcount+2)]=$arg[3];
+				$where_2[]= ':where'.($wcount) . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount+1) . ' AND ' . ':where'.($wcount+2) . ((count($arg)==6)?' '.$arg[5].' ' : '');
+				$wcount+=3;
+			}
+		}else{
+			if(count($arg) == 3){
+				if ($arg[0]=='LITERAL'){
+					$ret[1][':where'.($wcount)]=$arg[0];
+					$where_2[] = $arg[1] . ' '.$arg[2].' ';
+				}else{
+					$ret[1][':where'.($wcount)]=$arg[0];
+					$ret[1][':where'.($wcount+1)]=$arg[1];
+					$where_2[] =':where'.($wcount) . '=' . ':where'.($wcount+1) . ' '.$arg[2].' ';
 				}
-			} else {
-				if (count($arg) == 3) {
-					if ($arg[0]=='LITERAL')
-						$where_2[] = $arg[1] . ' '.$arg[2].' ';
-					else
-						$where_2[] = $arg[0] . '=' . _db_validate_value($arg[1]) . ' '.$arg[2].' ';
-				} else {
-					if ($arg[0]=='LITERAL')
-						$where_2[] = $arg[1];
-					else
-						$where_2[] = $arg[0] . '=' . _db_validate_value($arg[1]);
+			}else{
+				if($arg[0]=='LITERAL'){
+					$ret[1][':where'.($wcount)]=$arg[0];
+					$where_2[] = $arg[1];
+				}else{
+					$ret[1][':where'.($wcount)]=$arg[0];
+					$ret[1][':where'.($wcount+1)]=$arg[1];
+					$where_2[] = ':where'.($wcount) . '=' . ':where'.($wcount+1);
 				}
 			}
 		}
-		return 'WHERE '.implode('', $where_2);
-	} else
-		return 'WHERE '.$where;
+	}
+	$ret[0]='WHERE '.implode('', $where_2);
+	return $ret;
 }
 /** Queries the database and returns the result set or NULL if it failed.
  * @param resource $db mysql database link. Set to null to use the default settings.
@@ -281,42 +286,63 @@ function _db_build_where($where) {
  * @param int $offset Row to start at
  * @return mixed resource or false on error.
  */
-function db_query($db, $table, $columns = '*',array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+function db_query($db, $table, array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 	if ($db===null)
 		$db = db_get_connection();
+	if($where!==null){
+		$where=_db_build_where($where);
+	}else{
+		$where=array();
+	}
 	$query = 'SELECT ';
-	if (is_array($columns))
-		$query .= implode(', ', $columns);
-	else
-		$query .= $columns;
-	if (!empty($table))
-		$query .= " FROM $table";
-	if ($where != null) {
-		$query .= ' ' . _db_build_where($where);
+	if ($columns!==null){
+		$ccount=0;
+		foreach($columns as $column){
+			$query .= ':col'.$ccount.',';
+			$where[1][':col'.$ccount]=$column;
+		}
+		$query= trim($query,',');
+	}else
+		$query .= '*';
+	if (!empty($table)){
+		$query .= ' FROM :table';
+		$conditions[1][':table']=$table;
+	}
+	if (isset($where[0])){
+		$query .= ' '.$where[0];
 	}
 	if ($groupBy != null) {
-		$query .= " GROUP BY $groupBy";
-		if ($having != null)
-			$query .= " HAVING $having";
+		$query .= ' GROUP BY :groupby';
+		$where[1][':groupby']=$groupBy;
+		if ($having != null){
+			$query .=  'HAVING :having';
+			$where[1][':having']=$having;
+		}
 	}
 	if ($sortBy != null) {
 		$query .= ' ORDER BY';
+		$ccount=0;
 		foreach($sortBy as $sort) {
-			$query .= " $sort[0] $sort[1],";
+			$query .= " :sort$ccount :sortd$ccount,";
+			$where[1][':sort'.$ccount]=$sort[0];
+			$where[1][':sortd'.$ccount]=$sort[1];
+			$ccount++;
 		}
 		$query = substr($query, 0, -1);
 	}
 	if($limit>0){
-		$query.=" LIMIT $limit";
-		if($offset>0)
-			$query.=" OFFSET $offset";
+		$query.=" LIMIT :qlimit";
+		$where[1][':qlimit']=$limit;
+		if($offset>0){
+			$query.=" OFFSET :qoffset";
+			$where[1][':qoffset']=$offset;
+		}
 	}
-	if(db_isDebug())
-		echo $query;
-	$res = mysql_query($query, $db);
-	if (!$res)
-		db_log_error(mysql_error(), $query);
-	return $res;
+	$stm=$db->prepare($query);
+	if (!$stm->execute($where[1])) {
+		return db_log_error($stm,$where[1]);
+	}
+	return $stm;
 }
 /** Updates data in the database. Returns the error on failure and false on success.
  * @param resource $db mysql database link. Set to null to use the default settings.
@@ -355,13 +381,22 @@ function db_insert($db, $table, array $data) {
 		$db = db_get_connection();
 	//printVar($data);
 	//printVar(array_map('_db_validate_value', $data));
-	$query = "INSERT INTO $table " . '(`' . implode('`, `',array_keys($data)) . '`) VALUES ('
-		. implode(', ', array_map('_db_validate_value', $data)) . ')';
-	$res = mysql_query($query, $db);
-	if (!$res) {
-		return db_log_error(mysql_error(), $query);
-	} else {
-		return false;
+	$stm = "INSERT INTO $table " . '(`' . implode('`, `',array_keys($data)) . '`) VALUES ('
+		. trim(str_repeat('?,',count($data)),',') . ')';
+	try{
+		$stm = $db->prepare($stm);
+	}catch(PDOException $e){
+		if(db_isdebug()){
+			throw $e;
+		}else{
+			return 'Could not prepare the statement.';
+		}
+	}
+	if (!$stm->execute($conditions[1])) {
+		return db_log_error($stm,array_merge(array(':table'=>$table),$conditions[1]));
+	}else{
+		$stm->closeCursor();
+		return true;
 	}
 }
 
@@ -396,12 +431,23 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 function db_delete($db, $table, array $conditions = null) {
 	if ($db===null)
 		$db= db_get_connection();
-	$query= "DELETE FROM $table";
-	if (!is_null($conditions))
-		$query.= ' '._db_build_where($conditions);
-	$res = mysql_query($query,$db);
-	if(!$res){
-		return db_log_error(mysql_error(),$query);
+	$stm= "DELETE FROM :table";
+	if (!$conditions!==null){
+		$conditions=_db_build_where($conditions);
+		$stm+=' '.$conditions[0];
+	}else{$conditions=array();}
+	$conditions[1][':table']=$table;
+	try{
+		$stm = $db->prepare($stm);
+	}catch(PDOException $e){
+		if(db_isdebug()){
+			throw $e;
+		}else{
+			return 'Could not prepare the statement.';
+		}
+	}
+	if(!$stm->execute($conditions[1])){
+		return db_log_error($stm,$conditions);
 	}else{
 		return false;
 	}
@@ -413,21 +459,30 @@ function db_delete($db, $table, array $conditions = null) {
  * @param array $conditions see _db_build_where(...)
  * @return mixed false on error or the count.
  */
-function db_num_rows($db,$table,$conditions=null){
+function db_num_rows($db,$table,array $conditions=null){
 	if ($db===null)
 		$db= db_get_connection();
-	if($conditions===null)
-		$sql="SELECT COUNT(*) FROM $table";
-	elseif(is_array($conditions))
-		$sql="SELECT COUNT(*) FROM $table "._db_build_where($conditions);
-	else
-		$sql="SELECT COUNT(*) FROM $table WHERE $conditions";
-	if(db_isDebug())echo $sql;
-	$res=mysql_query($sql,$db);
-	if(!$res){
-		db_log_error(mysql_error(),$sql);
-		return false;
+	if($conditions===null){
+		$stm = 'SELECT COUNT(*) FROM :table';
+		$conditions=array();
+	}else{
+		$conditions=_db_build_where($conditions);
+		$stm = 'SELECT COUNT(*) FROM :table WHERE '.$conditions[0];
 	}
-	$res=mysql_fetch_array($res);
-	return $res[0];
+	$conditions[1][':table']=$table;
+	try{
+		$stm = $db->prepare($stm);
+	}catch(PDOException $e){
+		if(db_isdebug()){
+			throw $e;
+		}else{
+			return 'Could not prepare the statement.';
+		}
+	}
+	if (!$stm->execute($conditions[1])) {
+		return db_log_error($stm,array_merge(array(':table'=>$table),$conditions[1]));
+	}
+	$ret = $stm->fetch(PDO::FETCH_NUM);
+	$stm->closeCursor();
+	return $ret[0];
 }
