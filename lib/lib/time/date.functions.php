@@ -144,21 +144,7 @@ function date_create_unix_timestamp_ary($date){
 	return $date['year'] . '-' . $date['month'] . '-' . $date['day'] . ' 00:00:00';
 }
 /**
- * Fixes the date so that it is valid. This version does not change the passed arguments' values.
- * Ex. 2-29-2001 will become 3-1-2001
- * 15-6-2011 will become 3-6-2012
- * @param integer $month
- * @param integer $day
- * @param integer $year
- * @param boolean $unix Optional. Default is true. Use UNIX date format
- * @return string The resulting string
- */
-function date_fix_date_noref($month, $day, $year,$unix=true){
-	return date_fix_date($month,$day,$year,$unix);
-}
-/**
  * Fixes the date so that it is valid. Can handle negative values. Great for creating date ranges.
- * NOTE: Changes the passed variables' values.
  * Ex. 2-29-2001 will become 3-1-2001
  * 15-6-2011 will become 3-6-2012
  * 3-0-2001 will become 2-28-2001
@@ -169,7 +155,7 @@ function date_fix_date_noref($month, $day, $year,$unix=true){
  * @param boolean $unix Optional. Default is true. Use UNIX date format
  * @return string The resulting string
  */
-function date_fix_date(&$month,&$day,&$year,$unix=true){
+function date_fix_date($month,$day,$year,$unix=true){
 	if($month>12){
 		while ($month>12){
 			$month-=12;//subtract a $year
@@ -255,7 +241,7 @@ function date_fix_date(&$month,&$day,&$year,$unix=true){
  * @param int $unix Optional. Default is true. Use UNIX date format
  * @return string The resulting string
  */
-function date_fix_timestamp(&$month, &$day, &$year, &$hour, &$minute, &$second, $unix=true){
+function date_fix_timestamp($month, $day, $year, $hour, $minute, $second, $unix=true){
 	if ($month ==0) $month=1;
 	if ($day ==0) $day=1;
 	while ($second<0){
