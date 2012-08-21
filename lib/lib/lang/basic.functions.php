@@ -6,4 +6,9 @@ function isEmpty(array $arr) {
 	return true;
 }
 function blank($var){return (empty($var)&&!is_numeric($var));}
-function between($var,$start,$end){return $var>$start&&$var<$end;}
+function between($var,$start,$end,$inclusive=false){
+	if($inclusive)
+		return $var>=$start&&$var<=$end;
+	else
+		return $var>$start&&$var<$end;
+}

@@ -94,7 +94,7 @@ function default_error_handler($errno, $errstr, $errfile, $errline,$errcontext) 
 		if($v['function'] == "include" || $v['function'] == "include_once" || $v['function'] == "require_once" || $v['function'] == "require"){
 			echo "#$k <b>{$v['function']}</b>({$v['args'][0]}) called at [{$v['file']}:{$v['line']}]<br />";
 		}else{
-			echo "#$k <b>{$v['function']}<b>() called at [{$v['file']}:{$v['line']}]<br />";
+			echo "#$k <b>{$v['function']}</b>() called at [{$v['file']}:{$v['line']}]<br />";
 		}
 	}
 	//debug_print_backtrace();
