@@ -221,7 +221,4 @@ class sql_class{
 			$ary[$k]=$v;
 		return $ary;
 	}
-	public function __clone(){
-		$this->data=clone $this->data;
-	}
 }
