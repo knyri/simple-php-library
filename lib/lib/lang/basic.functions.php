@@ -12,3 +12,6 @@ function between($var,$start,$end,$inclusive=false){
 	else
 		return $var>$start&&$var<$end;
 }
+function is_set($options,$option){
+	return ($options&$option) == $option;
+}
