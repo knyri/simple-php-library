@@ -42,3 +42,16 @@ function str_trim_array($charlist, $ary) {
 	}
 	return $ary;
 }
+
+/**
+ * Returns a substring of the <var>string</var> to the nearest word. Does not support negative numbers(for now).
+ * @param string $string
+ * @param int $offset
+ * @param int $length
+ * @param array $separators Default is <var>array(' ','-','.','/',',')</var>
+ * @return string
+ */
+function smart_substring($string,$offset,$length,array $separators=array(' ','-','.','/',',')){
+	while($length>0 && !in_array($string[$offset+$length],$separators))$length--;
+	return substr($string, $offset,$length);
+}
