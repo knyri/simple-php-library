@@ -14,11 +14,12 @@ function str_empty($str) {
 /**
  *
  * Tests to see if the string starts with the needle.
- * @param string $needle
  * @param string $haystack
+ * @param string $needle
  */
-function str_starts_with($needle, $haystack) {
-	return (stripos($needle, $haystack)==0);
+function str_starts_with($haystack, $needle) {
+	if(strlen($haystack)<strlen($needle))return false;
+	return substr($haystack,0,strlen($needle))==$needle;
 }
 /**
  * Tests to see if the string ends with the needle.
@@ -26,7 +27,7 @@ function str_starts_with($needle, $haystack) {
  * @param string $haystack
  * @return boolean
  */
-function str_ends_with($needle, $haystack) {
+function str_ends_with($haystack, $needle) {
 	return (substr($haystack, -strlen($needle))==$needle);
 }
 /**
