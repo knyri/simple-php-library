@@ -221,7 +221,7 @@ function _db_validate_value($var) {
 	if (is_null($var)){
 			return 'NULL';
 		}elseif (is_string($var)){
-			if ($var == "NOW()")return $var;
+			if ($var == "NOW()" || ($var[0]=='b' && $var[1]=='\''))return $var;
 			return "'" . clean_text($var) . "'";
 		}else{
 			return (is_bool($var)) ? intval($var) : $var;
