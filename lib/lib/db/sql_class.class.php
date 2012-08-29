@@ -11,7 +11,7 @@ class sql_class{
 	 */
 	public function delete(){
 		$error=db_delete(null,$this->table,$this->getPkey());
-		//$this->saveOperation('delete');
+		//if(!$error)	$this->saveOperation('delete');
 		return $error;
 	}
 	public function deleteWhere(){
@@ -21,18 +21,8 @@ class sql_class{
 		}
 		unset($where[count($where)-1][2]);
 		$error=db_delete(null,$this->table,$where);
-		//$this->saveOperation('delete');
+		//if(!$error)$this->saveOperation('delete');
 		return $error;
-	}
-	public function getId(){
-		if(is_array($this->pkey)){
-			$ret=array();
-			foreach($this->pkey as $key){
-				$ret[$key]=$this->data[$key];
-			}
-			return $ret;
-		}else
-			return $this->data[$this->pkey];
 	}
 	/**
 	 * Automatically chooses between insert and update based on the availability of the
@@ -54,7 +44,7 @@ class sql_class{
 	 */
 	public function update(){
 		$error=db_update(null,$this->table,$this->data,$this->getPkey());
-		//$this->saveOperation('update');
+		//if(!$error)$this->saveOperation('update');
 		return $error;
 	}
 	/**
@@ -65,8 +55,24 @@ class sql_class{
 		$error=db_insert(null,$this->table,$this->data);
 		if(!is_array($this->pkey))
 			$this->data[$this->pkey]=mysql_insert_id(db_get_connection());
-		//$this->saveOperation('insert');
+		//if(!$error)$this->saveOperation('insert');
 		return $error;
+	}
+	protected function saveOperation($type){
+		db_insert(null,'changelog',array(
+			'type'=>$type,
+			'data'=>serialize($this)
+		));
+	}
+	public function getId(){
+		if(is_array($this->pkey)){
+			$ret=array();
+			foreach($this->pkey as $key){
+				$ret[$key]=$this->data[$key];
+			}
+			return $ret;
+		}else
+			return $this->data[$this->pkey];
 	}
 	/**
 	 * Loads the record.
@@ -177,12 +183,6 @@ class sql_class{
 	 */
 	public function findAllForForm(){
 		return $this->find();
-	}
-	protected function saveOperation($type){
-		db_insert(null,'changelog',array(
-			'type'=>$type,
-			'data'=>serialize($this)
-		));
 	}
 	/**
 	 * Enter description here ...
