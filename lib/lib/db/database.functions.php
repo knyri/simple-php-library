@@ -218,14 +218,12 @@ function result_table($result) {
  * @return string|unknown|Ambigous <unknown, number>
  */
 function _db_validate_value($var) {
-	if (is_null($var)){
-			return 'NULL';
-		}elseif (is_string($var)){
-			if ($var == "NOW()" || ($var[0]=='b' && $var[1]=='\''))return $var;
-			return "'" . clean_text($var) . "'";
-		}else{
-			return (is_bool($var)) ? intval($var) : $var;
-		}
+	if (is_string($var)){
+		if ($var == "NOW()" || ($var[0]=='b' && $var[1]=='\''))return $var;
+		return "'" . clean_text($var) . "'";
+	}else{
+		return (is_bool($var)) ? intval($var) : $var;
+	}
 }
 /** Builds the WHERE clause.
  * @param array $where Array of conditions to be met. Each element must be array(column, value, ['AND'|'OR']).
@@ -255,12 +253,20 @@ function _db_build_where($where) {
 				if (count($arg) == 3) {
 					if ($arg[0]=='LITERAL')
 						$where_2[] = $arg[1] . ' '.$arg[2].' ';
-					else
+					elseif($arg[1]==null || strtoupper($arg[1])=='NULL'){
+						$where_2[] = $arg[0] . ' IS NULL '.$arg[2].' ';
+					}elseif(strtoupper($arg[1])=='!NULL'){
+						$where_2[] = $arg[0] . ' IS NOT NULL '.$arg[2].' ';
+					}else
 						$where_2[] = $arg[0] . '=' . _db_validate_value($arg[1]) . ' '.$arg[2].' ';
 				} else {
 					if ($arg[0]=='LITERAL')
 						$where_2[] = $arg[1];
-					else
+					elseif($arg[1]==null || strtoupper($arg[1])=='NULL'){
+						$where_2[] = $arg[0] . ' IS NULL ';
+					}elseif(strtoupper($arg[1])=='!NULL'){
+						$where_2[] = $arg[0] . ' IS NOT NULL ';
+					}else
 						$where_2[] = $arg[0] . '=' . _db_validate_value($arg[1]);
 				}
 			}
