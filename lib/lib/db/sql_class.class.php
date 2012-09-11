@@ -53,7 +53,7 @@ class sql_class{
 	 */
 	public function insert(){
 		$error=db_insert(null,$this->table,$this->data);
-		if(!is_array($this->pkey))
+		if(!is_array($this->pkey)&&!$this->isPkeySet())
 			$this->data[$this->pkey]=mysql_insert_id(db_get_connection());
 		//if(!$error)$this->saveOperation('insert');
 		return $error;
