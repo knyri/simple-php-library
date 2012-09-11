@@ -217,6 +217,7 @@ function result_table($result) {
  * @return string|unknown|Ambigous <unknown, number>
  */
 function _db_validate_value($var) {
+	if(is_null($var) || $var=='NULL')return 'NULL';
 	if (is_string($var)){
 		if ($var == "NOW()" || ($var[0]=='b' && $var[1]=='\''))return $var;
 		return "'" . clean_text($var) . "'";
