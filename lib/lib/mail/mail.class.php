@@ -61,7 +61,8 @@ class mail{
 			}
 			$this->message .= "--{$mime_boundary}--";
 		}
-		$headers="";
+		$headers='';
+		if(isset($this->from))$headers.='From: '.$this->from."\r\n";
 		foreach($this->headers as $name=>$value){
 			$headers.="$name: $value\r\n";
 		}
