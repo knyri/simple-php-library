@@ -168,6 +168,7 @@ function db_get_row($db, $table, $condition=null, $columns='*', $cache=false, $t
 	} else {
 		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1";
 	}
+	$res=mysql_query($query,$db);
 	if(db_isDebug())echo "[[$query]]\n";
 	if (!$res)
 			db_log_error(mysql_error(), $query);
