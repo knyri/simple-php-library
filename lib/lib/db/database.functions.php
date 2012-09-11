@@ -51,6 +51,7 @@ function db_close_connection() {
 function db_log_error($msg, $qry = '') {
 	$db = db_get_connection();
 	mysql_query('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(), \''.clean_text($msg).'\', \''.clean_text($qry).'\')', $db);
+	if(db_isDebug())echo "Error:[[$msg]]\n";
 	return $msg;
 }
 /** Checks to see if a record exists that matches the conditions.
@@ -108,18 +109,16 @@ function db_get_column($db, $table, $column, $condition = null, $default = null,
 	if ($condition) {
 		if(is_array($condition))
 			$condition=substr(_db_build_where($condition),6);
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1", $db);
-		if (!$res) {
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1");
-			return $default;
-		}
+		$query="SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1";
 	} else {
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1", $db);
-		if (!$res) {
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1");
-			return $default;
-		}
+		$query="SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1";
 	}
+	$res = mysql_query($query, $db);
+	if (!$res) {
+		db_log_error(mysql_error(), $query);
+		return $default;
+	}
+	if(db_isDebug())echo "[[$query]]\n";
 	$row = mysql_fetch_array($res);
 	mysql_free_result($res);
 	if ($row[$column] == null) return $default;
@@ -165,14 +164,13 @@ function db_get_row($db, $table, $condition=null, $columns='*', $cache=false, $t
 	if ($condition) {
 		if(is_array($condition))
 			$condition=substr(_db_build_where($condition),6);
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1", $db);
-		if (!$res)
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1");
+		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1";
 	} else {
-		$res = mysql_query("SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1", $db);
-		if (!$res)
-			db_log_error(mysql_error(), "SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1");
+		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1";
 	}
+	if(db_isDebug())echo "[[$query]]\n";
+	if (!$res)
+			db_log_error(mysql_error(), $query);
 	if (!$res || mysql_num_rows($res)==0) return null;
 	$row = mysql_fetch_array($res, $type);
 	mysql_free_result($res);
@@ -317,8 +315,7 @@ function db_query($db, $table, $columns = '*',array $where = null,array $sortBy 
 		if($offset>0)
 			$query.=" OFFSET $offset";
 	}
-	if(db_isDebug())
-		echo $query;
+	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res)
 		db_log_error(mysql_error(), $query);
@@ -342,7 +339,7 @@ function db_update($db, $table, array $data, array $conditions = null) {
 	$query .= implode(',', $data_2);
 	if ($conditions != null)
 		$query .= ' ' . _db_build_where($conditions);
-	if(db_isDebug()) echo $query;
+	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res) {
 		return db_log_error(mysql_error(), $query);
@@ -363,6 +360,7 @@ function db_insert($db, $table, array $data) {
 	//printVar(array_map('_db_validate_value', $data));
 	$query = "INSERT INTO $table " . '(`' . implode('`, `',array_keys($data)) . '`) VALUES ('
 		. implode(', ', array_map('_db_validate_value', $data)) . ')';
+	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res) {
 		return db_log_error(mysql_error(), $query);
@@ -385,6 +383,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 	foreach ($data as $datum)
 		$values[]= '('.implode(', ',array_map('_db_validate_value',$datum)).')';
 	$query.= implode(',', $values);
+	if(db_isDebug())echo "[[$query]]\n";
 	unset($values);
 	$res = mysql_query($query,$db);
 	if(!$res){
@@ -405,6 +404,7 @@ function db_delete($db, $table, array $conditions = null) {
 	$query= "DELETE FROM $table";
 	if (!is_null($conditions))
 		$query.= ' '._db_build_where($conditions);
+	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query,$db);
 	if(!$res){
 		return db_log_error(mysql_error(),$query);
@@ -428,7 +428,7 @@ function db_num_rows($db,$table,$conditions=null){
 		$sql="SELECT COUNT(*) FROM $table "._db_build_where($conditions);
 	else
 		$sql="SELECT COUNT(*) FROM $table WHERE $conditions";
-	if(db_isDebug())echo $sql;
+	if(db_isDebug())echo "[[$sql]]\n";
 	$res=mysql_query($sql,$db);
 	if(!$res){
 		db_log_error(mysql_error(),$sql);
