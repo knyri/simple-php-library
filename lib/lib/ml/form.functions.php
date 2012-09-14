@@ -238,7 +238,7 @@ function form_radio($name,$id,array $values,$default,array $attrib=null,$before=
 	$attrib=combine_attrib($attrib).' ';
 	$val=form_get($name,$default);
 	foreach($values as $value=>$disp){
-		echo $before.'<label><input type="radio" name="'.$name.'" value="'.$value.'" id="'.$id.$value.'"'.(($value==$val)?' checked="checked" ':' ').$attrib.'/>&nbsp;'.$disp.'</label>'.$after;
+		echo $before.'<input type="radio" name="'.$name.'" value="'.$value.'" id="'.$id.$value.'"'.(($value==$val)?' checked="checked" ':' ').$attrib.'/>&nbsp;<label for="'.$id.$value.'">'.$disp.'</label>'.$after;
 	}
 }
 function form_radioYN($name,$id,$default,array $attrib=null,$before=null,$after=null){
@@ -257,113 +257,13 @@ function form_checkbox($name,$id,array $values,array $attrib=null,$before=null,$
 	$attrib=combine_attrib($attrib).' ';
 	$checked=form_get($name,array());
 	foreach($values as $value=>$disp){
-		echo $before.'<label for="'.$id.$value.'"><input type="checkbox" name="'.$name.'[]" value="'.$value.'" id="'.$id.$value.'"'.(in_array($value,$checked)?' checked="checked"':'').$attrib.'/>&nbsp;'.$disp.'</label>'.$after;
+		echo $before.'<input type="checkbox" name="'.$name.'[]" value="'.$value.'" id="'.$id.$value.'"'.(in_array($value,$checked)?' checked="checked"':'').$attrib.'/>&nbsp;<label for="'.$id.$value.'">'.$disp.'</label>'.$after;
 	}
 }
 function form_textarea($sName,$iCols,$iRows,array $attrib=array()){
 	$attrib=combine_attrib($attrib);
 	$val=form_get($sName,'');
 	echo '<textarea name="'.$sName.'" cols="'.$iCols.'" rows="'.$iRows.'" '.$attrib.'>'.$val.'</textarea>';
-}
-
-/**
- * use is_date
- * @deprecated
- */
-function isValidDate($name){
-	return is_date($name);
-}
-/**
- * use is_phone
- * @deprecated
- */
-function isValidPhone($value){
-	return is_phone($value);
-}
-
-/**
- * use is_alphastr
- * @deprecated
- */
-function isAlphaStr($value,$min=1,$max=1){
-	return is_alphastr($value,$min,$max);
-}
-/**
- * use is_aplhanumstr
-  * @deprecated
- */
-function isAlphaNumStr($value,$min=1,$max=1){
-	return is_alphanumstr($value,$min,$max);
-}
-/**
- * use is_namestr
- * @deprecated
- */
-function isNameStr($value,$min=1,$max=1){
-	return is_namestr($value,$min,$max);
-}
-/**
- * use is_address
- * @deprecated
- */
-function isAddressStr($value){
-	return is_address($value);
-}
-/**
- * use is_zip
- * @deprecated
- */
-function isZipStr($value){
-	return is_zip($value);
-}
-/**
- * use is_wordstr
- * @deprecated
- */
-function isWordStr($value,$min=1,$max=1){
-	return is_wordstr($value,$min,$max);
-}
-/**
- * use is_email
- * @deprecated
- */
-function isValidEmail($value){
-	return is_email($value);
-}
-/**
- * use is_url
- * @deprecated
- */
-function isValidURL($url){
-	return is_url($url);
-}
-/**
- * use is_validselection
- * @deprecated
- */
-function isValidSelection($name,array $valid){
-	return is_validselection($name, $valid);
-}
-/**
- * use is_minselected
- * @deprecated
- */
-function isMinSelected($name,$iMin){
-	return is_minselected($name, $iMin);
-}
-/**
- * use is_selected
- * @deprecated
- */
-function isSelected($name,$value){
-	return is_selected($name, $value);
-}
-/**
- * use is_notselected
- * @deprecated
- */
-function notSelected($name,$value){
-	return is_notselected($name, $value);
 }
 /******************************************************************************************************
  * ***************************************/
@@ -462,21 +362,6 @@ function form_regex_test($test,$separator,$value,$min=1,$max=1){
  */
 function is_alphastr($value,$min=1,$max=1){
 	return form_regex_test('A-Za-z',' ',$value,$min,$max);
-	/*
-	if(empty($value))
-		return ($min==0)?true:E_FORM_EMPTY;
-	if($max==1)
-		return preg_match('/^[A-Za-z]+$/',$value)===1;
-	if($max==0){
-		if($min>1)
-			return (preg_match('/^([A-Za-z]+ +){'.($min-1).',}[A-Za-z]+$/',$value)>=$min)?true:E_FORM_MINNOTMET;
-		else
-			return preg_match('/^[A-Za-z ]+$/',$value)===1;
-	}
-	$max--;
-	if($min>0)$min--;
-	return (preg_match("/^[A-Za-z]+( +[A-Za-z]+){".$min.",$max}$/",$value)===1)?true:E_FORM_LIMITEXCEEDED;
-	//*/
 }
 /**
  * Tests to see if the field only contains A-Z, a-z, and 0-9.
@@ -487,21 +372,6 @@ function is_alphastr($value,$min=1,$max=1){
  */
 function is_alphanumstr($value,$min=1,$max=1){
 	return form_regex_test('A-Za-z0-9',' ',$value,$min,$max);
-	/*
-	if(empty($value))
-		return ($min==0)?true:E_FORM_EMPTY;
-	if($max==1)
-		return preg_match('/^[A-Za-z0-9]+$/',$value)===1;
-	if($max==0){
-		if($min>1)
-			return (preg_match('/^([A-Za-z0-9]+ +){'.($min-1).',}[A-Za-z0-9]+$/',$value)>=$min)?true:E_FORM_MINNOTMET;
-		else
-			return preg_match('/^[A-Za-z0-9 ]+$/',$value)===1;
-	}
-	$max--;
-	if($min>0)$min--;
-	return (preg_match("/^[A-Za-z0-9]+( +[A-Za-z0-9]+){".$min.",$max}$/",$value)===1)?true:E_FORM_LIMITEXCEEDED;
-	//*/
 }
 /**
  * Tests to see if the field only contains A-Z, a-z, apostrophe, hyphen, comma and period.
@@ -512,33 +382,6 @@ function is_alphanumstr($value,$min=1,$max=1){
  */
 function is_namestr($value,$min=1,$max=1){
 	return form_regex_test('A-Za-z\'\.\-,',' ',$value,$min,$max);
-	/*
-	if(blank($value))
-		return ($min==0)?true:E_FORM_EMPTY;
-	if($max==1)
-		return preg_match('/^[A-Za-z\'\.\-,]+$/',$value)===1;
-	if($max<1){
-		if($min>0){
-			if(preg_match('/^([A-Za-z\'\.\-,]+ +){'.($min-1).',}[A-Za-z\'\.\-,]+$/',$value)===1)
-				return true;
-			else
-				return (preg_match('/^([A-Za-z\'\.\-,]+ +)/',$value)===1)?E_FORM_MINNOTMET:false;
-		}else{//empty would be caught prior so + is used instead of *
-			return preg_match('/^[A-Za-z\'\.\-, ]+$/',$value)===1;
-		}
-	}else{
-		if($min>0){
-			if(preg_match('/^([A-Za-z\'\.\-,]+ +){'.($min-1).','.($max-1).'}[A-Za-z\'\.\-,]+$/',$value)===1)return true;
-			if(preg_match('/^([A-Za-z\'\.\-,]+ +){'.$min.',}$/',$value)===1)return E_FORM_LIMITEXCEEDED;
-			if(preg_match('/^([A-Za-z\'\.\-,]+ +){0,'.($max-1).'}[A-Za-z\'\.\-,]+$/',$value)===1)return E_FORM_MINNOTMET;
-			return false;
-		}else{
-			if(preg_match('/^([A-Za-z\'\.\-,]+ +){0,'.($max-1).'}[A-Za-z\'\.\-,]+$/',$value)===1)return true;
-			if(preg_match('/^[A-Za-z\'\.\-, ]+$/',$value)===1)return E_FORM_LIMITEXCEEDED;
-			return false;
-		}
-	}
-	//*/
 }
 /**
  * Tests to see if the field only contains starts with a number or PO followed by a number and one or more alpha strings maybe ending with a period.
@@ -571,22 +414,6 @@ function is_zip($value){
  */
 function is_wordstr($value,$min=1,$max=1){
 	return form_regex_test('A-Za-z0-9\-\/\+=~`\.,:;<>\{\}\[\]\(\)\|!@\$%\^&\*\'"_\?\\\#',' \r\n\t',$value,$min,$max);
-	/*
-	if(empty($value))
-		return ($min==0)?true:E_FORM_EMPTY;
-	$legal='A-Za-z0-9\-\/\+=~`\.,:;<>\{\}\[\]\(\)\|!@\$%\^&\*\'"_\?\\\#';
-	if($max==1)
-		return preg_match('/^['.$legal.']+$/',$value)===1;
-	if($max==0){
-		if($min>1)
-			return (preg_match('/^(['.$legal.']+[ \r\n\t]+){'.($min-1).',}[.$legal.]+$/',$value)===1)?true:E_FORM_MINNOTMET;
-		else
-			return preg_match('/^['.$legal.' \r\n\t]+$/',$value)===1;
-	}
-	$max--;
-	if($min>0)$min--;
-	return (preg_match("/^[$legal]+([ \r\n\t]+[$legal]+){".$min.",$max}$/",$value)===1)?true:E_FORM_LIMITEXCEEDED;
-	//*/
 }
 /**
  * Checks to see if the email address conforms to RFC 822.
