@@ -43,7 +43,7 @@ function db_close_connection() {
 /** Logs a database error.
  * Common usage:
  * if (!$res)
- *		echo db_log_error(mysql_error(), $query);
+ *		echo db_log_error(mysql_error($db), $query);
  * @param string $msg Error message
  * @param string $qry The query that caused it. Optional.
  * @return string $msg
@@ -66,7 +66,7 @@ function db_record_exist($db, $table, $condition) {
 	if ($condition) {
 		$res = mysql_query("SELECT * FROM $table WHERE $condition", $db);
 		if (!$res) {
-			return db_log_error(mysql_error(), "SELECT * FROM $table WHERE $condition");
+			return db_log_error(mysql_error($db), "SELECT * FROM $table WHERE $condition");
 		}
 		$ret = (mysql_num_rows($res) > 0);
 		mysql_free_result($res);
@@ -88,7 +88,7 @@ function db_do_operation($db, $operation, $default = null) {
 		$db= db_get_connection();
 	$res = mysql_query("SELECT $operation", $db);
 	if (!$res) {
-		db_log_error(mysql_error(), "SELECT $operation");
+		db_log_error(mysql_error($db), "SELECT $operation");
 		return $default;
 	}
 	$row = mysql_fetch_array($res);
@@ -115,7 +115,7 @@ function db_get_column($db, $table, $column, $condition = null, $default = null,
 	}
 	$res = mysql_query($query, $db);
 	if (!$res) {
-		db_log_error(mysql_error(), $query);
+		db_log_error(mysql_error($db), $query);
 		return $default;
 	}
 	if(db_isDebug())echo "[[$query]]\n";
@@ -171,7 +171,7 @@ function db_get_row($db, $table, $condition=null, $columns='*', $cache=false, $t
 	$res=mysql_query($query,$db);
 	if(db_isDebug())echo "[[$query]]\n";
 	if (!$res)
-			db_log_error(mysql_error(), $query);
+			db_log_error(mysql_error($db), $query);
 	if (!$res || mysql_num_rows($res)==0) return null;
 	$row = mysql_fetch_array($res, $type);
 	mysql_free_result($res);
@@ -320,7 +320,7 @@ function db_query($db, $table, $columns = '*',array $where = null,array $sortBy 
 	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res)
-		db_log_error(mysql_error(), $query);
+		db_log_error(mysql_error($db), $query);
 	return $res;
 }
 /** Updates data in the database. Returns the error on failure and false on success.
@@ -344,7 +344,7 @@ function db_update($db, $table, array $data, array $conditions = null) {
 	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res) {
-		return db_log_error(mysql_error(), $query);
+		return db_log_error(mysql_error($db), $query);
 	}
 	return false;
 }
@@ -353,9 +353,10 @@ function db_update($db, $table, array $data, array $conditions = null) {
  * @param resource $db mysql database link. Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array $data Array of column names and the new values. Each element must be array[column]=value.
- * @return mixed false on success or the error.
+ * @param boolean $get_insert_id If true the insert id will be returned on success.
+ * @return mixed false or the insert id on success or the error(always a string).
  */
-function db_insert($db, $table, array $data) {
+function db_insert($db, $table, array $data,$get_insert_id=false) {
 	if ($db===null)
 		$db = db_get_connection();
 	//printVar($data);
@@ -365,8 +366,10 @@ function db_insert($db, $table, array $data) {
 	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query, $db);
 	if (!$res) {
-		return db_log_error(mysql_error(), $query);
+		return db_log_error(mysql_error($db), $query);
 	} else {
+		if($get_insert_id)
+			return mysql_insert_id($db);
 		return false;
 	}
 }
@@ -389,7 +392,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 	unset($values);
 	$res = mysql_query($query,$db);
 	if(!$res){
-		return db_log_error(mysql_error(),$query);
+		return db_log_error(mysql_error($db),$query);
 	}else{
 		return false;
 	}
@@ -409,7 +412,7 @@ function db_delete($db, $table, array $conditions = null) {
 	if(db_isDebug())echo "[[$query]]\n";
 	$res = mysql_query($query,$db);
 	if(!$res){
-		return db_log_error(mysql_error(),$query);
+		return db_log_error(mysql_error($db),$query);
 	}else{
 		return false;
 	}
@@ -433,7 +436,7 @@ function db_num_rows($db,$table,$conditions=null){
 	if(db_isDebug())echo "[[$sql]]\n";
 	$res=mysql_query($sql,$db);
 	if(!$res){
-		db_log_error(mysql_error(),$sql);
+		db_log_error(mysql_error($db),$sql);
 		return false;
 	}
 	$res=mysql_fetch_array($res);
