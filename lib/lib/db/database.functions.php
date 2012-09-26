@@ -57,16 +57,17 @@ function db_log_error($msg, $qry = '') {
 /** Checks to see if a record exists that matches the conditions.
  * @param resource $db mysql database link. Set to null to use the default settings.
  * @param string $table required
- * @param string $condition required
+ * @param string|array $condition required
  * @return mixed boolean on success or a string containing the error message.
  */
 function db_record_exist($db, $table, $condition) {
 	if ($db===null)
 		$db = db_get_connection();
 	if ($condition) {
-		$res = mysql_query("SELECT * FROM $table WHERE $condition", $db);
+		$condition=_db_build_where($condition);
+		$res = mysql_query("SELECT * FROM $table $condition", $db);
 		if (!$res) {
-			return db_log_error(mysql_error($db), "SELECT * FROM $table WHERE $condition");
+			return db_log_error(mysql_error($db), "SELECT * FROM $table $condition");
 		}
 		$ret = (mysql_num_rows($res) > 0);
 		mysql_free_result($res);
@@ -107,9 +108,8 @@ function db_get_column($db, $table, $column, $condition = null, $default = null,
 	if ($db===null)
 		$db = db_get_connection();
 	if ($condition) {
-		if(is_array($condition))
-			$condition=substr(_db_build_where($condition),6);
-		$query="SELECT".($cache?'':' SQL_CACHE')." $column FROM $table WHERE $condition LIMIT 0,1";
+		$condition=_db_build_where($condition);
+		$query="SELECT".($cache?'':' SQL_CACHE')." $column FROM $table $condition LIMIT 0,1";
 	} else {
 		$query="SELECT".($cache?'':' SQL_CACHE')." $column FROM $table LIMIT 0,1";
 	}
@@ -162,9 +162,8 @@ function db_get_row($db, $table, $condition=null, $columns='*', $cache=false, $t
 	if ($db===null)
 		$db = db_get_connection();
 	if ($condition) {
-		if(is_array($condition))
-			$condition=substr(_db_build_where($condition),6);
-		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table WHERE $condition LIMIT 0,1";
+		$condition=_db_build_where($condition);
+		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table $condition LIMIT 0,1";
 	} else {
 		$query="SELECT".($cache?'':' SQL_CACHE')." $columns FROM $table LIMIT 0,1";
 	}
@@ -429,10 +428,8 @@ function db_num_rows($db,$table,$conditions=null){
 		$db= db_get_connection();
 	if($conditions===null)
 		$sql="SELECT COUNT(*) FROM $table";
-	elseif(is_array($conditions))
-		$sql="SELECT COUNT(*) FROM $table "._db_build_where($conditions);
 	else
-		$sql="SELECT COUNT(*) FROM $table WHERE $conditions";
+		$sql="SELECT COUNT(*) FROM $table "._db_build_where($conditions);
 	if(db_isDebug())echo "[[$sql]]\n";
 	$res=mysql_query($sql,$db);
 	if(!$res){
