@@ -563,13 +563,15 @@ class PDOTable{
 	 * @return boolean
 	 */
 	public function load($id){
+		if($this->dataset)$this->dataset->closeCursor();
 		$where=_db_build_where($this->getPkey($id));
 		if($this->loadstm==null){
 			$this->loadstm=db_prepare($this->db,'SELECT * FROM `'.$this->table.'`'.$where[0]);
-		}
-		$error=db_run_query($this->db,$this->loadstm,$where[1]);
+		}else
+			$this->loadstm->closeCursor();
+		$error=db_run_query($this->loadstm,$where[1]);
 		if($error)return false;
-		$this->data=$stm->fetch(PDO::FETCH_ASSOC);
+		$this->data=$this->loadstm->fetch(PDO::FETCH_ASSOC);
 		//$this->data=db_get_row_assoc(null,$this->table,$this->getPkey($id));
 		return $this->data!=null;
 	}
