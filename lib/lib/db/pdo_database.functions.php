@@ -10,7 +10,7 @@ PackageManager::requireClassOnce('error.IllegalArgumentException');
 global $_DB, $_DB_OPEN_CON;
 $_DB = null;
 $_DB_OPEN_CON = false;
-function db_isDebug(){
+function db_debug(){
 	if(isset($GLOBALS['simple']['lib']['db']['debug']))
 		if($GLOBALS['simple']['lib']['db']['debug']==true)
 			return true;
@@ -30,7 +30,7 @@ function db_get_connection($forcenew = false) {
 		try{
 		$_DB = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
 		}catch(PDOException $e){
-			if(db_isDebug())
+			if(db_debug())
 				throw $e;
 			else
 				return null;
@@ -54,7 +54,7 @@ function db_close_connection() {
  * @param string $qry The query that caused it. Optional.
  * @return string $msg
  */
-function db_log_error($statement,$args) {
+function db_log_error($statement,$args=null) {
 	$db = db_get_connection();
 	$err=$statement->errorInfo();
 	$params=array(
@@ -63,9 +63,9 @@ function db_log_error($statement,$args) {
 	);
 	try{
 		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
-		$stm->execute();
+		$stm->execute($params);
 	}catch(PDOException $e){
-		if(db_isDebug())throw $e;
+		if(db_debug())throw $e;
 	}
 
 	return $params[':message'];
@@ -81,8 +81,8 @@ function db_record_exist($db, $table, array $condition) {
 		$db = db_get_connection();
 	if ($condition) {
 		$ret = db_num_rows($db,$table,$condition);
-		if(is_numeric($ret))return $ret;
-		return $ret>0;
+		if(is_numeric($ret))return $ret>0;
+		return false;
 	} else {
 		throw new IllegalArgumentException('$condition MUST be set.');
 	}
@@ -150,7 +150,7 @@ function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO:
 	try{
 		$stm = $db->prepare($stm);
 	}catch(PDOException $e){
-		if(db_isdebug()){
+		if(db_debug()){
 			throw $e;
 		}else{
 			return 'Could not prepare the statement.';
@@ -174,12 +174,18 @@ function result_table($result) {
 		$rowc = 0;
 		$color = "";
 		$index = 0;
-		$i = mysql_num_fields($result);
+		$row=$result->fetch(PDO::FETCH_ASSOC);
 		echo '<tr>';
-		for ($j=0; $j<$i;$j++)
-			echo '<th>'.mysql_field_name($result, $j).'</th>';
+		foreach(array_keys($row) as $column)
+			echo '<th>'.$column.'</th>';
+		echo '</tr><tr>';
+		foreach($row as $col) {
+				echo "<td bgcolor='#FFFFFF'>".nl2br(htmlspecialchars($col))."</td>";
+			$index++;
+		}
 		echo '</tr>';
-		while ($row = mysql_fetch_array($result)) {
+		$rowc++;
+		while ($row = $result->fetch(PDO::FETCH_NUM)) {
 			$index = 0;
 			if ($rowc%2 == 0)
 				$color = "#FFFFFF";
@@ -187,8 +193,6 @@ function result_table($result) {
 				$color = "#DDDDDD";
 			echo "<tr>";
 			foreach($row as $col) {
-
-				if ($index%2 != 0)
 					echo "<td bgcolor='$color'>".nl2br(htmlspecialchars($col))."</td>";
 				$index++;
 			}
@@ -233,40 +237,35 @@ function _db_build_where(array $where) {
 	foreach($where as $arg){
 		if(count($arg) > 3){
 			if($arg[1] == 'IN'){
-				$ret[1][':where'.($wcount)]=$arg[0];
-				$ret[1][':where'.($wcount+1)]=$arg[2];
-				$where_2[]= ':where'.($wcount) . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount+1) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
-				$wcount+=2;
+				$ret[1][':where'.($wcount)]=$arg[2];
+				$where_2[]= "`$arg[0]`" . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$wcount++;
 			}elseif($arg[1] == 'LIKE'){
-				$ret[1][':where'.($wcount)]=$arg[0];
-				$ret[1][':where'.($wcount+1)]=$arg[2];
-				$where_2[] = ':where'.($wcount) . ($arg[3]?' NOT LIKE ':' LIKE ') . '\'' . ':where'.($wcount+1) . '\'' . ((count($arg)==5)?' '.$arg[4].' ' : '');
-				$wcount+=2;
+				$ret[1][':where'.($wcount)]=$arg[2];
+				$where_2[] = "`$arg[0]`" . ($arg[3]?' NOT LIKE ':' LIKE ') . '\'' . ':where'.($wcount) . '\'' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$wcount++;
 			}elseif($arg[1] == 'BETWEEN'){
-				$ret[1][':where'.($wcount)]=$arg[0];
-				$ret[1][':where'.($wcount+1)]=$arg[2];
-				$ret[1][':where'.($wcount+2)]=$arg[3];
-				$where_2[]= ':where'.($wcount) . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount+1) . ' AND ' . ':where'.($wcount+2) . ((count($arg)==6)?' '.$arg[5].' ' : '');
-				$wcount+=3;
+				$ret[1][':where'.($wcount)]=$arg[2];
+				$ret[1][':where'.($wcount+1)]=$arg[3];
+				$where_2[]= "`$arg[0]`" . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount) . ' AND ' . ':where'.($wcount+1) . ((count($arg)==6)?' '.$arg[5].' ' : '');
+				$wcount+=2;
 			}
 		}else{
 			if(count($arg) == 3){
 				if ($arg[0]=='LITERAL'){
-					$ret[1][':where'.($wcount)]=$arg[0];
 					$where_2[] = $arg[1] . ' '.$arg[2].' ';
 				}else{
-					$ret[1][':where'.($wcount)]=$arg[0];
-					$ret[1][':where'.($wcount+1)]=$arg[1];
-					$where_2[] =':where'.($wcount) . '=' . ':where'.($wcount+1) . ' '.$arg[2].' ';
+					$ret[1][':where'.$wcount]=$arg[1];
+					$where_2[] ="`$arg[0]`=:where$wcount $arg[2] ";
+					$wcount++;
 				}
 			}else{
 				if($arg[0]=='LITERAL'){
-					$ret[1][':where'.($wcount)]=$arg[0];
 					$where_2[] = $arg[1];
 				}else{
-					$ret[1][':where'.($wcount)]=$arg[0];
-					$ret[1][':where'.($wcount+1)]=$arg[1];
-					$where_2[] = ':where'.($wcount) . '=' . ':where'.($wcount+1);
+					$ret[1][':where'.($wcount)]=$arg[1];
+					$where_2[] = "`$arg[0]`=:where$wcount";
+					$wcount++;
 				}
 			}
 		}
@@ -291,113 +290,44 @@ function db_query($db, $table, array $columns = null,array $where = null,array $
 		$db = db_get_connection();
 	if($where!==null){
 		$where=_db_build_where($where);
-	}else{
-		$where=array();
 	}
 	$query = 'SELECT ';
 	if ($columns!==null){
-		$ccount=0;
-		foreach($columns as $column){
-			$query .= ':col'.$ccount.',';
-			$where[1][':col'.$ccount]=$column;
-		}
-		$query= trim($query,',');
+		$query.=implode(',',$columns);
 	}else
 		$query .= '*';
 	if (!empty($table)){
-		$query .= ' FROM :table';
-		$conditions[1][':table']=$table;
+		$query .= ' FROM '.$table;
 	}
-	if (isset($where[0])){
+	if ($where){
 		$query .= ' '.$where[0];
+		$where=$where[1];
 	}
 	if ($groupBy != null) {
-		$query .= ' GROUP BY :groupby';
-		$where[1][':groupby']=$groupBy;
+		$query .= ' GROUP BY '.$groupBy;
 		if ($having != null){
-			$query .=  'HAVING :having';
-			$where[1][':having']=$having;
+			$query .=  'HAVING '.$having;
 		}
 	}
 	if ($sortBy != null) {
 		$query .= ' ORDER BY';
-		$ccount=0;
 		foreach($sortBy as $sort) {
-			$query .= " :sort$ccount :sortd$ccount,";
-			$where[1][':sort'.$ccount]=$sort[0];
-			$where[1][':sortd'.$ccount]=$sort[1];
-			$ccount++;
+			$query .= " $sort[0] $sort[1],";
 		}
 		$query = substr($query, 0, -1);
 	}
 	if($limit>0){
-		$query.=" LIMIT :qlimit";
-		$where[1][':qlimit']=$limit;
+		$query.=" LIMIT $limit";
 		if($offset>0){
-			$query.=" OFFSET :qoffset";
-			$where[1][':qoffset']=$offset;
+			$query.=" OFFSET $offset";
 		}
 	}
+	if(db_debug())echo $query;
 	$stm=$db->prepare($query);
-	if (!$stm->execute($where[1])) {
-		return db_log_error($stm,$where[1]);
+	if (!$stm->execute($where)) {
+		return db_log_error($stm,$where);
 	}
 	return $stm;
-}
-/** Updates data in the database. Returns the error on failure and false on success.
- * @param resource $db mysql database link. Set to null to use the default settings.
- * @param string $table Name of the table
- * @param array $data Array of column names and the new values. Each element must be array[column]=value.
- * @param array $conditions See _db_build_where(..).
- * @return mixed false on success or the error on failure.
- */
-function db_update($db, $table, array $data, array $conditions = null) {
-	if ($db===null)
-		$db = db_get_connection();
-	$query = "UPDATE $table SET ";
-	$data_2 = array();
-	foreach($data as $key=>$value) {
-		$data_2[] = $key.'='._db_validate_value($value);
-	}
-	$query .= implode(',', $data_2);
-	if ($conditions != null)
-		$query .= ' ' . _db_build_where($conditions);
-	if(db_isDebug()) echo $query;
-	$res = mysql_query($query, $db);
-	if (!$res) {
-		return db_log_error(mysql_error(), $query);
-	}
-	return false;
-}
-
-/** Inserts data into the database. Returns NULL on failure or false on success.
- * @param resource $db mysql database link. Set to null to use the default settings.
- * @param string $table Name of the table
- * @param array $data Array of column names and the new values. Each element must be array[column]=value.
- * @return mixed false on success or the error.
- */
-function db_insert($db, $table, array $data) {
-	if ($db===null)
-		$db = db_get_connection();
-	//printVar($data);
-	//printVar(array_map('_db_validate_value', $data));
-	$stm = "INSERT INTO $table " . '(`' . implode('`, `',array_keys($data)) . '`) VALUES ('
-		. trim(str_repeat('?,',count($data)),',') . ')';
-	try{
-		$stm = $db->prepare($stm);
-	}catch(PDOException $e){
-		if(db_isdebug()){
-			throw $e;
-		}else{
-			return 'Could not prepare the statement.';
-		}
-	}
-	if (!$stm->execute($conditions[1])) {
-		return db_log_error($stm,array_merge(array(':table'=>$table),$conditions[1]));
-	}else{
-		$stm->closeCursor();
-		return true;
-	}
 }
 
 /** Inserts data into the database. Returns the error message on failure or false on success.
@@ -431,16 +361,15 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 function db_delete($db, $table, array $conditions = null) {
 	if ($db===null)
 		$db= db_get_connection();
-	$stm= "DELETE FROM :table";
+	$stm= "DELETE FROM `$table`";
 	if (!$conditions!==null){
 		$conditions=_db_build_where($conditions);
 		$stm+=' '.$conditions[0];
 	}else{$conditions=array();}
-	$conditions[1][':table']=$table;
 	try{
 		$stm = $db->prepare($stm);
 	}catch(PDOException $e){
-		if(db_isdebug()){
+		if(db_debug()){
 			throw $e;
 		}else{
 			return 'Could not prepare the statement.';
@@ -463,26 +392,924 @@ function db_num_rows($db,$table,array $conditions=null){
 	if ($db===null)
 		$db= db_get_connection();
 	if($conditions===null){
-		$stm = 'SELECT COUNT(*) FROM :table';
-		$conditions=array();
+		$stm = "SELECT COUNT(*) FROM $table";
+		//$conditions=array();
 	}else{
 		$conditions=_db_build_where($conditions);
-		$stm = 'SELECT COUNT(*) FROM :table WHERE '.$conditions[0];
+		$stm = "SELECT COUNT(*) FROM $table ".$conditions[0];
+		$conditions=$conditions[1];
 	}
-	$conditions[1][':table']=$table;
 	try{
 		$stm = $db->prepare($stm);
 	}catch(PDOException $e){
-		if(db_isdebug()){
+		if(db_debug()){
 			throw $e;
 		}else{
 			return 'Could not prepare the statement.';
 		}
 	}
-	if (!$stm->execute($conditions[1])) {
-		return db_log_error($stm,array_merge(array(':table'=>$table),$conditions[1]));
+	if (!$stm->execute($conditions)) {
+		return db_log_error($stm,$conditions);
 	}
 	$ret = $stm->fetch(PDO::FETCH_NUM);
 	$stm->closeCursor();
 	return $ret[0];
 }
+
+/**
+ * Exists for logging purposes.
+ * @param resource $stm
+ * @param array $params
+ * @return Ambigous <string>|boolean The error if failed or false on success.
+ */
+function db_run_query($stm, array $params=null){
+	if (!$stm->execute($params)) {
+		return db_log_error($stm,$params);
+	}
+	return false;
+}
+
+/**
+ * Attempts to prepare the statement.
+ * @param resource $db
+ * @param string $query
+ * @throws PDOException
+ * @return boolean|PDOStatement
+ */
+function db_prepare($db,$query){
+	try{
+		$query = $db->prepare($query);
+	}catch(PDOException $e){
+		if(db_debug()){
+			throw $e;
+		}else{
+			return false;
+		}
+	}
+	return $query;
+}
+
+function db_now(){
+	return date('Y-m-d',time());
+}
+/**
+ * Class for working a PDO table.
+ * @author Ken
+ *
+ */
+class PDOTable{
+	protected $table,
+		$columns,
+		$data=array(),
+		$dataset=null,
+		$pkey=null,
+		$db=null,
+		$rowCountstm=null,
+		$saveopstm=null,
+		$loadstm=null,
+		$plainloadall=null;
+	/**
+	 * Enter description here ...
+	 * @param string $table
+	 * @param array $columns column names
+	 * @param array $colTypes columns types. One of PDO::PARAM_*
+	 * @param string|array $pkey The primary key(s) for the table
+	 * @param resource $db
+	 */
+	public function __construct($table,array $columns,array $colTypes,$pkey,$db){
+		$this->table=$table;
+		$this->columns=array_combine($columns,$colTypes);
+		$this->pkey=$pkey;
+		$this->db=$db;
+	}
+	public function getTotalRows(){
+		if($this->rowCountstm==null){
+			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM `'.$this->table.'`');
+			if(!$this->rowCountstm)throw new ErrorException('Could not prepare the statement.');
+		}
+		if(!db_run_query($this->rowCountstm)){
+			throw new ErrorException('Could not execute the query.');
+		}
+		$ret=$this->rowCountstm->fetch(PDO::FETCH_NUM);
+		return $ret[0];
+	}
+	public function set($key,$value){
+		$this->data[$key]=$value;
+	}
+	public function get($key,$default=null){
+		if(isset($this->data[$key]))
+			return $this->data[$key];
+		return $default;
+	}
+	public function getId(){
+		if(is_array($this->pkey)){
+			$ret=array();
+			foreach($this->pkey as $key){
+				$ret[$key]=$this->data[$key];
+			}
+			return $ret;
+		}else
+			return $this->data[$this->pkey];
+	}
+	public function isPkeySet(){
+		if(is_array($this->pkey)){
+				$ret=array();
+				foreach($this->pkey as $key){
+					if(!isset($this->data[$key]))return false;
+				}
+				return true;
+			}else
+				return isset($this->data[$this->pkey]);
+	}
+	/**
+	 * Gets the primary key(s) for update and delete operations.
+	 * @param mixed $id
+	 * @throws IllegalArgumentException
+	 * @return array
+	 */
+	protected function getPkey($id=null){
+		if($id!=null){
+			if(is_array($this->pkey)){
+				if(!is_array($id))
+					throw new IllegalArgumentException('Primary key is an array. Supplied IDs must also be an array.');
+				elseif(count($this->pkey)!=count($id))
+					throw new IllegalArgumentException('Key count('.count($this->pkey).') and ID count('.count($id).') are not equal');
+				else{
+					$ret=array();
+					$keys=array_combine($this->pkey,$id);
+					foreach($keys as $key=>$value){
+						$ret[]=array($key,$value,'AND');
+					}
+					unset($ret[count($ret)-1][2]);
+					return $ret;
+				}
+			}else
+				return array(array($this->pkey,$id));
+		}else{//id==null
+			if(is_array($this->pkey)){
+				$ret=array();
+				foreach($this->pkey as $key){
+					$ret[]=array($key,$this->data[$key],'AND');
+				}
+				unset($ret[count($ret)-1][2]);
+				return $ret;
+			}else
+				return array(array($this->pkey,$this->data[$this->pkey]));
+		}
+	}
+	/**
+	 * Loads the record.
+	 * @param mixed $id
+	 * @return boolean
+	 */
+	public function load($id){
+		$where=_db_build_where($this->getPkey($id));
+		if($this->loadstm==null){
+			$this->loadstm=db_prepare($this->db,'SELECT * FROM `'.$this->table.'`'.$where[0]);
+		}
+		$error=db_run_query($this->db,$this->loadstm,$where[1]);
+		if($error)return false;
+		$this->data=$stm->fetch(PDO::FETCH_ASSOC);
+		//$this->data=db_get_row_assoc(null,$this->table,$this->getPkey($id));
+		return $this->data!=null;
+	}
+	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
+		if($this->dataset)$this->dataset->closeCursor();
+		if($columns || $sortBy || $groupBy || $limit || $offset){
+			$this->dataset=db_query($this->db, $this->table,$columns,null,$sortBy,$groupBy,null,$limit,$offset);
+		}else{
+			if($this->plainloadall==null){
+				$this->plainloadall=db_prepare($this->db,'SELECT * FROM `'.$this->table.'`');
+			}
+			$error=db_run_query($this->plainloadall);
+			if(!$error){
+				$this->dataset=$this->plainloadall;
+			}
+		}
+		return $this->dataset!=false;
+	}
+	public function find(array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+		if($this->dataset)$this->dataset->closeCursor();
+		if($where==null){
+			$where=array();
+			foreach($this->data as $key=>$value){
+				$where[]=array($key,$value,'AND');
+			}
+			unset($where[count($where)-1][2]);
+		}
+		$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
+		return $this->dataset!=false;
+	}
+	public function getLoadAllResult(){
+		return $this->dataset;
+	}
+	public function loadNext(){
+		$this->data=$this->dataset->fetch(PDO::FETCH_ASSOC);
+		return $this->data!=false;
+	}
+	/**
+	 * Deletes the record represented by this object.
+	 * @return false on success or the error.
+	 */
+	public function delete(){
+		$error=db_delete($this->db,$this->table,$this->getPkey());
+		//if(!$error)	$this->saveOperation('delete');
+		return $error;
+	}
+	/**
+	 * Automatically chooses between insert and update based on the availability of the
+	 * primary keys.
+	 * @return string,boolean false on success or the error.
+	 */
+	public function save(){
+		$error=false;
+		if($this->isPkeySet()){
+			$error=$this->update();
+		}else{
+			$error=$this->insert();
+		}
+		return $error;
+	}
+	/**
+	 * Forces an update.
+	 * @return string,boolean FALSE on success or the error.
+	 */
+	public function update(){
+		$query='UPDATE `'.$this->table.'`  SET ';
+		$data=array();
+		foreach($this->data as $key=>$value){
+			$query.="`$key`=:$key,";
+			$data[':'.$key]=$value;
+		}
+		$where=_db_build_where($this->getPkey());
+		$query=substr($query,0,-1).' '.$where[0];
+		$stm=db_prepare($this->db, $query);
+		$data=array_merge($data,$where[1]);
+		$error=db_run_query($stm,$data);
+		//if(!$error)$this->saveOperation('update');
+		return $error;
+	}
+	/**
+	 * Forces an insert. Useful if you want to specify an Auto Increment field.
+	 * @return string,boolean false on success or the error.
+	 */
+	public function insert(){
+		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($this->data)).'`) VALUES (:'.implode(',:',array_keys($this->data)).')';
+		$stm=db_prepare($this->db, $query);
+		foreach($this->data as $key=>$value){
+			$stm->bindValue(":$key",$value,$this->columns[$key]);
+		}
+		$error=db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
+			$this->data[$this->pkey]=$this->db->lastInsertId();
+		//if(!$error)$this->saveOperation('insert');
+		return $error;
+	}
+	protected function saveOperation($type){
+		if($this->saveopstm==null){
+			$this->saveopstm=db_prepare($this->db,'INSERT INTO `updates` (`type`,`data`) VALUES (:type,:data)');
+			if(!$this->saveopstm)throw new ErrorException('Could not prepare the statement.');
+		}
+		db_run_query($this->saveopstm,array(':type'=>$type,':data'=>serialize($this)));
+	}
+	/**
+	 * Resets the internal arrays and frees any open result sets.
+	 */
+	public function recycle(){
+		if($this->dataset)$this->dataset->closeCursor();
+		$this->data=array();
+	}
+	/**
+	 * Copies the data held by the internal array to the given array.
+	 * @param array $ary
+	 * @return array The resulting array.
+	 */
+	public function copyTo(array $ary){
+		foreach($this->data as $k=>$v)
+			$ary[$k]=$v;
+		return $ary;
+	}
+}
+
+
+/**
+ * Class to build a table with pagination and sorting backed by a SQL table.
+ * For the format of a cell, the current column's value is referenced by $value$. A hidden column's value can be referenced by $col name$.
+ * WARNING: Spaces ARE allowed in the column names! There is no escape character. You CAN have $ in the column value.
+ * @author Kenneth Pierce
+ */
+class sql_table {
+	private $prefix='';
+	private $table = '';
+	private $select_columns = array();
+	private $shown_columns=array();
+	private $hidden_columns = array();
+	/**
+	 * Double entry array mapping columns to aliases and aliases to columns for shown columns. Only a single entry is entered for hidden columns mapping the alias to the column.
+	 * @var array
+	 */
+	private $aliases_columns = array();
+	private $column_format = array();
+	private $column_attributes = array();
+	private $col_callback = array();
+	private $defaultSort=array();
+	private $caption=null;
+	public function setCaption($caption){
+		$this->caption=$caption;
+	}
+	public function addSort($column,$dir){
+		$this->defaultSort[]=array($column,$dir);
+	}
+	public function setPrefix($prefix){
+		$this->prefix=$prefix;
+	}
+	/**
+	 * Sets the table to be queried.
+	 * @param string $table
+	 */
+	public function setTable($table) {
+		$this->table = $table;
+	}
+	function addAlias($col,$alias){
+		$this->aliases_columns[$alias]=$col;
+		if(!isset($this->hidden_columns[$col]))
+			$this->aliases_columns[$col]=$alias;
+	}
+	/**
+	 * Adds a hidden column. It is in the select statement, but not displayed.
+	 * @param string $column The column name.
+	 * @param string $alias Column alias(for easier reference)
+	 * @param string $callback Function to be called on the value
+	 */
+	public function addHiddenColumn($column,$alias=null,$callback=null) {
+		$this->select_columns[] = $column;
+		$this->hidden_columns[] = $column;
+		if($alias)
+			$this->aliases_columns[$alias]=$column;
+		if($callback)
+			$this->col_callback[$column]=$callback;
+	}
+	/**
+	 * Adds several hidden columns.
+	 * @param array $columns Column list.
+	 */
+	public function addHiddenColumns(array $columns) {
+		$this->select_columns = array_merge($this->select_columns, $columns);
+		$this->hidden_columns = array_merge($this->hidden_columns, $columns);
+	}
+	/**
+	 * Adds a column that will only use other columns to build it's content. This column will NOT be in the select statement. As such, you cannot set an alias for or sort by this column.
+	 * @param string $column
+	 * @param string $format
+	 * @param array $tdattib
+	 */
+	public function addDummyColumn($column,$format,array $tdattib=null){
+		$this->shown_columns[]=$column;
+		$this->column_format[$column] = $format;
+		if(isset($tdattrib))
+			$this->column_attributes[$column] = $tdattrib;
+	}
+	/**
+	 * Adds a function that will be called on each value of the column. The function should take one argument and return a value.
+	 * @param string $column Name of the column or alias. You can use aliases to refrence the same data with different callbacks.
+	 * @param string $callback
+	 */
+	public function addCallback($column, $callback){
+		$this->col_callback[$column]=$callback;
+	}
+	/**
+	 * Adds a column to the select query.
+	 * @param string $column The table column
+	 * @param string $alias The name to be displayed.
+	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
+	 * @param array $tdattrib array of key=>value mappings to be added to the TD element containing this value.
+	 * @param string $callback A string containing the name of a function that will be called on this value. It should take one argument and return a value.
+	 */
+	public function addColumn($column, $alias=null,$format=null,array $tdattrib=null,$callback=null) {
+		$this->select_columns[] = $column;
+		$this->shown_columns[]=$column;
+		if ($alias!=null){
+			$this->aliases_columns[$column] = $alias;
+			$this->aliases_columns[$alias] = $column;
+		}
+		if($format!=null)
+			$this->column_format[$column] = $format;
+		if($tdattrib!=null)
+			$this->column_attributes[$column] = $tdattrib;
+		if($callback!=null)
+			$this->col_callback[$column] = $callback;
+	}
+	/**
+	 * Adds the columns to the select query.
+	 * @param array $columns Table columns.
+	 * @param array $aliases Display columns.
+	 */
+	public function addColumns(array $columns, array $aliases) {
+		$merged = array_combine($columns, $aliases);
+		foreach ($merged as $column => $alias)
+			$this->addColumn($column, $alias);
+	}
+	/**
+	 * Sets the format/content for the column. Columns can be
+	 * referenced by $column.
+	 * @param string $column The column name.
+	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
+	 */
+	public function setColumnFormat($column, $format) {
+		$this->column_format[$column] = $format;
+	}
+	/**
+	 * Queries and returns the table.
+	 * @param resource $db MySQL database connection.
+	 * @param string $conditions SQL query conditions.
+	 * @param string $extra Extra appended to the link.
+	 * @return string The table.
+	 */
+	public function printTable($db, $conditions = null, $extra = '') {
+		$row_count=0;
+		$row_count=db_num_rows($db,$this->table,$conditions);
+		if($row_count==0){
+			return 'Nothing found.';
+		}
+		$buf = '';
+		$start = 0;
+		$numrows = 10;
+		$sort = null;
+		$sortDir = 'ASC';
+		$dir = 'up';
+		$pageLinks = '';
+		$shown_columns = array_diff($this->select_columns, $this->hidden_columns);
+		if (isset($_GET[$this->prefix.'start'])){
+			$start = $_GET[$this->prefix.'start'];
+		}
+		if (isset($_GET[$this->prefix.'numrows'])) {
+			$numrows = $_GET[$this->prefix.'numrows'];
+			if ($numrows > 100) {
+				$numrows = 100;
+			} else if ($numrows < 1) {
+				$numrows = 10;
+			}
+		}
+		/*if (isset($_GET['letter']) && !empty($_GET['letter'])) {
+			if (ereg('^[a-z]?$', $_GET['letter']))
+			$letter = $_GET['letter'];
+		}*/
+		if (isset($_GET[$this->prefix.'sort']) && !empty($_GET[$this->prefix.'sort'])) {
+			$sort = $_GET[$this->prefix.'sort'];
+			if(!in_array($sort, $this->select_columns)){
+				if(isset($this->aliases_columns[$sort])){
+					$sort=$this->aliases_columns[$sort];
+				}else{$sort=null;}
+			}
+			if (isset($_GET[$this->prefix.'dir'])) {
+				if ($_GET[$this->prefix.'dir'] == 'down') {
+					$sortDir = 'DESC';
+				} else {
+					$sortDir = 'ASC';
+				}
+				$dir = $_GET['dir'];
+			}
+		}
+		if ($sort==null){
+			if(count($this->defaultSort)>0){
+				$sort='';
+				foreach($this->defaultSort as $dsort)
+					$sort.= $dsort[0].' '.$dsort[1].',';
+				$sort=substr($sort,0,-1);
+			}
+		}else{
+			$sort.=" $sortDir";
+		}
+		$sql = 'SELECT SQL_CACHE ';
+		$sql .= implode(',', $this->select_columns);
+		//limit [offset,]row count
+		if ($conditions == '' || $conditions == null)
+			$sql .= " FROM $this->table";
+		else
+			$sql.= " FROM $this->table WHERE $conditions";
+		if($sort)
+			$sql.= " ORDER BY $sort";
+		$sql.= " LIMIT $start, $numrows";
+		if(db_debug())echo $sql;
+		$res = $db->query($sql);
+		if (!$res) {
+			$err = db_log_error($sql);
+			return 'Database error: '.$err;
+		}
+		$res->setFetchMode(PDO::FETCH_ASSOC);
+		//$row_count=mysql_num_rows($res);
+		/*if($row_count==0){
+			return 'Nothing found.';
+		}*/
+		/********************
+		 ********************
+		 ********************/
+		?>
+		<form method="get">
+		Results per page:
+			<select name="<?php echo $this->prefix ?>numrows">
+		<?php for ($i = 10; $i < 101; $i+=10) {?>
+				<option value="<?php echo $i; ?>" <?php echo ($i == $numrows)?'selected="selected"':''; ?>><?php echo $i; ?></option>
+		<?php }?>
+			</select>
+			<?php
+				$gcopy=$_GET;
+				unset($gcopy[$this->prefix.'numrows']);
+				foreach($gcopy as $key=>$value) {
+					//if ($key == 'numrows') continue;
+					echo "<input type=\"hidden\" name=\"$key\" value=\"$value\" />";
+				}
+				unset($gcopy);
+			?>
+		<input type="submit" value="Update" />
+		</form>
+		<?php
+		$pageLinks = getPages($row_count, $start, $numrows, "&amp;".$this->prefix."sort=$sort&amp;".$this->prefix."dir=".$dir.$extra,$this->prefix);
+		$buf .= "<div>$pageLinks</div>\n";
+		$buf .= '<table cellspacing="0">';
+		$buf.= "<caption>$this->caption</caption>";
+		/********************
+		 ****TITLES**********
+		 ********************/
+		// DIR CHANGES USES HERE!! IT NO LONGER CONTAINS THE DIRECTION STRING
+		$buf .= "\n<tr>\n";
+		$baseurl = '';//$_SERVER['PHP_SELF'];
+
+		foreach($this->shown_columns as $column) {
+			$display = isset($this->aliases_columns[$column])?$this->aliases_columns[$column]:$column;
+			if(in_array($column,$this->select_columns)){
+				$buf.="\t<th><a href=\"".$baseurl.'?'.$this->prefix.'sort='.$display;
+				$dir=false;// false is up
+				if ($sort==$column) {
+					if ($sortDir=='ASC') {
+						$buf .= '&amp;'.$this->prefix.'dir=down';
+						$dir = true;
+					} else {
+						$buf .= '&amp;'.$this->prefix.'dir=up';
+					}
+					$buf .= '&amp;'.$this->prefix.'numrows='.$numrows.$extra.'">'.$display;
+					if ($dir) {
+						$buf .= '&nbsp;<img src="/lib/i/arrow_down.png" />';
+					} else {
+						$buf .= '&nbsp;<img src="/lib/i/arrow_up.png" />';
+					}
+				} else {
+					$buf .= '&amp;'.$this->prefix.'dir=down&amp;'.$this->prefix.'numrows='.$numrows.$extra.'">'.$display;
+				}
+				$buf .= "</a></th>\n";
+			}else{
+				$buf.="\t<th>$display</th>\n";
+			}
+		}
+		$buf .= '</tr>';
+		/********************
+		 ***ROWS*************
+		 ********************/
+		 /*
+		$select_columns = array();
+		$hidden_columns = array();
+		$aliases_columns = array();
+		$column_format = array();
+		*/
+		while ($row = $res->fetch()) {
+			if($numrows<1)break;
+			$rowBuf = "<tr>\n";
+			foreach($this->shown_columns as $column) {
+				if(isset($this->column_attributes[$column])){
+					$rowBuf .= "\t<td";
+					foreach($this->column_attributes[$column] as $key=>$value){
+						$rowBuf.=" $key=\"$value\"";
+					}
+					$rowBuf.=">";
+				}else{
+					$rowBuf .= "\t<td>";
+				}
+				if(isset($this->col_callback[$column])){
+					$row[$column]=call_user_func($this->col_callback[$column],$row[$column]);
+				}
+				if (isset($this->column_format[$column])){
+					if(isset($row[$column]))
+						$cvalue=str_replace('$value$',$row[$column],$this->column_format[$column]);
+					else
+						$cvalue=$this->column_format[$column];
+					$idx=-1;
+					while(($idx=strpos($cvalue,'$',$idx+1))!==false){
+						$idx2=strpos($cvalue,'$',$idx+1);
+						if($idx2===false){break;}
+						$sidx=substr($cvalue,$idx+1,$idx2-$idx-1);
+						if(isset($this->aliases_columns[$sidx])&&isset($row[$this->aliases_columns[$sidx]])){
+							$cbvalue=$row[$this->aliases_columns[$sidx]];
+							if(isset($this->col_callback[$sidx])){
+								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$this->aliases_columns[$sidx]]);
+							}
+							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
+							$idx+=strlen($cbvalue);
+						}elseif(isset($row[$sidx])){
+							$cbvalue=$row[$sidx];
+							if(isset($this->col_callback[$sidx])){
+								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$sidx]);
+							}
+							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
+							$idx+=strlen($cbvalue);
+						}else{$idx=$idx2-1;}
+					}
+					$rowBuf.=$cvalue;
+				}else
+					$rowBuf .= $row[$column];
+				$rowBuf .= "</td>\n";
+			}
+			$buf .= $rowBuf."</tr>\n";
+			$numrows--;
+		}
+		$buf .= '</table>';
+		$buf .= "<div>$pageLinks</div>";
+//		$buf .= '<span style="font-size:smaller;">'.getElapsed('query').' seconds</span>';
+		return $buf;
+	}
+}// -- end class sql_table
+
+/**
+ * Class to build a table without pagination and sorting backed by a SQL table.
+ * For the format of a cell, the current column's value is referenced by $value$. A hidden column's value can be referenced by $col name$.
+ * WARNING: Spaces ARE allowed in the column names! There is no escape character. You CAN have $ in the column value.
+ * @author Kenneth Pierce
+ */
+class sql_table_simple {
+	private $sort=null;
+	private $dir='desc';
+	private $table = '';
+	private $showHeader=true;
+	private $select_columns = array();
+	private $shown_columns=array();
+	private $hidden_columns = array();
+	/**
+	 * Double entry array mapping columns to aliases and aliases to columns for shown columns. Only a single entry is entered for hidden columns mapping the alias to the column.
+	 * @var array
+	 */
+	private $aliases_columns = array();
+	private $column_format = array();
+	private $column_attributes = array();
+	private $quirk_col=array();
+	private $col_callback = array();
+	public function setShowHeader($bool){
+		$this->showHeader=$bool;
+	}
+	public function setPrefix($prefix){
+		$this->prefix=$prefix;
+	}
+	/**
+	 * Sets the table to be queried.
+	 * @param string $table
+	 */
+	public function setTable($table) {
+		$this->table = $table;
+	}
+	function addAlias($col,$alias){
+		$this->aliases_columns[$alias]=$col;
+		if(!isset($this->hidden_columns[$col]))
+			$this->aliases_columns[$col]=$alias;
+	}
+	/**
+	 * Adds a hidden column. It is in the select statement, but not displayed.
+	 * @param string $column The column name.
+	 * @param string $alias Column alias(for easier reference)
+	 * @param string $callback Function to be called on the value
+	 */
+	public function addHiddenColumn($column,$alias=null,$callback=null) {
+		$this->select_columns[] = $column;
+		$this->hidden_columns[] = $column;
+		if($alias)
+			$this->aliases_columns[$alias]=$column;
+		if($callback)
+			$this->col_callback[$column]=$callback;
+	}
+	/**
+	 * Adds several hidden columns.
+	 * @param array $columns Column list.
+	 */
+	public function addHiddenColumns(array $columns) {
+		$this->select_columns = array_merge($this->select_columns, $columns);
+		$this->hidden_columns = array_merge($this->hidden_columns, $columns);
+	}
+	/**
+	 * Adds a column that will only use other columns to build it's content. This column will NOT be in the select statement. As such, you cannot set an alias for or sort by this column.
+	 * @param string $column
+	 * @param string $format
+	 * @param array $tdattib
+	 */
+	public function addDummyColumn($column,$format,array $tdattib=null){
+		$this->shown_columns[]=$column;
+		$this->column_format[$column] = $format;
+		if(isset($tdattrib))
+			$this->column_attributes[$column] = $tdattrib;
+	}
+	/**
+	 * Adds a function that will be called on each value of the column. The function should take one argument and return a value.
+	 * @param string $column Name of the column or alias. You can use aliases to refrence the same data with different callbacks.
+	 * @param string $callback
+	 */
+	public function addCallback($column, $callback){
+		$this->col_callback[$column]=$callback;
+	}
+	/**
+	 * Specifies a column that needs to be referred by a different name. The problem that sparked this addition:
+	 * Column in the select statement: roster.pos
+	 * Column in the array: pos
+	 * @param unknown_type $col The original column name
+	 * @param unknown_type $resolved The name that should be used
+	 */
+	public function addQuirkCol($col,$resolved){
+		$this->quirk_col[$col]=$resolved;
+	}
+	/**
+	 * Adds a column to the select query.
+	 * @param string $column The table column
+	 * @param string $alias The name to be displayed.
+	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
+	 * @param array $tdattrib array of key=>value mappings to be added to the TD element containing this value.
+	 * @param string $callback A string containing the name of a function that will be called on this value. It should take one argument and return a value.
+	 */
+	public function addColumn($column, $alias=null,$format=null,array $tdattrib=null,$callback=null) {
+		$this->select_columns[] = $column;
+		$this->shown_columns[]=$column;
+		if ($alias!=null){
+			$this->aliases_columns[$column] = $alias;
+			$this->aliases_columns[$alias] = $column;
+		}
+		if($format!=null)
+			$this->column_format[$column] = $format;
+		if($tdattrib!=null)
+			$this->column_attributes[$column] = $tdattrib;
+		if($callback!=null)
+			$this->col_callback[$column] = $callback;
+	}
+	/**
+	 * Adds the columns to the select query.
+	 * @param array $columns Table columns.
+	 * @param array $aliases Display columns.
+	 */
+	public function addColumns(array $columns, array $aliases) {
+		$merged = array_combine($columns, $aliases);
+		foreach ($merged as $column => $alias)
+			$this->addColumn($column, $alias);
+	}
+	/**
+	 * Sets the format/content for the column. Columns can be
+	 * referenced by $column.
+	 * @param string $column The column name.
+	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
+	 */
+	public function setColumnFormat($column, $format) {
+		$this->column_format[$column] = $format;
+	}
+	public function setSort($column,$direction){
+		if(isset($this->aliases_columns[$column]))
+			$this->sort=$this->aliases_columns[$column];
+		else
+			$this->sort=$column;
+		$this->dir=$direction;
+	}
+	/**
+	 * Queries and returns the table.
+	 * @param resource $db MySQL database connection.
+	 * @param string $conditions SQL query conditions.
+	 * @param string $extra Extra appended to the link.
+	 * @return string The table.
+	 */
+	public function printTable($db, $conditions = null, $extra = '') {
+		$row_count=0;
+		$row_count=db_num_rows($db,$this->table,$conditions);
+		if($row_count==0){
+			return 'Nothing found.';
+		}
+		$buf = '';
+		$shown_columns = array_diff($this->select_columns, $this->hidden_columns);
+		if ($this->sort==null){
+			$this->sort = $this->select_columns[0];
+		}
+		$sql = 'SELECT SQL_CACHE ';
+		$sql .= implode(',', $this->select_columns);
+		//limit [offset,]row count
+		if ($conditions == '' || $conditions == null)
+			$sql .= " FROM $this->table";
+		else
+			$sql .= " FROM $this->table WHERE $conditions";
+		$sql .= " ORDER BY $this->sort $this->dir";
+		if(db_debug())echo $sql;
+		$res = $db->query($sql);
+		if (!$res) {
+			$err = db_log_error($sql);
+			return 'Database error: '.$err;
+		}
+		$res->setFetchType(PDO::FETCH_ASSOC);
+		$buf .= '<table cellspacing="0">';
+		/********************
+		 ****TITLES**********
+		 ********************/
+		// DIR CHANGES USES HERE!! IT NO LONGER CONTAINS THE DIRECTION STRING
+		if($this->showHeader){
+			$buf .= "\n<tr>\n";
+			$baseurl = '';//$_SERVER['PHP_SELF'];
+			foreach($this->shown_columns as $column) {
+				$display = isset($this->aliases_columns[$column])?$this->aliases_columns[$column]:$column;
+				$buf.="\t<th>$display</th>\n";
+			}
+			$buf .= '</tr>';
+		}
+		/********************
+		 ***ROWS*************
+		 ********************/
+		 /*
+		$select_columns = array();
+		$hidden_columns = array();
+		$aliases_columns = array();
+		$column_format = array();
+		*/
+		while ($row = $res->fetch()) {
+			$rowBuf = "<tr>\n";
+			foreach($this->shown_columns as $scolumn) {
+				if(isset($this->quirk_col[$scolumn]))$column=$this->quirk_col[$scolumn]; else $column=$scolumn;
+				if(isset($this->column_attributes[$scolumn])){
+					$rowBuf .= "\t<td";
+					foreach($this->column_attributes[$scolumn] as $key=>$value){
+						$rowBuf.=" $key=\"$value\"";
+					}
+					$rowBuf.=">";
+				}else{
+					$rowBuf .= "\t<td>";
+				}
+				if(isset($this->col_callback[$scolumn])){
+					$row[$column]=call_user_func($this->col_callback[$scolumn],$row[$column]);
+				}
+				if (isset($this->column_format[$scolumn])){
+					if(isset($row[$column]))
+						$cvalue=str_replace('$value$',$row[$column],$this->column_format[$scolumn]);
+					else
+						$cvalue=$this->column_format[$scolumn];
+					$idx=-1;
+					while(($idx=strpos($cvalue,'$',$idx+1))!==false){
+						$idx2=strpos($cvalue,'$',$idx+1);
+						if($idx2===false){break;}
+						$sidx=substr($cvalue,$idx+1,$idx2-$idx-1);
+						if(isset($this->aliases_columns[$sidx])&&isset($row[$this->aliases_columns[$sidx]])){
+							$cbvalue=$row[$this->aliases_columns[$sidx]];
+							if(isset($this->col_callback[$sidx])){
+								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$this->aliases_columns[$sidx]]);
+							}
+							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
+							$idx+=strlen($cbvalue);
+						}elseif(isset($row[$sidx])){
+							$cbvalue=$row[$sidx];
+							if(isset($this->col_callback[$sidx])){
+								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$sidx]);
+							}
+							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
+							$idx+=strlen($cbvalue);
+						}else{$idx=$idx2-1;}
+					}
+					$rowBuf.=$cvalue;
+				}else
+					$rowBuf .= $row[$column];
+				$rowBuf .= "</td>\n";
+			}
+			$buf .= $rowBuf."</tr>\n";
+		}
+		$buf .= '</table>';
+//		$buf .= '<span style="font-size:smaller;">'.getElapsed('query').' seconds</span>';
+		return $buf;
+	}
+}// -- end class sql_table
+
+function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='') {
+	$cPages = ceil($totalRows/$rowsPerPage);
+	if ($cPages == 1){return ' ';}
+	if (isset($_GET[$prefix.'start']))
+		$start = $_GET[$prefix.'start'];
+	else
+		$start = 0;
+	$pageLinks = '';
+	if ($start > 0) {
+		$pageLinks .= '<a href="?'.$prefix.'start=0&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_first.png" /></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.($currentRow-$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_previous.png" /></a>';
+	}
+	$page = $currentRow/$rowsPerPage;
+	$cPage = $page;
+	$topPage = $page+2;
+	$page -= 2;
+	if ($page < 0) { $page = 0; }
+	for (; $page <= $topPage && $page < $cPages; $page++) {
+		if ($page == $cPage) {
+			$pageLinks .= ' '.($page+1);
+		} else {
+			$pageLinks .= ' <a href="?'.$prefix.'start='.($page*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'">'.($page+1).'</a>';
+		}
+	}
+
+	if ($topPage-1 < $cPages) {
+		if ($topPage < $cPages-1)
+			$pageLinks .= ' ... <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'">'.$cPages.'</a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($topPage-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_next.png" /></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_last.png" /></a>';
+	}
+	return $pageLinks;
+} // -- getPages --

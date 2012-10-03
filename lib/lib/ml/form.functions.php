@@ -80,6 +80,44 @@ function form_select_mysql($result,$attrib,$selected=null){
 	echo '</select>'.EOL;
 }
 /**
+ * Creates a select element from a mysql result set where the first field is the value and the
+ * second field is the display.
+ * @param resource $result The first field is the value,the second field is the display.
+ * @param array|string $attrib A string containing the name or an array of 'key'=>'value' mappings that will be added to the attribute list.
+ * @param string|int $selected Defaults to null. If left blank it will be set to the value found in $_GET or $_POST.
+ */
+function form_select_PDO($result,$attrib,$selected=null){
+	//if(!is_resource($result))throw new IllegalArgumentException('Supplied result is not a valid mysql result.');
+	if(is_array($attrib)){
+		if(!isset($attrib['name'])){throw new IllegalArgumentException('name must be set in the attribute list');}
+	}else{
+		$attrib=array('name'=>$attrib);
+	}
+
+	if($selected===null)
+		$selected=form_get($attrib['name']);
+
+	echo '<select '.combine_attrib($attrib).'>';
+	if($selected===null){
+		$row=$result->fetch(PDO::FETCH_NUM);
+		?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+		while($row=$result->fetch(PDO::FETCH_NUM)){
+			?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
+		}
+	}else{
+		while($row=$result->fetch(PDO::FETCH_NUM)){
+			if($row[0]==$selected){
+				?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+				break;
+			}else{
+				?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
+			}
+		}
+		while($row=$result->fetch(PDO::FETCH_NUM)){?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php }
+	}
+	echo '</select>'.EOL;
+}
+/**
  * Echoes a series of checkboxes.
  * @param string $name Name of the group
  * @param string $id Id of the group(used to associate labels with the checkbox)
