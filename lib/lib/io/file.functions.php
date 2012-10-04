@@ -84,7 +84,7 @@ function file_extention($file){
  * @return string Returns the common MIME type for the file.
  */
 function file_get_type($file,$default='application/octet-stream'){
-	$file = fopen($file,'rb');
+	$fileh = fopen($file,'rb');
 	/*
 	3gp		00 00 00 .. 66 74 79 70 33 67 70
 	mp4		00 00 00 .. 66 74 79 70 6D 70 34
@@ -102,10 +102,24 @@ function file_get_type($file,$default='application/octet-stream'){
 			FF FB
 			FF FB 90
 			FF FB 30
-			49 44 33
+	mp3+id3		49 44 33 .. .. abcd0000 zz zz zz zz
+		a - ignore
+		b - exteded header- check for
+		c - ignore
+		d - footer
+		zz zz zz zz-length of the id3 section
 	*/
-	$head=fread($file,256);
-	fclose($file);
+	$head=fread($fileh,256);
+	//check for ID3 headers
+	if(ord_eq($head[0],0x49) && ord_eq($head[1],0x44) && ord_eq($head[2],0x33)){
+		$size=(ord($head[6])<<21) + (ord($head[7])<<14) + (ord($head[8])<<7) + (ord($head[9]));
+		//echo ord($head[6]).'-'.ord($head[7]).'-'.ord($head[8]).'-'.ord($head[9]);
+		fseek($fileh,$size+10);
+		$head=fread($fileh,256);
+		//echo 'ID3 detected. Size:'.$size.' - head:';
+		//var_export($head);
+	}
+	fclose($fileh);
 	if(ord_eq($head[0],0xFF)){//mp3
 		return 'audio/mpeg';
 	}elseif(ord_eq($head[0],0x00)&&ord_eq($head[1],0x00)){//3gpp,mp4,mpg,mov
