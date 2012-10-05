@@ -160,3 +160,11 @@ function file_get_type($file,$default='application/octet-stream'){
 	return $default;
 }
 function ord_eq($char,$ord){return ord($char)==$ord;}
+function file_normalize_path($path){
+	switch(DIRECTORY_SEPARATOR){
+		case '/':
+			return str_replace(array('\\','//'), '/', $path);
+		case '\\':
+			return str_replace(array('\\\\','//'), '\\', $path);
+	}
+}
