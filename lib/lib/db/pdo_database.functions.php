@@ -2,9 +2,24 @@
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
-
+class DBProfile{
+	private static $queries=array('insert'=>0,'select'=>0,'delete'=>0,'update'=>0,'run'=>0);
+	public static function query($type){
+		self::$queries[$type]++;
+	}
+	public static function get($type){
+		return self::$queries[$type];
+	}
+	public static function getTotal(){
+		$sum=0;
+		foreach(self::$queries as $v)
+			$sum+=$v;
+		return $sum;
+	}
+}
 PackageManager::requireClassOnce('ml.html');
 PackageManager::requireClassOnce('error.IllegalArgumentException');
+PackageManager::requireClassOnce('error.IllegalStateException');
 //require_once LIB.'lib/ml/class_html.inc.php';
 //require_once LIB.'lib/error/class_IllegalArgumentException.php';
 global $_DB, $_DB_OPEN_CON;
@@ -22,13 +37,15 @@ function db_debug(){
  * @param boolean $forcenew Forces the creation of a new connection.
  * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
-function db_get_connection($forcenew = false) {
+function &db_get_connection($forcenew = false) {
 	global $_DB, $_DB_OPEN_CON;
-	$conf = $GLOBALS['simple']['lib']['db'];
 	if ($forcenew){db_close_connection();}
-	if (!$_DB_OPEN_CON || $_DB = null) {
+	if (!$_DB_OPEN_CON || $_DB == null) {
+		$conf = $GLOBALS['simple']['lib']['db'];
 		try{
 		$_DB = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
+		$_DB_OPEN_CON=true;
+		//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 		}catch(PDOException $e){
 			if(db_debug())
 				throw $e;
@@ -55,20 +72,24 @@ function db_close_connection() {
  * @return string $msg
  */
 function db_log_error($statement,$args=null) {
-	$db = db_get_connection();
+	static $stm=null;
+	if($stm==null){
+		$db = db_get_connection();
+		if(!$db)throw new IllegalStateException('Failed to get a database object.');
+		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
+		if(!$stm)throw new IllegalStateException('Failed to prepare the error statement.');
+	}
 	$err=$statement->errorInfo();
 	$params=array(
-		':query'=>$statement->queryString,
-		':message'=>"SQLSTATE=$err[0]\nDVR ERR=$err[1]\nDVR MSG='$err[2]'\nARGS:".var_export($args,true)
+		':query'=>db_stm_to_string($statement->queryString,$args),
+		':message'=>'Err array:'.var_export($err,true)
 	);
 	try{
-		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
 		$stm->execute($params);
 	}catch(PDOException $e){
 		if(db_debug())throw $e;
 	}
-
-	return $params[':message'];
+	return $err;
 }
 /** Checks to see if a record exists that matches the conditions.
  * @param resource $db mysql database link. Set to null to use the default settings.
@@ -135,12 +156,13 @@ function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
  * @return array the resulting array or null.
  */
 function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO::FETCH_BOTH) {
+	DBProfile::query('select');
 	if ($db===null)
 		$db = db_get_connection();
 
 	if($conditions===null){
 		$stm = "SELECT :columns FROM :table LIMIT 0,1";
-		$conditions=array();
+		$conditions=array(null,null);
 	}else{
 		$conditions=_db_build_where($conditions);
 		$stm = "SELECT :columns FROM :table ".$conditions[0].' LIMIT 0,1';
@@ -156,7 +178,7 @@ function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO:
 			return 'Could not prepare the statement.';
 		}
 	}
-	if (!$stm->execute($conditions[1])) {
+	if (!db_run_query($stm,$conditions[1])) {
 		return db_log_error($stm,$conditions[1]);
 	}else{
 		$row=$stm->fetch($type);
@@ -230,6 +252,7 @@ function _db_validate_value($var) {
  * @return array the resulting where string and array of values for a PDOStatement
  */
 function _db_build_where(array $where) {
+	if($where==null || count($where)==0)return '';
 	$ret=array();
 	$wcount=0;
 	$where_2 = array();
@@ -238,16 +261,16 @@ function _db_build_where(array $where) {
 		if(count($arg) > 3){
 			if($arg[1] == 'IN'){
 				$ret[1][':where'.($wcount)]=$arg[2];
-				$where_2[]= "`$arg[0]`" . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$where_2[]= "$arg[0]" . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
 				$wcount++;
 			}elseif($arg[1] == 'LIKE'){
 				$ret[1][':where'.($wcount)]=$arg[2];
-				$where_2[] = "`$arg[0]`" . ($arg[3]?' NOT LIKE ':' LIKE ') . '\'' . ':where'.($wcount) . '\'' . ((count($arg)==5)?' '.$arg[4].' ' : '');
+				$where_2[] = "$arg[0]" . ($arg[3]?' NOT LIKE ':' LIKE ') .':where'.($wcount) . ((count($arg)==5)?' '.$arg[4].' ' : '');
 				$wcount++;
 			}elseif($arg[1] == 'BETWEEN'){
 				$ret[1][':where'.($wcount)]=$arg[2];
 				$ret[1][':where'.($wcount+1)]=$arg[3];
-				$where_2[]= "`$arg[0]`" . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount) . ' AND ' . ':where'.($wcount+1) . ((count($arg)==6)?' '.$arg[5].' ' : '');
+				$where_2[]= "$arg[0]" . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount) . ' AND ' . ':where'.($wcount+1) . ((count($arg)==6)?' '.$arg[5].' ' : '');
 				$wcount+=2;
 			}
 		}else{
@@ -256,7 +279,7 @@ function _db_build_where(array $where) {
 					$where_2[] = $arg[1] . ' '.$arg[2].' ';
 				}else{
 					$ret[1][':where'.$wcount]=$arg[1];
-					$where_2[] ="`$arg[0]`=:where$wcount $arg[2] ";
+					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
 					$wcount++;
 				}
 			}else{
@@ -264,7 +287,7 @@ function _db_build_where(array $where) {
 					$where_2[] = $arg[1];
 				}else{
 					$ret[1][':where'.($wcount)]=$arg[1];
-					$where_2[] = "`$arg[0]`=:where$wcount";
+					$where_2[] = "$arg[0]=:where$wcount";
 					$wcount++;
 				}
 			}
@@ -286,6 +309,7 @@ function _db_build_where(array $where) {
  * @return mixed resource or false on error.
  */
 function db_query($db, $table, array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+	DBProfile::query('select');
 	if ($db===null)
 		$db = db_get_connection();
 	if($where!==null){
@@ -322,21 +346,22 @@ function db_query($db, $table, array $columns = null,array $where = null,array $
 			$query.=" OFFSET $offset";
 		}
 	}
-	if(db_debug())echo $query;
-	$stm=$db->prepare($query);
-	if (!$stm->execute($where)) {
-		return db_log_error($stm,$where);
-	}
+	$stm=db_prepare($db,$query);
+	$error=db_run_query($stm,$where);
+	if($error)return $error;
 	return $stm;
 }
 
 /** Inserts data into the database. Returns the error message on failure or false on success.
+ * TODO: Fix to use PDO
  * @param resource $db mysql database link. Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array $columns Array of column names.
  * @param array $data Multi-deminsional array of the values. $data = array(array(row data), array(row data), ...).
+ * @deprecated
  */
 function db_multi_insert($db, $table, array $columns, array $data) {
+	DBProfile::query('insert');
 	if ($db===null)
 		$db=db_get_connection();
 	$query = "INSERT INTO $table (".implode(',',$columns).') VALUES ';
@@ -359,44 +384,13 @@ function db_multi_insert($db, $table, array $columns, array $data) {
  * @return mixed false on success or the error
  */
 function db_delete($db, $table, array $conditions = null) {
+	DBProfile::query('delete');
 	if ($db===null)
 		$db= db_get_connection();
 	$stm= "DELETE FROM `$table`";
-	if (!$conditions!==null){
+	if ($conditions!==null){
 		$conditions=_db_build_where($conditions);
-		$stm+=' '.$conditions[0];
-	}else{$conditions=array();}
-	try{
-		$stm = $db->prepare($stm);
-	}catch(PDOException $e){
-		if(db_debug()){
-			throw $e;
-		}else{
-			return 'Could not prepare the statement.';
-		}
-	}
-	if(!$stm->execute($conditions[1])){
-		return db_log_error($stm,$conditions);
-	}else{
-		return false;
-	}
-}
-/**
- * Enter description here ...
- * @param resource $db
- * @param string $table
- * @param array $conditions see _db_build_where(...)
- * @return mixed false on error or the count.
- */
-function db_num_rows($db,$table,array $conditions=null){
-	if ($db===null)
-		$db= db_get_connection();
-	if($conditions===null){
-		$stm = "SELECT COUNT(*) FROM $table";
-		//$conditions=array();
-	}else{
-		$conditions=_db_build_where($conditions);
-		$stm = "SELECT COUNT(*) FROM $table ".$conditions[0];
+		$stm.=' '.$conditions[0];
 		$conditions=$conditions[1];
 	}
 	try{
@@ -408,9 +402,65 @@ function db_num_rows($db,$table,array $conditions=null){
 			return 'Could not prepare the statement.';
 		}
 	}
-	if (!$stm->execute($conditions)) {
-		return db_log_error($stm,$conditions);
+	return db_run_query($stm,$conditions);
+}
+/**
+ * Enter description here ...
+ * @param PDO $db
+ * @param string $table
+ * @param array $conditions see _db_build_where(...)
+ * @return mixed false on error or the count.
+ */
+function db_num_rows($db,$table,array $conditions=null){
+	DBProfile::query('select');
+	if ($db===null)
+		$db= db_get_connection();
+	if($conditions===null){
+		$stm = "SELECT COUNT(*) FROM $table";
+		$conditions=array();
+	}else{
+		$conditions=_db_build_where($conditions);
+		$stm = "SELECT COUNT(*) FROM $table ".$conditions[0];
+		$conditions=$conditions[1];
 	}
+	try{
+		$stm = db_prepare($db,$stm);
+	}catch(PDOException $e){
+		if(db_debug()){
+			throw $e;
+		}else{
+			return false;
+		}
+	}
+	if(db_run_query($stm,$conditions))
+		return false;
+	$ret = $stm->fetch(PDO::FETCH_NUM);
+	$stm->closeCursor();
+	return $ret[0];
+}
+function db_exists($db,$table,array $conditions=null){
+	DBProfile::query('select');
+	if ($db===null)
+		$db= db_get_connection();
+	if($conditions===null){
+		$stm="SELECT EXISTS(SELECT 1 FROM $table)";
+		$conditions=array();
+	}else{
+		$conditions=_db_build_where($conditions);
+		$stm="SELECT EXISTS(SELECT 1 FROM $table {$conditions[0]})";
+		$conditions=$conditions[1];
+	}
+	try{
+		$stm = db_prepare($db,$stm);
+	}catch(PDOException $e){
+		if(db_debug()){
+			throw $e;
+		}else{
+			return false;
+		}
+	}
+	if(db_run_query($stm,$conditions))
+		return false;
 	$ret = $stm->fetch(PDO::FETCH_NUM);
 	$stm->closeCursor();
 	return $ret[0];
@@ -418,20 +468,30 @@ function db_num_rows($db,$table,array $conditions=null){
 
 /**
  * Exists for logging purposes.
- * @param resource $stm
+ * @param PDOStatement $stm
  * @param array $params
  * @return Ambigous <string>|boolean The error if failed or false on success.
  */
 function db_run_query($stm, array $params=null){
-	if (!$stm->execute($params)) {
+	DBProfile::query('run');
+	if(db_debug())echo '[['.db_stm_to_string($stm,$params).']]'."\n";
+	if ($stm->execute($params)===false && $stm->errorCode()!='00000') {
 		return db_log_error($stm,$params);
 	}
 	return false;
 }
-
+function db_stm_to_string($stm,array $params=null){
+	if($params==null)return is_object($stm)?$stm->queryString:$stm;
+	if(is_object($stm))
+		$stm=$stm->queryString;
+	foreach($params as $key=>$value){
+		$stm=str_replace($key, "'$value'", $stm);
+	}
+	return $stm;
+}
 /**
  * Attempts to prepare the statement.
- * @param resource $db
+ * @param PDO $db
  * @param string $query
  * @throws PDOException
  * @return boolean|PDOStatement
@@ -451,6 +511,54 @@ function db_prepare($db,$query){
 
 function db_now(){
 	return date('Y-m-d',time());
+}
+class PDOStatementWrapper{
+	protected $dataset=null,
+	$data=array();
+	public function __construct($stm,$fetch_mode=PDO::FETCH_ASSOC){
+		if(!$stm instanceof PDOStatement)throw new ErrorException('$stm is not a PDOStatement');
+		$this->dataset=$stm;
+		$this->dataset->setFetchMode(PDO::FETCH_ASSOC);
+	}
+	public function bindParam($key,&$value,$type){
+		$this->dataset->bindParam($key,$value,$type);
+	}
+	public function bindValue($key,$value,$type){
+		$this->dataset->bindValue($key,$value,$type);
+	}
+	/**
+	 * Closes the cursor and runs the statement.
+	 * @param array $args [optional] The arguements for the statement
+	 * @return boolean true on success, false on failure
+	 */
+	public function run(array $args=null){
+		$this->dataset->closeCursor();
+		return !db_run_query($this->dataset,$args);
+	}
+	public function get($key,$default=null){
+		if(isset($this->data[$key]))
+			return $this->data[$key];
+		return $default;
+	}
+	public function loadNext(){
+		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
+		$this->data=$this->dataset->fetch();
+		return $this->data!=false;
+	}
+	public function recycle(){
+		if($this->dataset)$this->dataset->closeCursor();
+		$this->data=array();
+	}
+	/**
+	 * Copies the data held by the internal array to the given array.
+	 * @param array $ary
+	 * @return array The resulting array.
+	 */
+	public function copyTo(array $ary){
+		foreach($this->data as $k=>$v)
+			$ary[$k]=$v;
+		return $ary;
+	}
 }
 /**
  * Class for working a PDO table.
@@ -484,7 +592,7 @@ class PDOTable{
 	}
 	public function getTotalRows(){
 		if($this->rowCountstm==null){
-			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM `'.$this->table.'`');
+			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
 			if(!$this->rowCountstm)throw new ErrorException('Could not prepare the statement.');
 		}
 		if(!db_run_query($this->rowCountstm)){
@@ -566,7 +674,7 @@ class PDOTable{
 		if($this->dataset)$this->dataset->closeCursor();
 		$where=_db_build_where($this->getPkey($id));
 		if($this->loadstm==null){
-			$this->loadstm=db_prepare($this->db,'SELECT * FROM `'.$this->table.'`'.$where[0]);
+			$this->loadstm=db_prepare($this->db,'SELECT * FROM '.$this->table.' '.$where[0]);
 		}else
 			$this->loadstm->closeCursor();
 		$error=db_run_query($this->loadstm,$where[1]);
@@ -581,7 +689,7 @@ class PDOTable{
 			$this->dataset=db_query($this->db, $this->table,$columns,null,$sortBy,$groupBy,null,$limit,$offset);
 		}else{
 			if($this->plainloadall==null){
-				$this->plainloadall=db_prepare($this->db,'SELECT * FROM `'.$this->table.'`');
+				$this->plainloadall=db_prepare($this->db,'SELECT * FROM '.$this->table);
 			}
 			$error=db_run_query($this->plainloadall);
 			if(!$error){
@@ -599,13 +707,28 @@ class PDOTable{
 			}
 			unset($where[count($where)-1][2]);
 		}
-		$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
-		return $this->dataset!=false;
+		$count=db_num_rows($this->db, $this->table,$where);
+		if($count)
+			$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
+		return $count;
+	}
+	public function exists(array $where=null){
+		if($this->dataset)$this->dataset->closeCursor();
+		if($where==null){
+			$where=array();
+			foreach($this->data as $key=>$value){
+				$where[]=array($key,$value,'AND');
+			}
+			unset($where[count($where)-1][2]);
+		}
+		$count=db_exists($this->db, $this->table,$where);
+		return $count=='1';
 	}
 	public function getLoadAllResult(){
 		return $this->dataset;
 	}
 	public function loadNext(){
+		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
 		$this->data=$this->dataset->fetch(PDO::FETCH_ASSOC);
 		return $this->data!=false;
 	}
@@ -640,7 +763,7 @@ class PDOTable{
 		$query='UPDATE `'.$this->table.'`  SET ';
 		$data=array();
 		foreach($this->data as $key=>$value){
-			$query.="`$key`=:$key,";
+			$query.="$key=:$key,";
 			$data[':'.$key]=$value;
 		}
 		$where=_db_build_where($this->getPkey());
