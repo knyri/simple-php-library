@@ -1,4 +1,5 @@
 <?php
+PackageManager::requireClassOnce('error.FileNotFoundException');
 /**
  * Clas to parse a CSV file. Delimiter, enclosure, and escape characters can be set. The first line is automatically read when
  * the file is opened and used as the column headers. This version does not require the rows to have the same number of columns
@@ -171,6 +172,7 @@ class CsvReader {
 	 * @access public
 	 */
 	public function open($file) {
+		if ($this->is_open())$this->reset();
 		if (!is_file($file)) {throw new FileNotFoundException($file);}
 			//echo "$file does not exist.";return false;}
 		//include $file;

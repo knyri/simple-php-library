@@ -6,7 +6,7 @@
  *
  */
 class File{
-	private $file=null;
+	protected $file=null;
 	private $handle=null;
 	private $open=false,$closed=false,$locked=false;
 	public function __construct($file){
@@ -15,7 +15,7 @@ class File{
 	public function getFile(){return $this->file;}
 	public function open($mode){
 		$this->handle=fopen($this->file,$mode);
-		if($this->handle!=null){
+		if($this->handle){
 			$this->open=true;
 			$this->closed=false;
 		}
@@ -36,6 +36,15 @@ class File{
 			return copy($this->file,$to);
 		else
 			return copy($this->file,$to,$context);
+	}
+	/**
+	 * Creates the directory structure for this file if it does not exist.
+	 * @return boolean
+	 */
+	public function ensureDir(){
+		if(!file_exists(dirname($this->file)))
+			return mkdir(dirname($this->file),0777,true);
+		return true;
 	}
 	/**
 	 * Moves/renames the file.
@@ -101,4 +110,10 @@ class File{
 	public function unlink(){return $this->delete();}
 	public function touch($time=0,$atime=0){if($time==0)$time=time();if($atime==0)$atime=$time;return touch($this->file,$time,$atime);}
 	public function truncate($size=0){return ftruncate($this->handle,$size);}
+	public function getModTime(){return filemtime($this->file);}
+	public function getCreatedTime(){return filectime($this->file);}
+	public function basename($suffix=''){return basename($this->file,$suffix);}
+	public function readToOutput(){
+		return readfile($this->file);
+	}
 }
