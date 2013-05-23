@@ -25,7 +25,9 @@ PackageManager::requireClassOnce('error.IllegalStateException');
 global $_DB, $_DB_OPEN_CON;
 $_DB = null;
 $_DB_OPEN_CON = false;
-function db_debug(){
+function db_debug($toggle=null){
+	if($toggle!==null)
+		$GLOBALS['simple']['lib']['db']['debug']=$toggle;
 	if(isset($GLOBALS['simple']['lib']['db']['debug']))
 		if($GLOBALS['simple']['lib']['db']['debug']==true)
 			return true;
@@ -49,8 +51,8 @@ function &db_get_connection($forcenew = false) {
 		}catch(PDOException $e){
 			if(db_debug())
 				throw $e;
-			else
-				return null;
+			$_DB=null;
+			$_DB_OPEN_CON=false;
 		}
 	}
 	return $_DB;
