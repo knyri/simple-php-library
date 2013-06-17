@@ -1,5 +1,10 @@
 <?php
 PackageManager::requireClassOnce('error.IllegalArgumentException');
+/**
+ * For use with the mysql_* base database functions
+ * @author Ken
+ *@deprecated
+ */
 class sql_class{
 	protected $data=array();
 	protected $dataset=null;

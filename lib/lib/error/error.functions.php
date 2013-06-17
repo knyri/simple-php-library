@@ -3,7 +3,7 @@
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
 
-define('E_FATAL', E_ERROR | E_USER_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR);
+if(!defined('E_FATAL'))define('E_FATAL', E_ERROR | E_USER_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR);
 
 /**
  * Creates an image from an array of text.

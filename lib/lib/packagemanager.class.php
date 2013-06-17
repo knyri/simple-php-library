@@ -6,7 +6,7 @@ class PackageManager {
 	 * @param string $path
 	 */
 	public static function addPath($path) {
-		PackageManager::$paths[] = $path;
+		PackageManager::$paths[]=$path;
 	}
 	public static function includeFile($file) {
 		foreach (PackageManager::$paths as $path) {
@@ -34,7 +34,6 @@ class PackageManager {
 			}
 		}
 		throw new Exception("Could not find '".$file.'\' Paths: \''.PackageManager::getPaths().'\'', 0);
-		//return false;
 	}
 	public static function requireFileOnce($file) {
 		foreach (PackageManager::$paths as $path) {
@@ -44,7 +43,6 @@ class PackageManager {
 			}
 		}
 		throw new Exception("Could not find '".$file.'\' Paths: \''.PackageManager::getPaths().'\'', 0);
-		//return false;
 	}
 	private static function getPaths() {
 		$ret = '.';

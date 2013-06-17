@@ -1,22 +1,34 @@
 <?php
-require_once 'cachepart.class.php';
+PackageManager::requireClassOnce('io.cachepart');
 
 /**
- * For caching entire files. Automaticall determines wether to use gzip or not
+ * For caching entire files. Automatically determines whether to use gzip or not
  * @author Ken
  *
  */
 class CacheFile extends CachePart{
 	private static $gz=null;
+	private $etag;
 	/**
 	 * Enter description here ...
 	 * @param string $file
 	 * @param int $ttl Time to live in seconds
+	 * @param string $etag Optional. Is generated using the file's name if not set.
 	 */
-	public function __construct($file,$ttl){
+	public function __construct($file,$ttl,$etag=null){
 		if(self::$gz==null)self::$gz=extension_loaded('zlib');
 		if(self::$gz)$file.='.gz';
 		parent::__construct($file,$ttl);
+		if($etag==null)
+			$this->etag=md5($file);
+		else
+			$this->etag=$etag;
+	}
+	public function setEtag($etag){
+		$this->etag=$etag;
+	}
+	public function getEtag(){
+		return $this->etag;
 	}
 	public function open($mode){
 		if(self::$gz)
@@ -70,7 +82,12 @@ class CacheFile extends CachePart{
 	}
 	/* Sets headers and reads file to output.
 	 * Headers set:
-	 * Last-Modified, Content-Length, and Content-Encoding(if needed)
+	 *  Last-Modified
+	 *  Content-Length
+	 *  ETag
+	 *  Expires
+	 *  Vary
+	 *  Content-Encoding(if needed)
 	 * @see File::readToOutput()
 	 */
 	public function readToOutput(){
@@ -78,6 +95,8 @@ class CacheFile extends CachePart{
 		$modTime=filemtime($this->file);
 		header('Last-Modified: '. gmdate('D, d M Y H:i:s',$modTime).' GMT' ,true);
 		header('Content-Length: '.filesize($this->file),true);
+		header('ETag: "'.$this->etag.'"');
+		header('Vary: Accept-Encoding');
 		if(self::$gz)
 			header('Content-Encoding: gzip',true);
 		header('Expires: '.gmdate('D, d M Y H:i:s',$modTime+$this->ttl) .' GMT',true);

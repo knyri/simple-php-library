@@ -1,5 +1,6 @@
 <?php
-require_once 'file.class.php';
+PackageManager::requireClassOnce('io.file');
+
 /**
  * For caching part of a file or output.
  * @author Ken

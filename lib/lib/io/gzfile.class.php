@@ -1,5 +1,5 @@
 <?php
-require_once 'file.class.php';
+PackageManager::requireClassOnce('io.file');
 /**
  * A class that represents a gz file.
  * Puts all the file functions in an object format.

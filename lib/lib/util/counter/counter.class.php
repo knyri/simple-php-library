@@ -20,10 +20,11 @@ class Counter {
 		unset($page);
 	}
 	public static function getDefaultPage() {
-		if (str_ends_with('/',$_SERVER['REQUEST_URI'])) { $page=$_SERVER['PHP_SELF'];} else { $page=$_SERVER['REQUEST_URI'];}
-		if (!isset($_SERVER['HTTP_HOST'])) return $page;
+		$conf=LibConfig::getConfig('util.counter');
+		if(str_ends_with('/',$_SERVER['REQUEST_URI'])) { $page=$_SERVER['PHP_SELF'];} else { $page=$_SERVER['REQUEST_URI'];}
+		if(!isset($_SERVER['HTTP_HOST'])) return $page;
 		$tmp = explode('.', strtolower($_SERVER['HTTP_HOST']));
-		if (isset($GLOBALS['simple']['lib']['util']['counter']['multidomain']) && $GLOBALS['simple']['lib']['util']['counter']['multidomain']==false) {
+		if($conf['multidomain']==false) {
 			if ($tmp[0]=='www') unset($tmp[0]);
 			$tmp = array_reverse($tmp);
 			unset($tmp[0]);
@@ -81,10 +82,11 @@ class Counter {
 	 * @return string The count for the page.
 	 */
 	public function count() {
+		$conf=LibConfig::getConfig('util.counter');
 		if(!isset($_SERVER['HTTP_USER_AGENT'])||$_SERVER['HTTP_USER_AGENT']==null)return;
 		$db = db_get_connection();
-		if(!empty($GLOBALS['simple']['lib']['util']['counter']['database']))
-			mysql_select_db($GLOBALS['simple']['lib']['util']['counter']['database'], $db);
+		if(!empty($conf['database']))
+			mysql_select_db($conf['database'], $db);
 
 		//fields relevant to both bots and users
 		if (empty($this->info['referrer'])) {
@@ -131,7 +133,7 @@ class Counter {
 			$diff =  db_do_operation($db, "TIMEDIFF(NOW(), '{$this->info['dtime']}')");
 			$diff = explode(':', $diff);
 			$diff = $diff[0]*60+$diff[1];
-			if ($diff > $GLOBALS['simple']['lib']['util']['counter']['expire']) {
+			if ($diff > $conf['expire']) {
 				$this->increment($db);
 			}
 		}

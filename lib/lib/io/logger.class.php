@@ -1,5 +1,5 @@
 <?php
-require_once 'file.class.php';
+PackageManager::requireClassOnce('io.file');
 /**
  * Simple File Logger
  * @author Ken

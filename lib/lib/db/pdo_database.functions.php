@@ -2,6 +2,13 @@
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
+
+/**
+ *
+ * Basic database profiling class.
+ * @author Ken
+ *
+ */
 class DBProfile{
 	private static $queries=array('insert'=>0,'select'=>0,'delete'=>0,'update'=>0,'run'=>0);
 	public static function query($type){
@@ -25,11 +32,16 @@ PackageManager::requireClassOnce('error.IllegalStateException');
 global $_DB, $_DB_OPEN_CON;
 $_DB = null;
 $_DB_OPEN_CON = false;
+/**
+ * Sets/returns the state of the debugging status for the db_* functions
+ * @param boolean $toggle Optional.
+ * @return boolean If the db_* functions provide debugging info.
+ */
 function db_debug($toggle=null){
+	$conf=LibConfig::getConfig('db');
 	if($toggle!==null)
-		$GLOBALS['simple']['lib']['db']['debug']=$toggle;
-	if(isset($GLOBALS['simple']['lib']['db']['debug']))
-		if($GLOBALS['simple']['lib']['db']['debug']==true)
+		$conf['debug']=$toggle;
+	if($conf['debug']==true)
 			return true;
 	return false;
 }
@@ -43,7 +55,7 @@ function &db_get_connection($forcenew = false) {
 	global $_DB, $_DB_OPEN_CON;
 	if ($forcenew){db_close_connection();}
 	if (!$_DB_OPEN_CON || $_DB == null) {
-		$conf = $GLOBALS['simple']['lib']['db'];
+		$conf = LibConfig::getConfig('db');
 		try{
 		$_DB = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
 		$_DB_OPEN_CON=true;
@@ -191,7 +203,7 @@ function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO:
 
 /**
  * Prints a table displaying the result.
- * @param resource mysql_result
+ * @param PDOStatement $result
  */
 function result_table($result) {
 	echo '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse" id="table1">';

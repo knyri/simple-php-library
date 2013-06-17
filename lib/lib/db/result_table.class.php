@@ -1,10 +1,8 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
+ * @deprecated
  */
-
-if (!defined('EOL')) define('EOL', "\n");
-if (!defined('TAB')) define('TAB', "\t");
 class result_table {
 	private $headers = array();
 	private $fetchtype = MYSQL_BOTH;

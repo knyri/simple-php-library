@@ -2,15 +2,14 @@
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
-//require_once 'class_IOException.php';
+
 PackageManager::requireClassOnce('error.IOException');
 
 class FileNotFoundException extends IOException {
-	public function __construct($file = null, $code = 0) {
-        if (!$file) {
-            parent::__construct("The file was not found.", $code);
-        } else {
-        	parent::__construct($file, $code);
-        }
-    }
+	public function __construct($file=null,$code=0){
+		if (!$file)
+			parent::__construct('The file was not found.',$code);
+		else
+			parent::__construct($file, $code);
+	}
 }
