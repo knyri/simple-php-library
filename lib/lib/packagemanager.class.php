@@ -10,8 +10,8 @@ class PackageManager {
 	}
 	public static function includeFile($file) {
 		foreach (PackageManager::$paths as $path) {
-			if (file_exists($path.$file)) {
-				include($path.$file);
+			if (file_exists("$path/$file")) {
+				include("$path/$file");
 				return true;
 			}
 		}
@@ -19,8 +19,8 @@ class PackageManager {
 	}
 	public static function includeFileOnce($file) {
 		foreach (PackageManager::$paths as $path) {
-			if (file_exists($path.$file)) {
-				include_once ($path.$file);
+			if (file_exists("$path/$file")) {
+				include_once ("$path/$file");
 				return true;
 			}
 		}
@@ -28,8 +28,8 @@ class PackageManager {
 	}
 	public static function requireFile($file) {
 		foreach (PackageManager::$paths as $path) {
-			if (file_exists($path.$file)) {
-				require($path.$file);
+			if (file_exists("$path/$file")) {
+				require("$path/$file");
 				return true;
 			}
 		}
@@ -37,8 +37,8 @@ class PackageManager {
 	}
 	public static function requireFileOnce($file) {
 		foreach (PackageManager::$paths as $path) {
-			if (file_exists($path.$file)) {
-				require_once($path.$file);
+			if (file_exists("$path/$file")) {
+				require_once("$path/$file");
 				return true;
 			}
 		}
