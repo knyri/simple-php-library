@@ -62,14 +62,14 @@ function form_select_mysql($result,$attrib,$selected=null){
 	echo '<select '.combine_attrib($attrib).'>';
 	if($selected===null){
 		$row=mysql_fetch_array($result,MYSQL_NUM);
-		?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+		?><option value="<?php echo $row[0]?>" selected><?php echo $row[1]?></option><?php
 		while($row=mysql_fetch_array($result,MYSQL_NUM)){
 			?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
 		}
 	}else{
 		while($row=mysql_fetch_array($result,MYSQL_NUM)){
 			if($row[0]==$selected){
-				?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+				?><option value="<?php echo $row[0]?>" selected><?php echo $row[1]?></option><?php
 				break;
 			}else{
 				?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
@@ -100,14 +100,14 @@ function form_select_PDO($result,$attrib,$selected=null){
 	echo '<select '.combine_attrib($attrib).'>';
 	if($selected===null){
 		$row=$result->fetch(PDO::FETCH_NUM);
-		?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+		?><option value="<?php echo $row[0]?>" selected><?php echo $row[1]?></option><?php
 		while($row=$result->fetch(PDO::FETCH_NUM)){
 			?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
 		}
 	}else{
 		while($row=$result->fetch(PDO::FETCH_NUM)){
 			if($row[0]==$selected){
-				?><option value="<?php echo $row[0]?>" selected="selected"><?php echo $row[1]?></option><?php
+				?><option value="<?php echo $row[0]?>" selected><?php echo $row[1]?></option><?php
 				break;
 			}else{
 				?><option value="<?php echo $row[0]?>"><?php echo $row[1]?></option><?php
@@ -163,12 +163,12 @@ function form_date($name,$date=null){
 	}else{
 		list($year,$month,$day)=array_map('intval',explode('-',date('Y-m-d')));
 	}
-?><select name="<?php echo $name;?>[month]"><option value="01"<?php echo $month==1?' selected="selected"':'';?>>Jan</option><option value="02"<?php echo $month==2?' selected="selected"':'';?>>Feb</option><option value="03"<?php echo $month==3?' selected="selected"':'';?>>Mar</option><option value="04"<?php echo $month==4?' selected="selected"':'';?>>Apr</option><option value="05"<?php echo $month==5?' selected="selected"':'';?>>May</option><option value="06"<?php echo $month==6?' selected="selected"':'';?>>Jun</option><option value="07"<?php echo $month==7?' selected="selected"':'';?>>Jul</option><option value="08"<?php echo $month==8?' selected="selected"':'';?>>Aug</option><option value="09"<?php echo $month==9?' selected="selected"':'';?>>Sep</option><option value="10"<?php echo $month==10?' selected="selected"':'';?>>Oct</option><option value="11"<?php echo $month==11?' selected="selected"':'';?>>Nov</option><option value="12"<?php echo $month==12?' selected="selected"':'';?>>Dec</option></select>
-<select name="<?php echo $name;?>[day]"><option value="01"<?php echo $day==1?' selected="selected"':'';?>>1</option><option value="02"<?php echo $day==2?' selected="selected"':'';?>>2</option><option value="03"<?php echo $day==3?' selected="selected"':'';?>>3</option><option value="04"<?php echo $day==4?' selected="selected"':'';?>>4</option><option value="05"<?php echo $day==5?' selected="selected"':'';?>>5</option><option value="06"<?php echo $day==6?' selected="selected"':'';?>>6</option><option value="07"<?php echo $day==7?' selected="selected"':'';?>>7</option><option value="08"<?php echo $day==8?' selected="selected"':'';?>>8</option><option value="09"<?php echo $day==9?' selected="selected"':'';?>>9</option><option value="10"<?php echo $day==10?' selected="selected"':'';?>>10</option><option value="11"<?php echo $day==11?' selected="selected"':'';?>>11</option><option value="12"<?php echo $day==12?' selected="selected"':'';?>>12</option><option value="13"<?php echo $day==13?' selected="selected"':'';?>>13</option><option value="14"<?php echo $day==14?' selected="selected"':'';?>>14</option><option value="15"<?php echo $day==15?' selected="selected"':'';?>>15</option><option value="16"<?php echo $day==16?' selected="selected"':'';?>>16</option><option value="17"<?php echo $day==17?' selected="selected"':'';?>>17</option><option value="18"<?php echo $day==18?' selected="selected"':'';?>>18</option><option value="19"<?php echo $day==19?' selected="selected"':'';?>>19</option><option value="20"<?php echo $day==20?' selected="selected"':'';?>>20</option><option value="21"<?php echo $day==21?' selected="selected"':'';?>>21</option><option value="22"<?php echo $day==22?' selected="selected"':'';?>>22</option><option value="23"<?php echo $day==23?' selected="selected"':'';?>>23</option><option value="24"<?php echo $day==24?' selected="selected"':'';?>>24</option><option value="25"<?php echo $day==25?' selected="selected"':'';?>>25</option><option value="26"<?php echo $day==26?' selected="selected"':'';?>>26</option><option value="27"<?php echo $day==27?' selected="selected"':'';?>>27</option><option value="28"<?php echo $day==28?' selected="selected"':'';?>>28</option><option value="29"<?php echo $day==29?' selected="selected"':'';?>>29</option><option value="30"<?php echo $day==30?' selected="selected"':'';?>>30</option><option value="31"<?php echo $day==31?' selected="selected"':'';?>>31</option></select>
+?><select name="<?php echo $name;?>[month]"><option value="01"<?php echo $month==1?' selected':'';?>>Jan</option><option value="02"<?php echo $month==2?' selected':'';?>>Feb</option><option value="03"<?php echo $month==3?' selected':'';?>>Mar</option><option value="04"<?php echo $month==4?' selected':'';?>>Apr</option><option value="05"<?php echo $month==5?' selected':'';?>>May</option><option value="06"<?php echo $month==6?' selected':'';?>>Jun</option><option value="07"<?php echo $month==7?' selected':'';?>>Jul</option><option value="08"<?php echo $month==8?' selected':'';?>>Aug</option><option value="09"<?php echo $month==9?' selected':'';?>>Sep</option><option value="10"<?php echo $month==10?' selected':'';?>>Oct</option><option value="11"<?php echo $month==11?' selected':'';?>>Nov</option><option value="12"<?php echo $month==12?' selected':'';?>>Dec</option></select>
+<select name="<?php echo $name;?>[day]"><option value="01"<?php echo $day==1?' selected':'';?>>1</option><option value="02"<?php echo $day==2?' selected':'';?>>2</option><option value="03"<?php echo $day==3?' selected':'';?>>3</option><option value="04"<?php echo $day==4?' selected':'';?>>4</option><option value="05"<?php echo $day==5?' selected':'';?>>5</option><option value="06"<?php echo $day==6?' selected':'';?>>6</option><option value="07"<?php echo $day==7?' selected':'';?>>7</option><option value="08"<?php echo $day==8?' selected':'';?>>8</option><option value="09"<?php echo $day==9?' selected':'';?>>9</option><option value="10"<?php echo $day==10?' selected':'';?>>10</option><option value="11"<?php echo $day==11?' selected':'';?>>11</option><option value="12"<?php echo $day==12?' selected':'';?>>12</option><option value="13"<?php echo $day==13?' selected':'';?>>13</option><option value="14"<?php echo $day==14?' selected':'';?>>14</option><option value="15"<?php echo $day==15?' selected':'';?>>15</option><option value="16"<?php echo $day==16?' selected':'';?>>16</option><option value="17"<?php echo $day==17?' selected':'';?>>17</option><option value="18"<?php echo $day==18?' selected':'';?>>18</option><option value="19"<?php echo $day==19?' selected':'';?>>19</option><option value="20"<?php echo $day==20?' selected':'';?>>20</option><option value="21"<?php echo $day==21?' selected':'';?>>21</option><option value="22"<?php echo $day==22?' selected':'';?>>22</option><option value="23"<?php echo $day==23?' selected':'';?>>23</option><option value="24"<?php echo $day==24?' selected':'';?>>24</option><option value="25"<?php echo $day==25?' selected':'';?>>25</option><option value="26"<?php echo $day==26?' selected':'';?>>26</option><option value="27"<?php echo $day==27?' selected':'';?>>27</option><option value="28"<?php echo $day==28?' selected':'';?>>28</option><option value="29"<?php echo $day==29?' selected':'';?>>29</option><option value="30"<?php echo $day==30?' selected':'';?>>30</option><option value="31"<?php echo $day==31?' selected':'';?>>31</option></select>
 <select name="<?php echo $name;?>[year]"><?php
 	$date=getdate();
 	for($i=0;$i<80;$i++)
-		echo '<option value="'.($date['year']-$i).'"'.($year==($date['year']-$i)?' selected="selected"':'').'>'.($date['year']-$i).'</option>';
+		echo '<option value="'.($date['year']-$i).'"'.($year==($date['year']-$i)?' selected':'').'>'.($date['year']-$i).'</option>';
 ?></select><?php
 }
 
@@ -179,7 +179,7 @@ function form_date($name,$date=null){
  * @param string $date [optional]A unix datestamp(year-month-day) or an array('day'=>day,'month'=>month,'year'=>year).
  */
 function form_time($name,$time=null){
-	$second=0;$hour=1;$minute=1;
+	$second=0;$hour=1;$minute=1;$h=0;
 	if($time===null){
 		$time=form_get($name);
 	}
@@ -193,9 +193,34 @@ function form_time($name,$time=null){
 	}else{
 		list($hour,$minute,$second)=array_map('intval',explode(':',date('H:i:s')));
 	}
-?><select name="<?php echo $name;?>[hour]"><option value="00"<?php echo $hour==0?' selected="selected"':'';?>>00</option><option value="01"<?php echo $hour==1?' selected="selected"':'';?>>01</option><option value="02"<?php echo $hour==2?' selected="selected"':'';?>>02</option><option value="03"<?php echo $hour==3?' selected="selected"':'';?>>03</option><option value="04"<?php echo $hour==4?' selected="selected"':'';?>>04</option><option value="05"<?php echo $hour==5?' selected="selected"':'';?>>05</option><option value="06"<?php echo $hour==6?' selected="selected"':'';?>>06</option><option value="07"<?php echo $hour==7?' selected="selected"':'';?>>07</option><option value="08"<?php echo $hour==8?' selected="selected"':'';?>>08</option><option value="09"<?php echo $hour==9?' selected="selected"':'';?>>09</option><option value="10"<?php echo $hour==10?' selected="selected"':'';?>>10</option><option value="11"<?php echo $hour==11?' selected="selected"':'';?>>11</option><option value="12"<?php echo $hour==12?' selected="selected"':'';?>>12</option><option value="13"<?php echo $hour==13?' selected="selected"':'';?>>13</option><option value="14"<?php echo $hour==14?' selected="selected"':'';?>>14</option><option value="15"<?php echo $hour==15?' selected="selected"':'';?>>15</option><option value="16"<?php echo $hour==16?' selected="selected"':'';?>>16</option><option value="17"<?php echo $hour==17?' selected="selected"':'';?>>17</option><option value="18"<?php echo $hour==18?' selected="selected"':'';?>>18</option><option value="19"<?php echo $hour==19?' selected="selected"':'';?>>19</option><option value="20"<?php echo $hour==20?' selected="selected"':'';?>>20</option><option value="21"<?php echo $hour==21?' selected="selected"':'';?>>21</option><option value="22"<?php echo $hour==22?' selected="selected"':'';?>>22</option><option value="23"<?php echo $hour==23?' selected="selected"':'';?>>23</option></select>
-<select name="<?php echo $name;?>[minute]"><option value="00"<?php echo $minute==0?' selected="selected"':'';?>>00</option><option value="01"<?php echo $minute==1?' selected="selected"':'';?>>01</option><option value="02"<?php echo $minute==2?' selected="selected"':'';?>>02</option><option value="03"<?php echo $minute==3?' selected="selected"':'';?>>03</option><option value="04"<?php echo $minute==4?' selected="selected"':'';?>>04</option><option value="05"<?php echo $minute==5?' selected="selected"':'';?>>05</option><option value="06"<?php echo $minute==6?' selected="selected"':'';?>>06</option><option value="07"<?php echo $minute==7?' selected="selected"':'';?>>07</option><option value="08"<?php echo $minute==8?' selected="selected"':'';?>>08</option><option value="09"<?php echo $minute==9?' selected="selected"':'';?>>09</option><option value="10"<?php echo $minute==10?' selected="selected"':'';?>>10</option><option value="11"<?php echo $minute==11?' selected="selected"':'';?>>11</option><option value="12"<?php echo $minute==12?' selected="selected"':'';?>>12</option><option value="13"<?php echo $minute==13?' selected="selected"':'';?>>13</option><option value="14"<?php echo $minute==14?' selected="selected"':'';?>>14</option><option value="15"<?php echo $minute==15?' selected="selected"':'';?>>15</option><option value="16"<?php echo $minute==16?' selected="selected"':'';?>>16</option><option value="17"<?php echo $minute==17?' selected="selected"':'';?>>17</option><option value="18"<?php echo $minute==18?' selected="selected"':'';?>>18</option><option value="19"<?php echo $minute==19?' selected="selected"':'';?>>19</option><option value="20"<?php echo $minute==20?' selected="selected"':'';?>>20</option><option value="21"<?php echo $minute==21?' selected="selected"':'';?>>21</option><option value="22"<?php echo $minute==22?' selected="selected"':'';?>>22</option><option value="23"<?php echo $minute==23?' selected="selected"':'';?>>23</option><option value="24"<?php echo $minute==24?' selected="selected"':'';?>>24</option><option value="25"<?php echo $minute==25?' selected="selected"':'';?>>25</option><option value="26"<?php echo $minute==26?' selected="selected"':'';?>>26</option><option value="27"<?php echo $minute==27?' selected="selected"':'';?>>27</option><option value="28"<?php echo $minute==28?' selected="selected"':'';?>>28</option><option value="29"<?php echo $minute==29?' selected="selected"':'';?>>29</option><option value="30"<?php echo $minute==30?' selected="selected"':'';?>>30</option><option value="31"<?php echo $minute==31?' selected="selected"':'';?>>31</option><option value="32"<?php echo $minute==32?' selected="selected"':'';?>>32</option><option value="33"<?php echo $minute==33?' selected="selected"':'';?>>33</option><option value="34"<?php echo $minute==34?' selected="selected"':'';?>>34</option><option value="35"<?php echo $minute==35?' selected="selected"':'';?>>35</option><option value="36"<?php echo $minute==36?' selected="selected"':'';?>>36</option><option value="37"<?php echo $minute==37?' selected="selected"':'';?>>37</option><option value="38"<?php echo $minute==38?' selected="selected"':'';?>>38</option><option value="39"<?php echo $minute==39?' selected="selected"':'';?>>39</option><option value="40"<?php echo $minute==40?' selected="selected"':'';?>>40</option><option value="41"<?php echo $minute==41?' selected="selected"':'';?>>41</option><option value="42"<?php echo $minute==42?' selected="selected"':'';?>>42</option><option value="43"<?php echo $minute==43?' selected="selected"':'';?>>43</option><option value="44"<?php echo $minute==44?' selected="selected"':'';?>>44</option><option value="45"<?php echo $minute==45?' selected="selected"':'';?>>45</option><option value="46"<?php echo $minute==46?' selected="selected"':'';?>>46</option><option value="47"<?php echo $minute==47?' selected="selected"':'';?>>47</option><option value="48"<?php echo $minute==48?' selected="selected"':'';?>>48</option><option value="49"<?php echo $minute==49?' selected="selected"':'';?>>49</option><option value="50"<?php echo $minute==50?' selected="selected"':'';?>>50</option><option value="51"<?php echo $minute==51?' selected="selected"':'';?>>51</option><option value="52"<?php echo $minute==52?' selected="selected"':'';?>>52</option><option value="53"<?php echo $minute==53?' selected="selected"':'';?>>53</option><option value="54"<?php echo $minute==54?' selected="selected"':'';?>>54</option><option value="55"<?php echo $minute==55?' selected="selected"':'';?>>55</option><option value="56"<?php echo $minute==56?' selected="selected"':'';?>>56</option><option value="57"<?php echo $minute==57?' selected="selected"':'';?>>57</option><option value="58"<?php echo $minute==58?' selected="selected"':'';?>>58</option><option value="59"<?php echo $minute==59?' selected="selected"':'';?>>59</option></select>
-<select name="<?php echo $name;?>[second]"><option value="00"<?php echo $second==0?' selected="selected"':'';?>>00</option><option value="01"<?php echo $second==1?' selected="selected"':'';?>>01</option><option value="02"<?php echo $second==2?' selected="selected"':'';?>>02</option><option value="03"<?php echo $second==3?' selected="selected"':'';?>>03</option><option value="04"<?php echo $second==4?' selected="selected"':'';?>>04</option><option value="05"<?php echo $second==5?' selected="selected"':'';?>>05</option><option value="06"<?php echo $second==6?' selected="selected"':'';?>>06</option><option value="07"<?php echo $second==7?' selected="selected"':'';?>>07</option><option value="08"<?php echo $second==8?' selected="selected"':'';?>>08</option><option value="09"<?php echo $second==9?' selected="selected"':'';?>>09</option><option value="10"<?php echo $second==10?' selected="selected"':'';?>>10</option><option value="11"<?php echo $second==11?' selected="selected"':'';?>>11</option><option value="12"<?php echo $second==12?' selected="selected"':'';?>>12</option><option value="13"<?php echo $second==13?' selected="selected"':'';?>>13</option><option value="14"<?php echo $second==14?' selected="selected"':'';?>>14</option><option value="15"<?php echo $second==15?' selected="selected"':'';?>>15</option><option value="16"<?php echo $second==16?' selected="selected"':'';?>>16</option><option value="17"<?php echo $second==17?' selected="selected"':'';?>>17</option><option value="18"<?php echo $second==18?' selected="selected"':'';?>>18</option><option value="19"<?php echo $second==19?' selected="selected"':'';?>>19</option><option value="20"<?php echo $second==20?' selected="selected"':'';?>>20</option><option value="21"<?php echo $second==21?' selected="selected"':'';?>>21</option><option value="22"<?php echo $second==22?' selected="selected"':'';?>>22</option><option value="23"<?php echo $second==23?' selected="selected"':'';?>>23</option><option value="24"<?php echo $second==24?' selected="selected"':'';?>>24</option><option value="25"<?php echo $second==25?' selected="selected"':'';?>>25</option><option value="26"<?php echo $second==26?' selected="selected"':'';?>>26</option><option value="27"<?php echo $second==27?' selected="selected"':'';?>>27</option><option value="28"<?php echo $second==28?' selected="selected"':'';?>>28</option><option value="29"<?php echo $second==29?' selected="selected"':'';?>>29</option><option value="30"<?php echo $second==30?' selected="selected"':'';?>>30</option><option value="31"<?php echo $second==31?' selected="selected"':'';?>>31</option><option value="32"<?php echo $second==32?' selected="selected"':'';?>>32</option><option value="33"<?php echo $second==33?' selected="selected"':'';?>>33</option><option value="34"<?php echo $second==34?' selected="selected"':'';?>>34</option><option value="35"<?php echo $second==35?' selected="selected"':'';?>>35</option><option value="36"<?php echo $second==36?' selected="selected"':'';?>>36</option><option value="37"<?php echo $second==37?' selected="selected"':'';?>>37</option><option value="38"<?php echo $second==38?' selected="selected"':'';?>>38</option><option value="39"<?php echo $second==39?' selected="selected"':'';?>>39</option><option value="40"<?php echo $second==40?' selected="selected"':'';?>>40</option><option value="41"<?php echo $second==41?' selected="selected"':'';?>>41</option><option value="42"<?php echo $second==42?' selected="selected"':'';?>>42</option><option value="43"<?php echo $second==43?' selected="selected"':'';?>>43</option><option value="44"<?php echo $second==44?' selected="selected"':'';?>>44</option><option value="45"<?php echo $second==45?' selected="selected"':'';?>>45</option><option value="46"<?php echo $second==46?' selected="selected"':'';?>>46</option><option value="47"<?php echo $second==47?' selected="selected"':'';?>>47</option><option value="48"<?php echo $second==48?' selected="selected"':'';?>>48</option><option value="49"<?php echo $second==49?' selected="selected"':'';?>>49</option><option value="50"<?php echo $second==50?' selected="selected"':'';?>>50</option><option value="51"<?php echo $second==51?' selected="selected"':'';?>>51</option><option value="52"<?php echo $second==52?' selected="selected"':'';?>>52</option><option value="53"<?php echo $second==53?' selected="selected"':'';?>>53</option><option value="54"<?php echo $second==54?' selected="selected"':'';?>>54</option><option value="55"<?php echo $second==55?' selected="selected"':'';?>>55</option><option value="56"<?php echo $second==56?' selected="selected"':'';?>>56</option><option value="57"<?php echo $second==57?' selected="selected"':'';?>>57</option><option value="58"<?php echo $second==58?' selected="selected"':'';?>>58</option><option value="59"<?php echo $second==59?' selected="selected"':'';?>>59</option></select><?php
+?><select name="<?php echo $name;?>[hour]"><?php
+	for($h=0;$h<$hour;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+	?><option value="<?php echo $h ?>" selected><?php echo $h ?></option><?php
+	for(;$h<24;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+?></select>
+<select name="<?php echo $name;?>[minute]"><?php
+for($h=0;$h<$minute;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+	?><option value="<?php echo $h ?>" selected><?php echo $h ?></option><?php
+	for(;$h<60;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+?></select>
+<select name="<?php echo $name;?>[second]"><?php
+for($h=0;$h<$second;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+	?><option value="<?php echo $h ?>" selected><?php echo $h ?></option><?php
+	for(;$h<60;$h++){?>
+		<option value="<?php echo $h ?>"><?php echo $h ?></option><?php
+	}
+?></select>
+<?php
 }
 /**
  * Creates a select HTML element.
@@ -212,7 +237,7 @@ function form_select($name,array $data,$default=null,array $extra=null){
 	if($default!=null){
 		foreach($data as $key=> $value){
 			echo "<option value=\"$key\"";
-			if($key==$default)echo ' selected="selected"';
+			if($key==$default)echo ' selected';
 			echo ">$value</option>";
 		}
 	} else{
@@ -239,7 +264,7 @@ function form_phone($name,$area='',$prefix='',$line=''){
 	if(empty($area)&& isset($phone['area']))	$area=	$phone['area'];
 	if(empty($prefix)&&isset($phone['prefix']))	$prefix=$phone['prefix'];
 	if(empty($line)&&isset($phone['line']))		$line=	$phone['line'];
-?>(<input type="text" name="<?php echo $name;?>[area]" value="<?php echo $area;?>" maxlength="3" />)<input type="text" name="<?php echo $name;?>[prefix]" value="<?php echo $prefix;?>" maxlength="3" />-<input type="text" name="<?php echo $name;?>[line]" value="<?php echo $line;?>" maxlength="4" /><?php
+?>(<input type=text name="<?php echo $name;?>[area]" value="<?php echo $area;?>" maxlength="3">)<input type=text name="<?php echo $name;?>[prefix]" value="<?php echo $prefix;?>" maxlength="3">-<input type=text name="<?php echo $name;?>[line]" value="<?php echo $line;?>" maxlength="4"><?php
 }
 function form_phone_tostr(array $phone_ary){
 	return $phone_ary['area'].'-'.$phone_ary['prefix'].'-'.$phone_ary['line'];
@@ -252,16 +277,16 @@ function form_time_tostr(array $time_ary){
 }
 function form_text($name,$value=null,array $extra=null){
 	if($value==null)$value=form_get($name);
-	echo '<input type="text" name="'.$name.'" value="'.$value.'" ';
+	echo '<input type=text name="'.$name.'" value="'.$value.'" ';
 	echo combine_attrib($extra);
-	echo '/>'.EOL;
+	echo '>'.EOL;
 }
 function form_text_labeled($name,$id,$label,$value=null,array $attrib=null){
 	if($value==null)$value=form_get($name);
 	echo '<label for="'.$id.'">'.$label.'</label>';
-	echo '<input type="text" name="'.$name.'" value="'.$value.'" ';
+	echo '<input type=text name="'.$name.'" value="'.$value.'" ';
 	echo combine_attrib($attrib);
-	echo '/>'.EOL;
+	echo '>'.EOL;
 }
 /**
  * Echoes a series of radio buttons.
@@ -276,7 +301,7 @@ function form_radio($name,$id,array $values,$default,array $attrib=null,$before=
 	$attrib=combine_attrib($attrib).' ';
 	$val=form_get($name,$default);
 	foreach($values as $value=>$disp){
-		echo $before.'<input type="radio" name="'.$name.'" value="'.$value.'" id="'.$id.$value.'"'.(($value==$val)?' checked="checked" ':' ').$attrib.'/>&nbsp;<label for="'.$id.$value.'">'.$disp.'</label>'.$after;
+		echo $before.'<label for="'.$id.$value.'"><input type=radio name="'.$name.'" value="'.$value.'" id="'.$id.$value.'"'.(($value==$val)?' checked ':' ').$attrib.'>&nbsp;'.$disp.'</label>'.$after;
 	}
 }
 function form_radioYN($name,$id,$default,array $attrib=null,$before=null,$after=null){
@@ -295,7 +320,7 @@ function form_checkbox($name,$id,array $values,array $attrib=null,$before=null,$
 	$attrib=combine_attrib($attrib).' ';
 	$checked=form_get($name,array());
 	foreach($values as $value=>$disp){
-		echo $before.'<input type="checkbox" name="'.$name.'[]" value="'.$value.'" id="'.$id.$value.'"'.(in_array($value,$checked)?' checked="checked"':'').$attrib.'/>&nbsp;<label for="'.$id.$value.'">'.$disp.'</label>'.$after;
+		echo $before.'<label for="'.$id.$value.'"><input type=checkbox name="'.$name.'[]" value="'.$value.'" id="'.$id.$value.'"'.(in_array($value,$checked)?' checked':'').$attrib.'>&nbsp;'.$disp.'</label>'.$after;
 	}
 }
 function form_textarea($sName,$iCols,$iRows,array $attrib=array()){
