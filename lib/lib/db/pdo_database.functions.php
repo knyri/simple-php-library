@@ -623,15 +623,23 @@ class PDOTable{
 			return $this->data[$key];
 		return $default;
 	}
+	/**
+	 * Get's the primary key.
+	 * If it is a compound key, an array in the form of ($key=>$value) containing the values is returned.
+	 * @return multitype:|Ambiguous false if the ID is not set
+	 */
 	public function getId(){
 		if(is_array($this->pkey)){
 			$ret=array();
 			foreach($this->pkey as $key){
+				if(!isset($this->data[$key]))return false;
 				$ret[$key]=$this->data[$key];
 			}
 			return $ret;
-		}else
+		}elseif(isset($this->data[$this->pkey]))
 			return $this->data[$this->pkey];
+		else
+			return false;
 	}
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
