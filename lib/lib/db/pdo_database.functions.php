@@ -3,6 +3,8 @@
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
 
+PakageManager::requireClassOnce('util.propertylist');
+
 /**
  *
  * Basic database profiling class.
@@ -526,9 +528,8 @@ function db_prepare($db,$query){
 function db_now(){
 	return date('Y-m-d',time());
 }
-class PDOStatementWrapper{
-	protected $dataset=null,
-	$data=array();
+class PDOStatementWrapper extends PropertyList{
+	protected $dataset=null;
 	public function __construct($stm,$fetch_mode=PDO::FETCH_ASSOC){
 		if(!$stm instanceof PDOStatement)throw new ErrorException('$stm is not a PDOStatement');
 		$this->dataset=$stm;
@@ -549,11 +550,6 @@ class PDOStatementWrapper{
 		$this->dataset->closeCursor();
 		return !db_run_query($this->dataset,$args);
 	}
-	public function get($key,$default=null){
-		if(isset($this->data[$key]))
-			return $this->data[$key];
-		return $default;
-	}
 	public function loadNext(){
 		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
 		$this->data=$this->dataset->fetch();
@@ -563,26 +559,15 @@ class PDOStatementWrapper{
 		if($this->dataset)$this->dataset->closeCursor();
 		$this->data=array();
 	}
-	/**
-	 * Copies the data held by the internal array to the given array.
-	 * @param array $ary
-	 * @return array The resulting array.
-	 */
-	public function copyTo(array $ary){
-		foreach($this->data as $k=>$v)
-			$ary[$k]=$v;
-		return $ary;
-	}
 }
 /**
  * Class for working a PDO table.
  * @author Ken
  *
  */
-class PDOTable{
+class PDOTable extends PropertyList{
 	protected $table,
 		$columns,
-		$data=array(),
 		$dataset=null,
 		$pkey=null,
 		$db=null,
@@ -604,24 +589,40 @@ class PDOTable{
 		$this->pkey=$pkey;
 		$this->db=$db;
 	}
+	/**
+	 * @throws ErrorException
+	 * @return number the number of rows in the table.
+	 */
 	public function getTotalRows(){
 		if($this->rowCountstm==null){
 			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
 			if(!$this->rowCountstm)throw new ErrorException('Could not prepare the statement.');
 		}
-		if(!db_run_query($this->rowCountstm)){
-			throw new ErrorException('Could not execute the query.');
-		}
+		if(!db_run_query($this->rowCountstm))throw new ErrorException('Could not execute the query.');
 		$ret=$this->rowCountstm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
-	public function set($key,$value){
-		$this->data[$key]=$value;
-	}
-	public function get($key,$default=null){
-		if(isset($this->data[$key]))
-			return $this->data[$key];
-		return $default;
+	/**
+	 * @throws ErrorException
+	 * @return int The number of rows matched by the query.
+	 */
+	public function count(){
+		$stm='SELECT COUNT(*) FROM '.$this->table;
+		$args=null;
+		if(count($this->data)){
+			$args=array();
+			$stm.='WHERE ';
+			foreach($this->data as $key=>$value){
+				$stm.="$key=? AND";
+				$args[]=$value;
+			}
+			$stm=substr($stm,0,-4);
+		}
+		$stm=db_prepare($this->db,$stm);
+		if(!$stm)throw new ErrorException('Could not prepare the statement.');
+		if(!db_run_query($stm,$args))throw new ErrorException('Could not execute the query.');
+		$ret=$stm->fetch(PDO::FETCH_NUM);
+		return $ret[0];
 	}
 	/**
 	 * Get's the primary key.
@@ -729,8 +730,7 @@ class PDOTable{
 			}
 			unset($where[count($where)-1][2]);
 		}
-		$count=db_num_rows($this->db, $this->table,$where);
-		if($count)
+		if($this->exists($where))
 			$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
 		return $count;
 	}
@@ -756,7 +756,7 @@ class PDOTable{
 	}
 	/**
 	 * Deletes the record represented by this object.
-	 * @return false on success or the error.
+	 * @return bool false on success or the error.
 	 */
 	public function delete(){
 		$error=db_delete($this->db,$this->table,$this->getPkey());
@@ -825,16 +825,6 @@ class PDOTable{
 	public function recycle(){
 		if($this->dataset)$this->dataset->closeCursor();
 		$this->data=array();
-	}
-	/**
-	 * Copies the data held by the internal array to the given array.
-	 * @param array $ary
-	 * @return array The resulting array.
-	 */
-	public function copyTo(array $ary){
-		foreach($this->data as $k=>$v)
-			$ary[$k]=$v;
-		return $ary;
 	}
 }
 
