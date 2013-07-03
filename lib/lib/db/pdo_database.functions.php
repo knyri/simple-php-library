@@ -3,7 +3,7 @@
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
 
-PakageManager::requireClassOnce('util.propertylist');
+PackageManager::requireClassOnce('util.propertylist');
 
 /**
  *
@@ -454,6 +454,13 @@ function db_num_rows($db,$table,array $conditions=null){
 	$stm->closeCursor();
 	return $ret[0];
 }
+/**
+ * @param unknown $db
+ * @param unknown $table
+ * @param array $conditions
+ * @throws PDOException
+ * @return boolean|string false on error. '0' or '1'
+ */
 function db_exists($db,$table,array $conditions=null){
 	DBProfile::query('select');
 	if ($db===null)
@@ -732,7 +739,7 @@ class PDOTable extends PropertyList{
 		}
 		if($this->exists($where))
 			$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
-		return $count;
+		return $this->dataset!=null;
 	}
 	public function exists(array $where=null){
 		if($this->dataset)$this->dataset->closeCursor();
