@@ -32,18 +32,11 @@ function date_equal($start, $end){
  * @return boolean True if the dates are equal.
  */
 function date_equal_int($smonth, $sday, $syear, $emonth, $eday, $eyear){
-	if ($smonth ==$emonth){
-		if ($sday ==$eday){
-			if ($syear ==$eyear){
-				return true;
-			}
-		}
-	}
-	return false;
+	return $smonth==$emonth && $sday==$eday && $syear==$eyear;
 }
 function date_equal_ary(array $start, array $end){
 	foreach ($start as $key=>$value){
-		if ($end[$key]!=$value) return false;;
+		if ($end[$key]!=$value) return false;
 	}
 	return true;
 }
@@ -63,24 +56,16 @@ function date_greater($start, $end){
 	}
 }
 function date_greater_int($smonth, $sday, $syear, $emonth, $eday, $eyear){
-	if ($syear>$eyear) return true;
-	if ($syear==$eyear){
-		if ($smonth>$emonth) return true;
-		if ($smonth==$emonth){
-			if ($sday>$eday) return true;
-		}
-	}
-	return false;
+	return $syear>$eyear ||
+	$syear==$eyear && ($smonth>$emonth || ($smonth==$emonth && $sday>$eday));
 }
 function date_greater_ary(array $start, array $end){
-	if ($start['year']>$end['year']) return true;
-	if ($start['year']==$end['year']){
-		if ($start['month']>$end['month']) return true;
-		if ($start['month']==$end['month']){
-			if ($start['day']>$end['day']) return true;
-		}
-	}
-	return false;
+	return $start['year']>$end['year'] ||
+		$start['year']==$end['year'] &&
+		(
+			$start['month']>$end['month'] ||
+			($start['month']==$end['month'] && $start['day']>$end['day'])
+		);
 }
 /**
  * Tests if $start >=$end. Alias for!date_lesser($start, $end).
@@ -110,38 +95,25 @@ function date_equal_lesser($start, $end){
  * @return boolean True if $start<$end
  */
 function date_lesser($start, $end){
-	if (is_array($start)&&is_array($end)) return date_lesser_ary($start, $end);
-	if (is_string($start)&&is_string($end)){
+	if(is_array($start)&&is_array($end)) return date_lesser_ary($start, $end);
+	if(is_string($start)&&is_string($end)){
 		$start=explode('-', $start);
 		$end=explode('-', $end);
-		return date_lesser_int($start[1], $start[2], $start[0], $end[1], $end[2], $end[0]);
+		return date_lesser_int($start[1],$start[2],$start[0],$end[1],$end[2],$end[0]);
 	}
 }
 function date_lesser_int($smonth, $sday, $syear, $emonth, $eday, $eyear){
-	if ($syear<$eyear) return true;
-	if ($syear==$eyear){
-		if ($smonth<$emonth) return true;
-		if ($smonth==$emonth){
-			if ($sday<$eday) return true;
-		}
-	}
-	return false;
+	return $syear<$eyear || $syear==$eyear && ($smonth<$emonth || ($smonth==$emonth && $sday<$eday));
 }
 function date_lesser_ary(array $start, array $end){
-	if ($start['year']<$end['year']) return true;
-	if ($start['year']==$end['year']){
-		if ($start['month']<$end['month']) return true;
-		if ($start['month']==$end['month']){
-			if ($start['day']<$end['day']) return true;
-		}
-	}
-	return false;
+	return $start['year']<$end['year'] ||
+		$start['year']==$end['year'] && ($start['month']<$end['month'] || ($start['month']==$end['month'] && $start['day']<$end['day']));
 }
 function date_create_unix_ary($date){
-	return $date['year'] . '-' . $date['month'] . '-' . $date['day'];
+	return $date['year'].'-'.$date['month'].'-'.$date['day'];
 }
 function date_create_unix_timestamp_ary($date){
-	return $date['year'] . '-' . $date['month'] . '-' . $date['day'] . ' 00:00:00';
+	return $date['year'].'-'.$date['month'].'-'.$date['day'].' 00:00:00';
 }
 /**
  * Fixes the date so that it is valid. Can handle negative values. Great for creating date ranges.
@@ -156,77 +128,36 @@ function date_create_unix_timestamp_ary($date){
  * @return string The resulting string
  */
 function date_fix_date($month,$day,$year,$unix=true){
-	if($month>12){
-		while ($month>12){
-			$month-=12;//subtract a $year
-			$year++;//add a $year
-		}
-	} else if ($month<1){
-		while ($month<1){
-			$month +=12;//add a $year
-			$year--;//subtract a $year
-		}
+	while($month>12){
+		$month-=12;
+		$year++;
 	}
-	if ($day>31){
-		while ($day>31){
-			if ($month==2){
-				if (is_leap_year($year)){//subtract a $month
-					$day-=29;
-				} else{
-					$day-=28;
-				}
-				$month++;//add a $month
-			} else if (date_hasThirtyOneDays($month)){
-				$day-=31;
-				$month++;
-			} else{
-				$day-=30;
-				$month++;
-			}
-		}//end while
-		while ($month>12){ //recheck $months
-			$month-=12;//subtract a $year
-			$year++;//add a $year
-		}
-	} else if ($day<1){
-		while ($day<1){
-			$month--;//subtract a $month
-			if ($month==2){
-				if (is_leap_year($year)){//add a $month
-					$day+=29;
-				}else{
-					$day+=28;
-				}
-			} else if (date_hasThirtyOneDays($month)){
-				$day+=31;
-			} else{
-				$day+=30;
-			}
-		}//end while
-		while ($month<1){//recheck $months
-			$month+=12;//add a $year
-			$year--;//subtract a $year
-		}
-	} else if ($month==2){
-		if(is_leap_year($year)){
-			if($day>29){
-				$day-=29;
-				$month++;
-			}
-		}else if($day>28){
-			$day-=28;
-			$month++;
-		}
-	} else if (!date_hasThirtyOneDays($month)&&$day>30){
-		$day-=30;
+	while($month<1){
+		$month+=12;
+		$year--;
+	}
+	$lastDay=date_get_last_day($month,$year);
+	while($day>$lastDay){
+		$day-=$lastDay;
 		$month++;
+		if($month==13){
+			$month=1;
+			$year++;
+		}
+		$lastDay=date_get_last_day($month,$year);
 	}
-	if ($year<1900) $year=1900;
-	if ($unix){
-		return "$year-$month-$day";
-	} else{
-		return "$month-$day-$year";
+	while($day<1){
+		$lastDay=date_get_last_day($month,$year);
+		$day+=$lastDay;
+		$month--;
+		if($month==0){
+			$month=12;
+			$year--;
+		}
 	}
+
+	if($year<1900) $year=1900;
+	return $unix?"$year-$month-$day":"$month-$day-$year";
 }
 /**
  * Fixes the date so that it is valid.
@@ -241,30 +172,28 @@ function date_fix_date($month,$day,$year,$unix=true){
  * @param int $unix Optional. Default is true. Use UNIX date format
  * @return string The resulting string
  */
-function date_fix_timestamp($month, $day, $year, $hour, $minute, $second, $unix=true){
-	if ($month ==0) $month=1;
-	if ($day ==0) $day=1;
-	while ($second<0){
+function date_fix_timestamp($month,$day,$year,$hour,$minute,$second,$unix=true){
+	while($second<0){
 		$minute--;
 		$second+=60;
 	}
-	while ($second >=60){
+	while($second>59){
 		$second-=60;
 		$minute++;
 	}
 	while($minute<0){
 		$hour--;
-		$minute +=60;
+		$minute+=60;
 	}
-	while ($minute >=60){
+	while($minute>59){
 		$minute-=60;
 		$hour++;
 	}
-	while ($hour<0){
+	while($hour<0){
 		$day--;
 		$hour+=24;
 	}
-	while ($hour >=24){
+	while($hour>23){
 		$hour-=24;
 		$day++;
 	}
@@ -278,10 +207,7 @@ function date_fix_timestamp($month, $day, $year, $hour, $minute, $second, $unix=
 function date_hasThirtyOneDays($month){
 	//1234567 89012:1357 802
 	//JfMaMjJ AsOnD:JMMJ AOD
-	if ($month<8)
-		return $month%2==1;
-	else
-		return $month%2==0;
+	return ($month<8)? $month%2==1: $month%2==0;
 }
 /**
  * Checks to see if the year is a leap year.
@@ -301,24 +227,38 @@ function date_get_date($timestamp){
 	$split=explode(' ',$timestamp);
 	return $split[0];
 }
+/**
+ * Returns an array containing the start and end dates for the month.
+ * array(
+ *  'start'=>array(
+ *   'month'=>month,
+ *   'year'=>year,
+ *   'day'=>1
+ *  ),
+ *  'end'=>array(
+ *   'month'=>month,
+ *   'year'=>year,
+ *   'day'=>day
+ *  )
+ * )
+ * @param int $month
+ * @param int $year
+ * @return array
+ */
 function date_get_range_month($month,$year){
 	$range=array();
 	$range['start']=array('month'=>$month,'year'=>$year,'day'=>1);
 	$range['end']=array('month'=>$month,'year'=>$year,'day'=>date_get_last_day($month, $year));
 	return $range;
 }
+/**
+ * @param int $month
+ * @param int $year
+ * @return number Number of days in the month
+ */
 function date_get_last_day($month,$year){
-	if($month==2){
-		if(is_leap_year($year)){
-			return 29;
-		}else{
-			return 28;
-		}
-	}else{
-		if(date_hasThirtyOneDays($month)){
-			return 31;
-		}else{
-			return 30;
-		}
-	}
+	if($month==2)
+		return is_leap_year($year)?29:28;
+	else
+		return date_hasThirtyOneDays($month)?31:30;
 }
