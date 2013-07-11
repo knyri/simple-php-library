@@ -95,6 +95,7 @@ function db_log_error($statement,$args=null) {
 		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
 		if(!$stm)throw new IllegalStateException('Failed to prepare the error statement.');
 	}
+	if(!is_object($statement))throw new IllegalArgumentException('$statement is not an object.');
 	$err=$statement->errorInfo();
 	$params=array(
 		':query'=>db_stm_to_string($statement->queryString,$args),
@@ -581,7 +582,69 @@ class PDOTable extends PropertyList{
 		$rowCountstm=null,
 		$saveopstm=null,
 		$loadstm=null,
-		$plainloadall=null;
+		$plainloadall=null,
+		$changes=array(),
+		$trackChanges=false,
+		$lastOperation=self::OP_NONE;
+	const OP_NONE=0,OP_LOAD=1,OP_INSERT=2,OP_UPDATE=3,OP_DELETE=4;
+	/**
+	 * If set to TRUE it will keep a second array with the changes made to the model.
+	 * @param boolean $v Optional. Sets the state if supplied
+	 * @return boolean
+	 */
+	public function trackChanges($v=null){
+		if($v===null)return $this->trackChanges;
+		$this->trackChanges=($v===true);
+	}
+	/**
+	 * Merges the changes with the main array and clears the changes.
+	 * Does NOT save the changes to the database.
+	 */
+	public function mergeChanges(){
+		$this->data=array_merge($this->data,$this->changes);
+		$this->changes=array();
+	}
+	/**
+	 * Forgets any changes to the model.
+	 * Will NOT undo changes commited to the database by calling save().
+	 */
+	public function forgetChanges(){
+		$this->changes=array();
+	}
+	/**
+	 * Attempts to undo the last change.
+	 * It will NOT revert any auto increment values. Do not use this
+	 * as a replacement for transactions.
+	 * @return boolean|string false on success or the error message.
+	 */
+	public function rollback(){
+		switch($this->lastOperation){
+			case self::OP_DELETE:
+				return $this->insert();
+			case self::OP_INSERT:
+				return $this->delete();
+			case self::OP_UPDATE:
+				$change=$this->changes;
+				$this->changes=array();
+				$err=$this->update();
+				$this->changes=$change;
+				return $err;
+			case self::OP_LOAD:
+			case self::OP_NONE:
+				return false;
+				break;
+		}
+	}
+	public function set($k,$v){
+		if($this->trackChanges){
+			if(parent::get($k)!=$v)
+				$this->changes[$k]=$v;
+		}else
+			parent::set($k,$v);
+	}
+	public function get($k,$d=null){
+		return ($this->trackChanges && isset($this->changes[$k]))? $this->changes[$k]:parent::get($k,$d);
+	}
 	/**
 	 * Enter description here ...
 	 * @param string $table
@@ -619,7 +682,8 @@ class PDOTable extends PropertyList{
 		if(count($this->data)){
 			$args=array();
 			$stm.='WHERE ';
-			foreach($this->data as $key=>$value){
+			$data=array_merge($this->data,$this->changes);
+			foreach($data as $key=>$value){
 				$stm.="$key=? AND";
 				$args[]=$value;
 			}
@@ -710,7 +774,9 @@ class PDOTable extends PropertyList{
 		$error=db_run_query($this->loadstm,$where[1]);
 		if($error)return false;
 		$this->data=$this->loadstm->fetch(PDO::FETCH_ASSOC);
+		$this->changes=array();
 		//$this->data=db_get_row_assoc(null,$this->table,$this->getPkey($id));
+		$this->lastOperation=self::OP_LOAD;
 		return $this->data!=null;
 	}
 	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
@@ -726,26 +792,32 @@ class PDOTable extends PropertyList{
 				$this->dataset=$this->plainloadall;
 			}
 		}
+		$this->lastOperation=self::OP_LOAD;
 		return $this->dataset!=false;
 	}
 	public function find(array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 		if($this->dataset)$this->dataset->closeCursor();
 		if($where==null){
+			$data=array_merge($this->data,$this->changes);
 			$where=array();
-			foreach($this->data as $key=>$value){
+			foreach($data as $key=>$value){
 				$where[]=array($key,$value,'AND');
 			}
 			unset($where[count($where)-1][2]);
 		}
 		if($this->exists($where))
 			$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
+		else
+			$this->dataset=null;
+		$this->lastOperation=self::OP_LOAD;
 		return $this->dataset!=null;
 	}
 	public function exists(array $where=null){
 		if($this->dataset)$this->dataset->closeCursor();
 		if($where==null){
+			$data=array_merge($this->data,$this->changes);
 			$where=array();
-			foreach($this->data as $key=>$value){
+			foreach($data as $key=>$value){
 				$where[]=array($key,$value,'AND');
 			}
 			unset($where[count($where)-1][2]);
@@ -759,6 +831,8 @@ class PDOTable extends PropertyList{
 	public function loadNext(){
 		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
 		$this->data=$this->dataset->fetch(PDO::FETCH_ASSOC);
+		$this->changes=array();
+		$this->lastOperation=self::OP_LOAD;
 		return $this->data!=false;
 	}
 	/**
@@ -767,6 +841,7 @@ class PDOTable extends PropertyList{
 	 */
 	public function delete(){
 		$error=db_delete($this->db,$this->table,$this->getPkey());
+		$this->lastOperation=self::OP_DELETE;
 		//if(!$error)	$this->saveOperation('delete');
 		return $error;
 	}
@@ -790,8 +865,9 @@ class PDOTable extends PropertyList{
 	 */
 	public function update(){
 		$query='UPDATE `'.$this->table.'`  SET ';
+		$update=array_merge($this->data,$this->changes);
 		$data=array();
-		foreach($this->data as $key=>$value){
+		foreach($update as $key=>$value){
 			$query.="$key=:$key,";
 			$data[':'.$key]=$value;
 		}
@@ -800,6 +876,7 @@ class PDOTable extends PropertyList{
 		$stm=db_prepare($this->db, $query);
 		$data=array_merge($data,$where[1]);
 		$error=db_run_query($stm,$data);
+		$this->lastOperation=self::OP_UPDATE;
 		//if(!$error)$this->saveOperation('update');
 		return $error;
 	}
@@ -808,14 +885,16 @@ class PDOTable extends PropertyList{
 	 * @return string,boolean false on success or the error.
 	 */
 	public function insert(){
-		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($this->data)).'`) VALUES (:'.implode(',:',array_keys($this->data)).')';
+		$data=array_merge($this->data,$this->changes);
+		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
 		$stm=db_prepare($this->db, $query);
-		foreach($this->data as $key=>$value){
+		foreach($data as $key=>$value){
 			$stm->bindValue(":$key",$value,$this->columns[$key]);
 		}
 		$error=db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
 			$this->data[$this->pkey]=$this->db->lastInsertId();
+		$this->lastOperation=self::OP_INSERT;
 		//if(!$error)$this->saveOperation('insert');
 		return $error;
 	}
@@ -832,6 +911,8 @@ class PDOTable extends PropertyList{
 	public function recycle(){
 		if($this->dataset)$this->dataset->closeCursor();
 		$this->data=array();
+		$this->changes=array();
+		$this->lastOperation=self::OP_NONE;
 	}
 }
 
