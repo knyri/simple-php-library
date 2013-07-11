@@ -18,9 +18,11 @@ class CsvReader {
 	private $cache_rows = false;
 	private $delimeter, $enclosure, $escape;
 	private $line_type = null;
+	private $fetch_type=0;
 	const LINE_UNIX = 1, LINE_WIN = 2, LINE_MAC = 3;
 	const STATE_OK = 0;
 	const STATE_EOF = 1;
+	const FETCH_NUM=0,FETCH_ASSOC=1;
 	/**
 	 * Creates a new CSV reader.
 	 * @param string $delim [optional] single character field delimiter. defaults to ','
@@ -49,29 +51,29 @@ class CsvReader {
 	 */
 	public function getline() {
 		if ($this->STATE==CsvReader::STATE_EOF) return false;
-		$delim = $this->delimeter;
-		$enclosure = $this->enclosure;
-		$escape = $this->escape;
-		$return = array();
-		$buf = '';
-		$quoted = false;
-		$double = ($enclosure==$escape);
-		$checkdouble = false;
-		$escaped = false;
-		$c = '';
-		while (($c = fgetc($this->FILE))!==false) {
-			if ($quoted) {
-				if ($escaped) {
-					if ($double) {
-						if ($checkdouble) {//3xenclosure
-							if ($c==$enclosure) {//4xenclosure
+		$delim=$this->delimeter;
+		$enclosure=$this->enclosure;
+		$escape=$this->escape;
+		$return=array();
+		$buf='';
+		$quoted=false;
+		$double=($enclosure==$escape);
+		$checkdouble=false;
+		$escaped=false;
+		$c='';
+		while(($c = fgetc($this->FILE))!==false) {
+			if($quoted) {
+				if($escaped) {
+					if($double) {
+						if($checkdouble) {//3xenclosure
+							if($c==$enclosure) {//4xenclosure
 								$buf .= $enclosure.$enclosure;
-							} elseif ($c==$delim) {//3xenclosure then delim
+							}elseif($c==$delim) {//3xenclosure then delim
 								$buf .= $enclosure;
 								$return[] = $buf;
 								$buf = '';
 								$quoted=false;
-							} else {
+							}else {
 								$buf .= $enclosure.$c;
 							}
 							$escaped = false;
@@ -134,6 +136,9 @@ class CsvReader {
 			}
 			$return[] = $buf;
 		}
+		if($this->cache_rows)
+			$this->DATA[$this->ROW_COUNT]=$return;
+		$this->ROW_COUNT++;
 		return $return;
 	}
 	private function setFileType($c) {
@@ -225,18 +230,15 @@ class CsvReader {
 			if ($row==null) {$row=$this->DEFAULTS;} else {$row=$this->clear_empty_values($row);}
 			$count = count($row);
 			if ($this->header_count > $count) array_fill($count, $this->header_count-$count, $this->default_value);
-			if ($this->cache_rows)
-				$this->DATA[$this->ROW_COUNT] = $row;
-			$this->ROW_COUNT++;
-			return array_combine($this->HEADERS, $row);
+			return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, $row):$row;
 		} else {
 			if (!$this->cache_rows) return false;
 			if ($row < $this->ROW_COUNT && $row>0)
-				return array_combine($this->HEADERS, $this->DATA[$row-1]);
+				return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];
 			while ($ROW_COUNT < $row) {
 				if (!get_row()) return false;
 			}
-			return array_combine($this->HEADERS, $this->DATA[$row-1]);
+			return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];
 		}
 	}
 	/**
