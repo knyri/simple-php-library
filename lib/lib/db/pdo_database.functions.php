@@ -701,7 +701,8 @@ class PDOTable{
 			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
 			if(!$this->rowCountstm)throw new ErrorException('Could not prepare the statement.');
 		}
-		if(!db_run_query($this->rowCountstm))throw new ErrorException('Could not execute the query.');
+		$err=db_run_query($this->rowCountstm);
+		if($err)throw new ErrorException('Could not execute the query.:'.$err);
 		$ret=$this->rowCountstm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
@@ -724,7 +725,8 @@ class PDOTable{
 		}
 		$stm=db_prepare($this->db,$stm);
 		if(!$stm)throw new ErrorException('Could not prepare the statement.');
-		if(!db_run_query($stm,$args))throw new ErrorException('Could not execute the query.');
+		$err=db_run_query($stm,$args);
+		if($err)throw new ErrorException('Could not execute the query.:'.$err);
 		$ret=$stm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
