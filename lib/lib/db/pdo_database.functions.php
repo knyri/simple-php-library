@@ -257,20 +257,20 @@ function _db_validate_value($var) {
 		}
 }
 /** Builds the WHERE clause.
- * @param array $where Array of conditions to be met. Each element must be array(column, value, ['AND'|'OR'], negate) (negate is optional).
+ * @param array $where Array of conditions to be met. Each element must be array(column, value[, 'AND'|'OR'|negate[, negate]]) (negate is optional).
  *		The last element must have the 3rd argument ommited or set to NULL.
  *		Special elements:
- *		+array(column, 'IN', list, negate, ['AND'|'OR'])
+ *		+array(column, 'IN', list, negate[, 'AND'|'OR'])
  *			list must NOT be an array nor enclosed in ().
  *			negate must be true or false and indicates 'NOT IN' when true.
- *		+array(column, 'BETWEEN', lower, upper, negate, ['AND'|'OR'])
- *		+array(column, 'LIKE', string value, negate, ['AND'|'OR'])
- *		+array('LITERAL', literal, ['AND'|'OR'])
+ *		+array(column, 'BETWEEN', lower, upper, negate[, 'AND'|'OR'])
+ *		+array(column, 'LIKE', string value, negate[, 'AND'|'OR'])
+ *		+array('LITERAL', literal[, 'AND'|'OR'])
  * @return array the resulting where string and array of values for a PDOStatement
  */
 function _db_build_where(array $where) {
 	if($where==null || count($where)==0)return '';
-	$ret=array();
+	$ret=array('',array());
 	$wcount=0;
 	$where_2 = array();
 	$wpart='';
@@ -291,9 +291,9 @@ function _db_build_where(array $where) {
 				$wcount+=2;
 			}elseif($arg[1]===null){
 				if($arg[4])
-					$where_2[] ="$arg[0] IS NULL $arg[2] ";
-				else
 					$where_2[] ="$arg[0] IS NOT NULL $arg[2] ";
+				else
+					$where_2[] ="$arg[0] IS NULL $arg[2] ";
 			}else{
 				$ret[1][':where'.$wcount]=$arg[1];
 				if($arg[4])
@@ -307,7 +307,13 @@ function _db_build_where(array $where) {
 				if ($arg[0]=='LITERAL'){
 					$where_2[] = $arg[1] . ' '.$arg[2].' ';
 				}elseif($arg[1]===null){
-					$where_2[] ="$arg[0] IS NULL $arg[2] ";
+					if(is_bool($arg[2])){
+						if($arg[2])
+							$where_2[] ="$arg[0] IS NOT NULL";
+						else
+							$where_2[] ="$arg[0] IS NULL";
+					}else
+						$where_2[] ="$arg[0] IS NULL $arg[2] ";
 				}else{
 					$ret[1][':where'.$wcount]=$arg[1];
 					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
@@ -316,6 +322,8 @@ function _db_build_where(array $where) {
 			}else{
 				if($arg[0]=='LITERAL'){
 					$where_2[] = $arg[1];
+				}elseif($arg[1]===null){
+					$where_2[] ="$arg[0] IS NULL ";
 				}else{
 					$ret[1][':where'.($wcount)]=$arg[1];
 					$where_2[] = "$arg[0]=:where$wcount";
@@ -1547,8 +1555,8 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 		$start = 0;
 	$pageLinks = '';
 	if ($start > 0) {
-		$pageLinks .= '<a href="?'.$prefix.'start=0&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_first.png" /></a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.($currentRow-$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_previous.png" /></a>';
+		$pageLinks .= '<a href="?'.$prefix.'start=0&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_first.png"></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.($currentRow-$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_previous.png"></a>';
 	}
 	$page = $currentRow/$rowsPerPage;
 	$cPage = $page;
@@ -1566,8 +1574,8 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 	if ($topPage-1 < $cPages) {
 		if ($topPage < $cPages-1)
 			$pageLinks .= ' ... <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'">'.$cPages.'</a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.(($topPage-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_next.png" /></a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_last.png" /></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($topPage-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_next.png"></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_last.png"></a>';
 	}
 	return $pageLinks;
 } // -- getPages --
