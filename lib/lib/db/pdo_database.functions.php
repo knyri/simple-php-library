@@ -273,7 +273,6 @@ function _db_build_where(array $where) {
 	$ret=array('',array());
 	$wcount=0;
 	$where_2 = array();
-	$wpart='';
 	foreach($where as $arg){
 		if(count($arg) > 3){
 			if($arg[1] == 'IN'){
@@ -332,7 +331,7 @@ function _db_build_where(array $where) {
 			}
 		}
 	}
-	$ret[0]='WHERE '.implode('', $where_2);
+	$ret[0]=' WHERE '.implode('', $where_2);
 	return $ret;
 }
 /** Queries the database and returns the result set or NULL if it failed.
@@ -561,12 +560,137 @@ function db_prepare($db,$query){
 function db_now(){
 	return date('Y-m-d',time());
 }
+class WhereBuilder{
+	private static $icnt=0;
+	private $where='',$values=array(),$pre,$ci=0;
+	public function __construct($prefix='wh'){
+		$this->pre=":$prefix".(++self::$icnt);
+	}
+	public function appendWhere($andor,WhereBuilder $where,$parens=false){
+		if($parens)
+			$this->where.="$andor (".$where->where.')';
+		else
+			$this->where.="$andor ".$where->where;
+	}
+	public function openParen($andor){
+		$this->where.="$andor (";
+	}
+	public function closeParen(){
+		$this->where.=')';
+	}
+	/**
+	 * Accepts multiple arguments.
+	 * Assumes AND if this is not the first condition
+	 * (['and'|'or',]col,val[,negate])
+	 * (['and'|'or',]col,'in',vals[,negate])
+	 * (['and'|'or',]col,'like',val[,negate])
+	 * (['and'|'or',]col,'between',start,end[,negate])
+	 * (['and'|'or',]col,comparator,val)
+	 * comparator='>' | '<' | '>=' | '<='
+	 * @return WhereBuilder A reference to itself for chaining.
+	 */
+	public function &addCond(){
+		$arg=func_get_args();
+		if(strlen($arg[0]) < 4 && (strtolower($arg[0])=='and' || strtolower($arg[0])=='or')){
+			$this->where.=' '.array_pop($arg).' ';
+		}elseif($this->ci>0){
+			$this->where.=' AND ';
+		}
+		$ac=count($arg);
+		if($ac===1)throw new ErrorException('At least 2 parameters are expected.');
+		if($ac==3)$arg[1]=strtolower($arg[1]);
+		if($ac==2){
+			if($arg[1]==null){
+				$this->where.="$arg[0] IS NULL";
+			}else{
+				$this->where.="$arg[0]=".$this->pre.$this->ci;
+				$this->values[$this->pre.$this->ci]=$args[1];
+				$this->ci++;
+			}
+		}elseif($ac==3 && (is_bool($arg[2]) || $arg[1][0]=='>' || $arg[1][0]=='<')){
+			if(is_bool($arg[2])){
+				if($arg[1]==null){
+					if($arg[2])
+						$this->where.="$arg[0] IS NULL";
+					else
+						$this->where.="$arg[0] IS NOT NULL";
+				}else{
+					if($arg[2])
+						$this->where.="$arg[0]=".$this->pre.$this->ci;
+					else
+						$this->where.="$arg[0]!=".$this->pre.$this->ci;
+					$this->values[$this->pre.$this->ci]=$args[1];
+					$this->ci++;
+				}
+			}else{
+				$this->where.="$arg[0]$arg[1]".$this->pre.$this->ci;
+				$this->values[$this->pre.$this->ci]=$args[2];
+				$this->ci++;
+			}
+		}elseif($arg[1]=='in'){
+			switch($ac){
+				case 3:
+					$this->values[$this->pre.$this->ci]=$arg[2];
+					$this->where.="$arg[0] IN (".$this->pre.$this->ci.')';
+					$this->ci++;
+				break;
+				case 4:
+					$this->values[$this->pre.$this->ci]=$arg[2];
+					$this->where.=$arg[0].($arg[3]?' NOT IN (':' IN (').$this->pre.$this->ci.')';
+					$this->ci++;
+				break;
+				default:
+					throw new IllegalStateException('Arguement count not correct for IN clause.');
+			}
+		}elseif($arg[1]=='like'){
+			switch($ac){
+				case 3:
+					$this->values[$this->pre.$this->ci]=$arg[2];
+					$this->where.="$arg[0] LIKE ".$this->pre.$this->ci;
+					$this->ci++;
+				break;
+				case 4:
+					$this->values[$this->pre.$this->ci]=$arg[2];
+					$this->where.=$arg[0].($arg[3]?' NOT LIKE ':' LIKE ').$this->pre.$this->ci;
+					$this->ci++;
+				break;
+				default:
+					throw new IllegalStateException('Arguement count not correct for LIKE clause.');
+			}
+		}elseif($arg[1]=='between'){
+			switch($ac){
+				case 4:
+					$this->values[$this->pre.($this->ci)]=$arg[2];
+					$this->values[$this->pre.($this->ci+1)]=$arg[3];
+					$this->where.= $arg[0].' BETWEEN '.$this->pre.$this->ci .' AND '. $this->pre.($this->ci+1);
+				break;
+				case 5:
+					$this->values[$this->pre.($this->ci)]=$arg[2];
+					$this->values[$this->pre.($this->ci+1)]=$arg[3];
+					$this->where.= $arg[0].($arg[4]?' NOT BETWEEN ':' BETWEEN ').$this->pre.$this->ci .' AND '. $this->pre.$this->ci+1;
+					$this->ci+=2;
+				break;
+				default:
+					throw new IllegalStateException('Arguement count not correct for BETWEEN clause.');
+			}
+		}else{
+			throw new ErrorException('Unknown Clause:'.$arg[1]);
+		}
+		return $this;
+	}
+	public function getWhere(){
+		return $this->where;
+	}
+	public function getValues(){
+		return $this->values;
+	}
+}
 class PDOStatementWrapper extends PropertyList{
 	protected $dataset=null;
 	public function __construct($stm,$fetch_mode=PDO::FETCH_ASSOC){
 		if(!$stm instanceof PDOStatement)throw new ErrorException('$stm is not a PDOStatement');
 		$this->dataset=$stm;
-		$this->dataset->setFetchMode(PDO::FETCH_ASSOC);
+		$this->dataset->setFetchMode($fetch_mode);
 	}
 	public function bindParam($key,&$value,$type){
 		$this->dataset->bindParam($key,$value,$type);
@@ -723,7 +847,7 @@ class PDOTable{
 		$args=null;
 		if($this->data->count()){
 			$args=array();
-			$stm.='WHERE ';
+			$stm.=' WHERE ';
 			$data=$this->data->copyTo(array());
 			foreach($data as $k=>$v){
 				$stm.="$k=? AND";
@@ -1148,18 +1272,22 @@ class sql_table {
 		}
 		$sql = 'SELECT SQL_CACHE ';
 		$sql .= implode(',', $this->select_columns);
+		$where=null;
 		//limit [offset,]row count
 		if ($conditions == '' || $conditions == null)
 			$sql .= " FROM $this->table";
-		else
-			$sql.= " FROM $this->table WHERE $conditions";
+		else{
+			$where=_db_build_where($conditions);
+			$sql.= " FROM $this->table $where[0]";
+			$where=$where[1];
+		}
 		if($sort)
 			$sql.= " ORDER BY $sort";
 		$sql.= " LIMIT $start, $numrows";
 		if(db_debug())echo $sql;
-		$res = $db->query($sql);
-		if (!$res) {
-			$err = db_log_error($sql);
+		$res=db_prepare($db,$sql);
+		if(!$res->execute($where)) {
+			$err = db_log_error($res,$where);
 			return 'Database error: '.$err;
 		}
 		$res->setFetchMode(PDO::FETCH_ASSOC);

@@ -7,12 +7,14 @@ class mail{
 		$subject=null,
 		$attachments=array(),
 		$headers=array(),
-		$ishtml=false;
+		$ishtml=false,
+		$generated=false;
 	public function __construct(){
 		$this->headers['MIME-Version']='1.0';
 	}
 	public function addAttachment($file,$type,$deleteonsend=false){
 		$this->attachments[$file]=array($type,$deleteonsend);
+		$this->generated=false;
 	}
 	public function setTo($to){
 		$this->to=$to;
@@ -25,6 +27,7 @@ class mail{
 	}
 	public function setMessage($message){
 		$this->message=$message;
+		$this->generated=false;
 	}
 	public function setHeader($name,$value){
 		$this->headers[$name]=$value;
@@ -34,7 +37,7 @@ class mail{
 		$this->ishtml=$html;
 	}
 	public function send(){
-		if(count($this->attachments)){
+		if(count($this->attachments) && !$this->generated){
 			$mime_boundary=md5(time());
 			$this->headers['Content-Type']="multipart/mixed; boundary=\"{$mime_boundary}\"";
 			$mtmp=$this->message;
@@ -48,10 +51,7 @@ class mail{
 			foreach($this->attachments as $file=>$mime){
 				if(is_file($file)){
 					$this->message .= "--{$mime_boundary}\n";
-					$fp =		@fopen($file,"rb");
-					$data =		@fread($fp,filesize($file));
-					@fclose($fp);
-					$data = chunk_split(base64_encode($data));
+					$data = chunk_split(base64_encode(file_get_contents($file)));
 					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\n" .
 								"Content-Description: ".basename($file)."\n" .
 								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".filesize($file).";\n" .
@@ -60,6 +60,7 @@ class mail{
 				}
 			}
 			$this->message .= "--{$mime_boundary}--";
+			$this->generated=true;
 		}
 		$headers='';
 		if(isset($this->from))$headers.='From: '.$this->from."\r\n";
