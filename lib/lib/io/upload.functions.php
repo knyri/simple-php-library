@@ -40,10 +40,14 @@ function file_upload_error_message($error_code) {
 			return 'Unknown upload error('.$error_code.')';
 	}
 }
+/**
+ * @param string|array $name
+ * @return string|unknown
+ */
 function file_upload_get_error($name){
-if (is_array($name)) {
-		$base=$_FILES[$name[0]]['error'];
+	if (is_array($name)) {
 		if(!isset($_FILES[$name[0]]))return UPLOAD_ERR_NO_FILE;
+		$base=$_FILES[$name[0]]['error'];
 		for ($i=1;$i<count($name);$i++) {
 			$base=$base[$name[$i]];
 		}

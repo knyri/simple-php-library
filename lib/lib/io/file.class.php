@@ -12,6 +12,9 @@ class File{
 	public function __construct($file){
 		$this->file=$file;
 	}
+	/**
+	 * @return string The name of the file
+	 */
 	public function getFile(){return $this->file;}
 	public function open($mode){
 		$this->handle=fopen($this->file,$mode);
@@ -61,6 +64,11 @@ class File{
 		else
 			return rename($this->file,$to,$context);
 	}
+	/**
+	 * Alias of move(...)
+	 * @param string $to
+	 * @param resource $context
+	 */
 	public function rename($to,$context=null){$this->move($to,$context);}
 	public function lock($operation,&$wouldBlock=null){
 		if($wouldBlock==null)
@@ -89,10 +97,14 @@ class File{
 	public function exists(){return file_exists($this->file);}
 	public function isDir(){return is_dir($this->file);}
 	public function isFile(){return is_file($this->file);}
-	public function isExecutable(){return is_executable($this->file);}
+	/**
+	 * Checks to see if the file is a symbolic link
+	 * @return boolean
+	 */
 	public function isLink(){return is_link($this->file);}
 	public function isReadable(){return is_readable($this->file);}
 	public function isWriteable(){return is_writable($this->file);}
+	public function isExecutable(){return is_executable($this->file);}
 	public function isUploadedFile(){return is_uploaded_file($this->file);}
 	/** See file_get_contents(...) in the standard PHP library.
 	 * Returns the contents of the file as a string. You do not need to open the file to do this.
@@ -113,7 +125,5 @@ class File{
 	public function getModTime(){return filemtime($this->file);}
 	public function getCreatedTime(){return filectime($this->file);}
 	public function basename($suffix=''){return basename($this->file,$suffix);}
-	public function readToOutput(){
-		return readfile($this->file);
-	}
+	public function readToOutput(){return readfile($this->file);}
 }
