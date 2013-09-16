@@ -392,6 +392,7 @@ function is_phone($value){
 function form_regex_test($test,$separator,$value,$min=1,$max=1){
 	if(blank($value))
 		return ($min==0)?true:E_FORM_EMPTY;
+	$value=trim($value,$separator);
 	if($max==1)
 		return preg_match('/^['.$test.']+$/',$value)===1;
 	if($max<1){
