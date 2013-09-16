@@ -61,12 +61,16 @@ function filter_msword($var,$charset='utf-8') {
 				"\xe2\x80\x9a"=>'&sbquo;',
 				"\xe2\x80\x99"=>'\'',
 				"\xe2\x80\x9b"=>'\'',
+				"\xe2\x80\xc2"=>'&prime;',
+				"\xe2\x80\xc3"=>'&Prime;',
+				"\xe2\x80\x9c"=>'"',
 				"\xe2\x80\x9d"=>'"',
 				"\xe2\x80\x9f"=>'"',
 				"\xe2\x80\xa2"=>'&bull;',
 				"\xe2\x80\x93"=>'&ndash;',
 				"\xe2\x80\x94"=>'&mdash;',
 				"\xe2\x80\xa6"=>'&hellip;',
+				"\xe2\x84\xa2"=>'&trade;',
 				"\xc2\xa1"=>'&iexcl;',
 				"\xc2\xa2"=>'&cent;',
 				"\xc2\xa3"=>'&pound;',
@@ -99,7 +103,6 @@ function filter_msword($var,$charset='utf-8') {
 				"\xc2\xbd"=>'&iquest;',
 				"\xc3\x97"=>'&times;',
 				"\xc3\xb7"=>'&divide;',
-				"\x00\x5e"=>'&circ;',
 				"\xc2\xa0"=>' ',
 				//malformed
 				"\x00\xa9"=>'&copy;',
@@ -113,9 +116,13 @@ function filter_msword($var,$charset='utf-8') {
 				"\x00\xbd"=>'&frac12;',
 				"\x00\xbe"=>'&frac34;',
 				"\x00\x18"=>'\'',
+				"\x18\x20"=>'\'',
 				"\x00\x19"=>'\'',
+				"\x19\x20"=>'\'',
 				"\x00\x1c"=>'"',
+				"\x1c\x20"=>'"',
 				"\x00\x1d"=>'"',
+				"\x1d\x20"=>'"',
 				"\x00\x22"=>'&bull;',
 				"\x00\x13"=>'&ndash;',
 				"\x00\x14"=>'&mdash;',
@@ -154,11 +161,30 @@ function filter_msword($var,$charset='utf-8') {
 				"\xbf"=>'&iquest;',
 				"\xd7"=>'&times;',
 				"\xf7"=>'&divide;',
-				"\x92"=>'\'',
-				"\x97"=>'&mdash;',
-				"\x96"=>'&ndash;',
+				"\x80"=>'&euro;',
+				"\x82"=>'&sbquo;',
+				"\x83"=>'&fnot;',
+				"\x84"=>'&bdquo;',
 				"\x85"=>'&hellip;',
-				"\x99"=>'&tm;'
+				"\x86"=>'&dagger;',
+				"\x87"=>'&Dagger;',
+				"\x88"=>'&circ;',
+				"\x89"=>'&permil;',
+				"\x8a"=>'&Scaron;',
+				"\x8b"=>'&lsaquo;',
+				"\x8c"=>'&OElig;',
+				"\x8e"=>'&#142;',
+				"\x91"=>'\'',
+				"\x92"=>'\'',
+				"\x95"=>'&bul;',
+				"\x96"=>'&ndash;',
+				"\x97"=>'&mdash;',
+				"\x99"=>'&trade;',
+				"\x9a"=>'&scaron;',
+				"\x9b"=>'&rsaquo;',
+				"\x9c"=>'&oelig;',
+				"\x9e"=>'&#158;',
+				"\x9f"=>'&Yuml;',
 			),/*
 			,
 			'windows-1252'=>array(
@@ -208,6 +234,8 @@ function filter_msword($var,$charset='utf-8') {
 			*/
 		);
 		$chars['cp1252']=&$chars['windows-1252'];
+		//I realise that there are minor differences between these two.
+		$chars['iso-8859-1']=&$chars['windows-1252'];
 
 	}
 	$var = strtr($var, $chars[$charset]);
