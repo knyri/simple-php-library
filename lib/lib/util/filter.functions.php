@@ -101,8 +101,10 @@ function filter_msword($var,$charset='utf-8') {
 				"\xc2\xbd"=>'&frac12;',
 				"\xc2\xbe"=>'&frac34;',
 				"\xc2\xbd"=>'&iquest;',
-				"\xc3\x97"=>'&times;',
+				"\xc3\x88"=>"&Egrave;",
+				"\xc3\x89"=>"&Eacute;",
 				"\xc3\xb7"=>'&divide;',
+				"\xc3\x97"=>'&times;',
 				"\xc2\xa0"=>' ',
 				//malformed
 				"\x00\xa9"=>'&copy;',
