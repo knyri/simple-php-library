@@ -135,6 +135,23 @@ function form_checkbox_mysql($name,$id,$values,array $checked=null,array $attrib
 	}
 }
 /**
+ * Echoes a series of checkboxes.
+ * @param string $name Name of the group
+ * @param string $id Id of the group(used to associate labels with the checkbox)
+ * @param resource $values a 2 column Mysql resource object.
+ * @param array $attrib Optional. Array of attribute=>value mappings.
+ * @param string $before Optional. Prepends this to each iteration.
+ * @param string $after Optional. Appends this to each iteration.
+ */
+function form_checkbox_PDO($name,$id,PDOStatement $values,array $checked=null,array $attrib=null,$before=null,$after=null){
+	$attrib=combine_attrib($attrib).' ';
+	if($checked==null)
+		$checked=form_get($name,array());
+	while($row=$values->fetch(PDO::FETCH_NUM)){
+		echo $before.'<label for="'.$id.$row[0].'"><input type="checkbox" name="'.$name.'[]" value="'.$row[0].'" id="'.$id.$row[0].'"'.(in_array($row[0],$checked)?' checked="checked"':'').$attrib.'/>&nbsp;'.$row[1].'</label>'.$after;
+	}
+}
+/**
  * Takes the array and outputs a hidden form element for each
  * array element. The array must be 'name'=>'value' format.
  * @param array $list
@@ -580,6 +597,20 @@ function form_token_valid($token_name='token'){
 }
 function form_token($token_name='token'){
 	return form_input($token_name,'hidden',$_SESSION['simple']['lib']['form']['token']);
+}
+if(isset($_SESSION['form_key']) && isset($_SESSION['form_key']['cur']))
+	$_SESSION['form_key']['old']=$_SESSION['form_key']['cur'];
+else
+	$_SESSION['form_key']['old']=null;
+$_SESSION['form_key']['new']=md5(time()+'saltymoonsailor');
+function form_key(){
+	echo '<input type="hidden" name="form_key" value="'.$_SESSION['form_key']['cur'].'">';
+}
+function form_key_match(){
+	return isset($_POST['form_key']) && $_SESSION['form_key']['old']==$_POST['form_key'];
+}
+function form_key_invalidate(){
+	$_POST['form_key']='';
 }
 function form_error(array $errors){
 	if(!$errors)return false;
