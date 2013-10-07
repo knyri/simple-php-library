@@ -544,7 +544,7 @@ function db_stm_to_string($stm,array $params=null){
  * @throws PDOException
  * @return boolean|PDOStatement
  */
-function db_prepare($db,$query){
+function db_prepare(PDO $db,$query){
 	try{
 		$query = $db->prepare($query);
 	}catch(PDOException $e){
@@ -756,7 +756,9 @@ class PDOTable{
 			$this->data=$t;
 		}
 		$this->trackChanges=$v;
-
+	}
+	public function uset($k){
+		$this->data->uset($k);
 	}
 	/**
 	 * Merges the changes with the main array and clears the changes.
