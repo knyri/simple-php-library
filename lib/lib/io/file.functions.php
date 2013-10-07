@@ -108,6 +108,7 @@ function file_get_type($file,$default='application/octet-stream'){
 		c - ignore
 		d - footer
 		zz zz zz zz-length of the id3 section
+	asf		30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C
 	*/
 	$head=fread($fileh,256);
 	//check for ID3 headers

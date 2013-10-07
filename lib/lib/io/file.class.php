@@ -56,9 +56,8 @@ class File{
 	 * @param resource $context Ignored if $this->isUploadedFile()==true
 	 */
 	public function move($to,$context=null){
-		if($this->isUploadedFile()){
+		if($this->isUploadedFile())
 			return move_uploaded_file($this->file,$to);
-		}
 		if($context==null)
 			return rename($this->file,$to);
 		else
