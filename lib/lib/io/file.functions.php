@@ -5,32 +5,24 @@
 
 /**
  *
- * @author Martin Sweeny
- * @version 2010.0617
- *
  * returns formatted number of bytes.
  * two parameters: the bytes and the precision (optional).
  * if no precision is set, function will determine clean
  * result automatically.
- * @param b bytes
- * @param p precision (0 being Bytes and 8 being YB)
+ * @param int b bytes
+ * @param int p precision (0 being Bytes and 8 being YB) Leave blank for auto selection.
  * @return The formatted output
  **/
-function formatBytes($b,$p = null) {
-	$units = array("B","kB","MB","GB","TB","PB","EB","ZB","YB");
+function formatBytes($b,$p=null){
+	static $units = array("B","kB","MB","GB","TB","PB","EB","ZB","YB"),
+			$div = array(1,1024,1048576,1073741824,1099511627776,1125899906842624,1152921504606846976,1180591620717411303424,1208925819614629174706176);
+	if($p!== null && $p< 9)
+		return number_format($b/ $div[$p]) ." ". $units[$p];
 	$c=0;
-	if(!$p && $p !== 0) {
-		foreach($units as $k => $u) {
-			if(($b / pow(1024,$k)) >= 1) {
-				$r["bytes"] = $b / pow(1024,$k);
-				$r["units"] = $u;
-				$c++;
-			}
-		}
-		return number_format($r["bytes"],2) . " " . $r["units"];
-	} else {
-		return number_format($b / pow(1024,$p)) . " " . $units[$p];
-	}
+	foreach($units as $k => $u)
+		if($b< $div[$k])
+			$c= $k- 1;
+	return number_format($b/ $div[$c],2) ." ". $units[$c];
 }
 /**
  * Lists the files in the supplied directory. One file per line.
@@ -39,31 +31,32 @@ function formatBytes($b,$p = null) {
  * @param string $urlpath url directory to access these files
  * @param boolean $usecounter
  */
-function listFiles($dir = '.',$urlpath='/', $usecounter = false) {
-	$pdir = opendir($dir);
-	$files = array();
-	while ($file = readdir($pdir)) {
-		if (!is_dir($dir.$file)) {
-			$files[] = $file;
-		}
+function listFiles($dir= '.',$urlpath= '/', $usecounter= false){
+	$pdir= opendir($dir);
+	$files= array();
+	while($file= readdir($pdir)){
+		if(!is_dir($dir.$file))
+			$files[]= $file;
 	}
 	sort($files);?>
-		<table>
-		<tr><th>icon</th><th>name</th><th>size</th></tr><?php
+<table>
+	<thead>
+	<tr><th>icon</th><th>name</th><th>size</th></tr>
+	<tbody><?php
 	foreach($files as $file) {?>
 			<tr>
 				<td><?php
 				$pos = strrpos($file, '.');
-				if ($pos===FALSE) {
+				if($pos===false)
 					echo " ";
-				} else {
-					?><img src="<?php echo URLPATH?>i/ico/file/<?php echo strtolower(substr($file, $pos+1)); ?>.png" alt="" /><?php
+				else{
+					?><img src="<?php echo URLPATH?>i/ico/file/<?php echo strtolower(substr($file, $pos+1)); ?>.png" alt=""><?php
 				}
 				?></td>
 				<td>
 					<a href="<?php echo ($usecounter?URLPATH.'downloadcounter.php?url=':'').$urlpath.$file; ?>"><?php echo $file; ?></a>
 				</td>
-				<td><?php echo formatBytes(@filesize($dir.$file)); ?></td>
+				<td><?php echo formatBytes(filesize($dir.$file)); ?></td>
 		</tr><?php
 	}
 	?>
@@ -78,7 +71,22 @@ function file_extention($file){
 }
 /**
  * Examines the first 256 bytes of a file and attempts to identify it. Returns the common MIME type for the file.
- * Can currently identify 3gp,mp4,mov,mpeg,mkv,flv,ogg, and avi.
+ * Can currently identify
+ * <ul>
+ * 	<li>3gp	video/3gpp
+ * 	<li>mov	video/quicktime
+ * 	<li>mpeg	video/mpeg
+ * 	<li>mpeg2	video/mpeg
+ * 	<li>mp3	audio/mpeg
+ * 	<li>mp4	video/mp4
+ * 	<li>webm	video/webm
+ *	<li>asf container(wmv,wma,asf)	video/x-ms-asf
+ *	<li>mkv container	video/x-matroska
+ *	<li>flv	video/x-flv
+ *	<li>ogg	video/ogg
+ *	<li>avi	video/x-msvideo
+ *	<li>wav	audio/x-wav
+ * </ul>
  * @param string $file The file to identify.
  * @param string $default Value returned if the file could not be identified
  * @return string Returns the common MIME type for the file.
@@ -93,11 +101,12 @@ function file_get_type($file,$default='application/octet-stream'){
 	mpeg2	00 00 01 BA 44
 	mkv		1A 45 DF A3 .. .. .. .. 6D 61 74 72 6F 73 6B 61
 	webm 	1A 45 DF A3 ... pos(31) 77 65 62 6D
-	wmv		30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C	//video/x-ms-wmv
+	asf		30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C	//video/x-ms-wmv
 	flv		46 4C 56 01
 	ogg		4F 67 67 53
-	avi		52 49 46 46 .. .. .. .. 41 56 49 20 4C 49 53 54	//video/x-msvideo
-	wav		52 49 46 46 .. .. .. .. 57 41 56 45//audio/x-wav, audio/wav
+	RIFF container
+		avi	52 49 46 46 .. .. .. .. 41 56 49 20 4C 49 53 54	//video/x-msvideo
+		wav	52 49 46 46 .. .. .. .. 57 41 56 45//audio/x-wav, audio/wav
 	mp3		FF
 			FF FB
 			FF FB 90
@@ -108,7 +117,6 @@ function file_get_type($file,$default='application/octet-stream'){
 		c - ignore
 		d - footer
 		zz zz zz zz-length of the id3 section
-	asf		30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C
 	*/
 	$head=fread($fileh,256);
 	//check for ID3 headers
@@ -144,8 +152,9 @@ function file_get_type($file,$default='application/octet-stream'){
 			return'video/webm';
 		}
 	}elseif(ord_eq($head[0],0x30)&&ord_eq($head[1],0x26)&&ord_eq($head[2],0xb2)&&ord_eq($head[3],0x75)&&ord_eq($head[4],0x8e)&&ord_eq($head[5],0x66)&&ord_eq($head[6],0xcf)
-	  &&ord_eq($head[7],0x11)&&ord_eq($head[8],0xa6)&&ord_eq($head[9],0xd9)&&ord_eq($head[10],0x00)&&ord_eq($head[11],0xaa)&&ord_eq($head[12],0x00)&&ord_eq($head[13],0x62)&&ord_eq($head[14],0xce)&&ord_eq($head[15],0x6c)){//wmv
-		return 'video/x-ms-wmv';
+	  &&ord_eq($head[7],0x11)&&ord_eq($head[8],0xa6)&&ord_eq($head[9],0xd9)&&ord_eq($head[10],0x00)&&ord_eq($head[11],0xaa)&&ord_eq($head[12],0x00)&&ord_eq($head[13],0x62)&&ord_eq($head[14],0xce)&&ord_eq($head[15],0x6c)){
+		//asf container
+		return 'video/x-ms-asf';
 	}elseif(ord_eq($head[0],0x46)&&ord_eq($head[1],0x4c)&&ord_eq($head[2],0x56)&&ord_eq($head[3],0x01)){//flv
 		return 'video/x-flv';
 	}elseif(ord_eq($head[0],0x4f)&&ord_eq($head[1],0x67)&&ord_eq($head[2],0x67)&&ord_eq($head[3],0x53)){//ogg
