@@ -117,6 +117,10 @@ function file_get_type($file,$default='application/octet-stream'){
 		c - ignore
 		d - footer
 		zz zz zz zz-length of the id3 section
+	jpg	FF D8 FF E0 00 10 4A 46 49 46
+	png	89 50 4E 47
+	bmp	42 4d
+	gif	47 49 46 38
 	*/
 	$head=fread($fileh,256);
 	//check for ID3 headers
@@ -129,7 +133,19 @@ function file_get_type($file,$default='application/octet-stream'){
 		//var_export($head);
 	}
 	fclose($fileh);
-	if(ord_eq($head[0],0xFF)){//mp3
+	if(mord_eq($head,0x424d,0,2)){
+		return 'image/bmp';
+	}
+	if(mord_eq($head,0x47494638,0,4)){
+		return 'image/gif';
+	}
+	if(mord_eq($head,0x89504e47,0,4)){
+		return 'image/png';
+	}
+	if(ord_eq($head[0],0xFF)){
+		if(mord_eq($head,0xD8FFE000104A464946,1,9)){
+			return 'image/jpeg';
+		}else//mp3
 		return 'audio/mpeg';
 	}elseif(ord_eq($head[0],0x00)&&ord_eq($head[1],0x00)){//3gpp,mp4,mpg,mov
 		if(ord_eq($head[2],0x00)){//3gpp,mp4
@@ -170,6 +186,13 @@ function file_get_type($file,$default='application/octet-stream'){
 	return $default;
 }
 function ord_eq($char,$ord){return ord($char)==$ord;}
+function mord_eq($chars,$ord,$start,$len){
+	for($len--;$len>=0;$len--){
+		if(ord($chars[$start+$len])!=($ord&0xFF))return false;
+		$ord=$ord>>8;
+	}
+	return true;
+}
 function file_normalize_path($path){
 	switch(DIRECTORY_SEPARATOR){
 		case '/':
