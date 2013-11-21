@@ -927,6 +927,14 @@ class PDOTable{
 		}
 	}
 	/**
+	 * Useful function for helper classes
+	 * @param PDOStatement $data
+	 */
+	public function setDataset(PDOStatement $data){
+		$this->recycle();
+		$this->dataset=$data;
+	}
+	/**
 	 * Loads the record.
 	 * @param mixed $id
 	 * @return boolean
