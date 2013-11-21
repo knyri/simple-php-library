@@ -1,14 +1,16 @@
 <?php
 
 class mail{
-	private $to=null,
+	private $to=array(),
 		$from=null,
 		$message=null,
 		$subject=null,
 		$attachments=array(),
 		$headers=array(),
 		$ishtml=false,
-		$generated=false;
+		$generated=false,
+		$cc=array(),
+		$bcc=array();
 	public function __construct(){
 		$this->headers['MIME-Version']='1.0';
 	}
@@ -16,8 +18,24 @@ class mail{
 		$this->attachments[$file]=array($type,$deleteonsend);
 		$this->generated=false;
 	}
+	public function addTo($addr){
+		if(is_array($this->to))
+			$this->to[]=$addr;
+		else
+			$this->to.=','.$addr;
+	}
+	/**
+	 * Sets the To address.
+	 * @param string $to
+	 */
 	public function setTo($to){
 		$this->to=$to;
+	}
+	public function addCC($to){
+		$this->cc[]=$to;
+	}
+	public function addBCC($to){
+		$this->bcc[]=$to;
 	}
 	public function setFrom($from){
 		$this->from=$from;
@@ -29,6 +47,10 @@ class mail{
 		$this->message=$message;
 		$this->generated=false;
 	}
+	public function getMessage(){return $this->message;}
+	public function getTo(){return $this->to;}
+	public function getFrom(){return $this->from;}
+	public function getHeader($name){return isset($this->headers[$name])?$this->headers[$name]:null;}
 	public function setHeader($name,$value){
 		$this->headers[$name]=$value;
 	}
@@ -37,6 +59,10 @@ class mail{
 		$this->ishtml=$html;
 	}
 	public function send(){
+		if(is_array($this->to))
+			$to=implode(',',$this->to);
+		else
+			$to=$this->to;
 		if(count($this->attachments) && !$this->generated){
 			$mime_boundary=md5(time());
 			$this->headers['Content-Type']="multipart/mixed; boundary=\"{$mime_boundary}\"";
@@ -61,13 +87,19 @@ class mail{
 			}
 			$this->message .= "--{$mime_boundary}--";
 			$this->generated=true;
+		}elseif($this->ishtml){
+			$this->headers['Content-Type']='text/html';
+		}elseif(!isset($this->headers['Content-Type'])){
+			$this->headers['Content-Type']='text/plain';
 		}
 		$headers='';
 		if(isset($this->from))$headers.='From: '.$this->from."\r\n";
+		if(count($this->bcc))$headers.='Bcc: '.implode(',',$this->bcc)."\r\n";
+		if(count($this->cc))$headers.='Cc: '.implode(',',$this->cc)."\r\n";
 		foreach($this->headers as $name=>$value){
 			$headers.="$name: $value\r\n";
 		}
 		$headers=substr($headers,0,-2);
-		return mail($this->to, $this->subject, $this->message,$headers);
+		return mail($to, $this->subject, $this->message,$headers);
 	}
 }
