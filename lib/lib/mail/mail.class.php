@@ -11,8 +11,12 @@ class mail{
 		$generated=false,
 		$cc=array(),
 		$bcc=array();
+	private static $httpctx;
 	public function __construct(){
 		$this->headers['MIME-Version']='1.0';
+		if(!isset(self::$httpctx)){
+			self::$httpctx=stream_context_create(array('http'=>array('method'=>'GET')));
+		}
 	}
 	public function addAttachment($file,$type,$deleteonsend=false){
 		$this->attachments[$file]=array($type,$deleteonsend);
@@ -75,12 +79,20 @@ class mail{
 			$this->message.=trim($mtmp)."\n";
 			unset($mtmp);
 			foreach($this->attachments as $file=>$mime){
+				if(substr($file,0,4)=='http'){
+					$this->message .= "--{$mime_boundary}\n";
+					$data = chunk_split(base64_encode(file_get_contents($file,false,self::$httpctx)));
+					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\n" .
+							"Content-Description: ".basename($file)."\n" .
+							"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\n" .
+							"Content-Transfer-Encoding: base64\n\n" . $data . "\n\n";
+				}else
 				if(is_file($file)){
 					$this->message .= "--{$mime_boundary}\n";
 					$data = chunk_split(base64_encode(file_get_contents($file)));
 					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\n" .
 								"Content-Description: ".basename($file)."\n" .
-								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".filesize($file).";\n" .
+								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\n" .
 								"Content-Transfer-Encoding: base64\n\n" . $data . "\n\n";
 					if($mime[1]===true)@unlink($file);
 				}
