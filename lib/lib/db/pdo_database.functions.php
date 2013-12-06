@@ -289,11 +289,11 @@ function _db_build_where(array $where) {
 				$where_2[]= "$arg[0]" . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount) . ' AND ' . ':where'.($wcount+1) . ((count($arg)==6)?' '.$arg[5].' ' : '');
 				$wcount+=2;
 			}elseif($arg[1]===null){
-				if($arg[4])
+				if($arg[3])
 					$where_2[] ="$arg[0] IS NOT NULL $arg[2] ";
 				else
 					$where_2[] ="$arg[0] IS NULL $arg[2] ";
-			}else{
+			}else{//What case is this?
 				$ret[1][':where'.$wcount]=$arg[1];
 				if($arg[4])
 					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
@@ -734,7 +734,8 @@ class PDOTable{
 		$loadstm=null,
 		$plainloadall=null,
 		$trackChanges=false,
-		$lastOperation=self::OP_NONE;
+		$lastOperation=self::OP_NONE,
+		$lastError=null;
 	const OP_NONE=0,OP_LOAD=1,OP_INSERT=2,OP_UPDATE=3,OP_DELETE=4;
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
@@ -860,7 +861,7 @@ class PDOTable{
 		$stm=db_prepare($this->db,$stm);
 		if(!$stm)throw new ErrorException('Could not prepare the statement.');
 		$err=db_run_query($stm,$args);
-		if($err)throw new ErrorException('Could not execute the query.:'.$err);
+		if($err)throw new ErrorException('Could not execute the query:'.$err);
 		$ret=$stm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
@@ -947,7 +948,10 @@ class PDOTable{
 		}else
 			$this->loadstm->closeCursor();
 		$error=db_run_query($this->loadstm,$where[1]);
-		if($error)return false;
+		if($error){
+			$this->lastError=$error;
+			return false;
+		}
 		$row=$this->loadstm->fetch(PDO::FETCH_ASSOC);
 		$this->data->initFrom($row?$row:array());
 		$this->lastOperation=self::OP_LOAD;
@@ -964,7 +968,8 @@ class PDOTable{
 			$error=db_run_query($this->plainloadall);
 			if(!$error){
 				$this->dataset=$this->plainloadall;
-			}
+			}else
+				$this->lastError=$error;
 		}
 		$this->lastOperation=self::OP_LOAD;
 		return $this->dataset!=false;
@@ -1016,7 +1021,7 @@ class PDOTable{
 	public function delete(){
 		$error=db_delete($this->db,$this->table,$this->getPkey());
 		$this->lastOperation=self::OP_DELETE;
-		//if(!$error)	$this->saveOperation('delete');
+		if($error)	$this->lastError=$error;
 		return $error;
 	}
 	/**
@@ -1051,7 +1056,7 @@ class PDOTable{
 		$data=array_merge($data,$where[1]);
 		$error=db_run_query($stm,$data);
 		$this->lastOperation=self::OP_UPDATE;
-		//if(!$error)$this->saveOperation('update');
+		if($error)$this->lestError=$error;
 		return $error;
 	}
 	/**
@@ -1068,7 +1073,7 @@ class PDOTable{
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
 			$this->data->set($this->pkey,$this->db->lastInsertId());
 		$this->lastOperation=self::OP_INSERT;
-		//if(!$error)$this->saveOperation('insert');
+		if($error)$this->lastError=$error;
 		return $error;
 	}
 	protected function saveOperation($type){
@@ -1085,9 +1090,16 @@ class PDOTable{
 		if($this->dataset)$this->dataset->closeCursor();
 		$this->data->initFrom(array());
 		$this->lastOperation=self::OP_NONE;
+		$this->lastError=null;
 	}
 	public function __clone(){
 		$this->data=clone $this->data;
+	}
+	/**
+	 * @return Ambigous <Ambigous, boolean, mixed, string> The last error.
+	 */
+	public function getLastError(){
+		return $this->lastError;
 	}
 }
 
