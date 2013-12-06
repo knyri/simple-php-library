@@ -201,3 +201,13 @@ function file_normalize_path($path){
 			return str_replace(array('\\\\','//'), '\\', $path);
 	}
 }
+function getHttpContext($method='GET',array $headers=null,$content=null){
+	$ret=array('method'=>$method);
+	if(count($headers)){
+		$ret['header']='';
+		foreach($headers as $k=>$v)
+			$ret['header'].="$k: $v\r\n";
+	}
+	if($content)$ret['content']=$content;
+	return array('http'=>$ret);
+}
