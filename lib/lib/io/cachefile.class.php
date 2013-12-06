@@ -88,11 +88,15 @@ class CacheFile extends CachePart{
 	 *  Expires
 	 *  Vary
 	 *  Content-Encoding(if needed)
+	 *  Cache-Control
+	 *  Unsets Pragma
 	 * @see File::readToOutput()
 	 */
 	public function readToOutput(){
 		clearstatcache();
 		$modTime=filemtime($this->file);
+		header('Cache-Control: public,max-age='.$this->ttl,true);
+		header('Pragma:',true);
 		header('Last-Modified: '. gmdate('D, d M Y H:i:s',$modTime).' GMT' ,true);
 		header('Content-Length: '.filesize($this->file),true);
 		header('ETag: "'.$this->etag.'"');
