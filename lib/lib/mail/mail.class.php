@@ -62,6 +62,10 @@ class mail{
 		if(!is_bool($html))return $this->ishtml;
 		$this->ishtml=$html;
 	}
+	/**
+	 * Attempts to send the mail. Uses the standard PHP mail(...) function.
+	 * @return boolean true if the mail was sent or false.
+	 */
 	public function send(){
 		if(is_array($this->to))
 			$to=implode(',',$this->to);
