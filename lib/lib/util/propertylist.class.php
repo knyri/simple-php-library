@@ -14,7 +14,7 @@ class PropertyList{
 	 * @return mixed
 	 */
 	public function get($key,$default=null){
-		if(isset($this->data[$key]))
+		if(array_key_exists($key,$this->data))
 			return $this->data[$key];
 		return $default;
 	}
@@ -61,11 +61,11 @@ class ChangeTrackingPropertyList extends PropertyList{
 		$changes=array('old'=>array(),'new'=>array());
 		foreach($this->changes as $k=>$v){
 			$changes['new'][$k]=$v;
-			$changes['old'][$k]=isset($this->data[$k])?$this->data[$k]:null;
+			$changes['old'][$k]=array_key_exists($k,$this->data)?$this->data[$k]:null;
 		}
 		foreach($this->cleared as $k=>$v){
 			$changes['new'][$k]=null;
-			$changes['old'][$k]=isset($this->data[$k])?$this->data[$k]:null;
+			$changes['old'][$k]=array_key_exists($k,$this->data)?$this->data[$k]:null;
 		}
 		return $changes;
 	}
@@ -91,7 +91,7 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @param mixed $v
 	 */
 	public function set($k,$v){
-		if(isset($this->data[$k]) && $this->data[$k]==$v){
+		if(array_key_exists($k,$this->data) && $this->data[$k]==$v){
 			unset($this->changes[$k]);
 			return;
 		}
@@ -104,8 +104,7 @@ class ChangeTrackingPropertyList extends PropertyList{
 	}
 	public function mergeChanges(){
 		$this->data=$this->getFinal();
-		$this->changes=array();
-		$this->cleared=array();
+		$this->discardChanges();
 	}
 	/**
 	 * @param string $key
@@ -113,9 +112,9 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @return mixed
 	 */
 	public function get($key,$default=null){
-		if(isset($this->changes[$key]))
+		if(array_key_exists($key,$this->changes))
 			return $this->changes[$key];
-		if(isset($this->data[$key]) && !isset($this->cleared[$key]))
+		if(array_key_exists($key,$this->data) && !isset($this->cleared[$key]))
 			return $this->data[$key];
 		return $default;
 	}
