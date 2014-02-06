@@ -147,13 +147,13 @@ function date_fix_date($month,$day,$year,$unix=true){
 		$lastDay=date_get_last_day($month,$year);
 	}
 	while($day<1){
-		$lastDay=date_get_last_day($month,$year);
-		$day+=$lastDay;
 		$month--;
 		if($month==0){
 			$month=12;
 			$year--;
 		}
+		$lastDay=date_get_last_day($month,$year);
+		$day+=$lastDay;
 	}
 
 	if($year<1900) $year=1900;
