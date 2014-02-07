@@ -109,7 +109,7 @@ function db_log_error($statement,$args=null) {
 	return $err;
 }
 /** Checks to see if a record exists that matches the conditions.
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table required
  * @param string $condition required
  * @return mixed boolean on success or a string containing the error message.
@@ -126,7 +126,7 @@ function db_record_exist($db, $table, array $condition) {
 	}
 }
 /** Fetches a single column value from the database.
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table
  * @param string $column
  * @param array $condition see _db_build_where
@@ -142,7 +142,7 @@ function db_get_column($db, $table, $column, array $condition = null, $default =
 }
 /**
  * Alias of db_get_column(..)
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table
  * @param string $column
  * @param string $condition
@@ -154,7 +154,7 @@ function db_get_field($db, $table, $column, array $condition = null, $default = 
 }
 /**
  * Shortcut for db_get_row($db,$table,$condition,$columns,$cache,MYSQL_ASSOC);
- * @param resource $db
+ * @param PDO $db
  * @param string $table
  * @param string $condition
  * @param string $columns
@@ -165,7 +165,7 @@ function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
 	return db_get_row($db, $table, $condition, $columns, PDO::FETCH_ASSOC);
 }
 /** Fetches a single row from the database.
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table
  * @param string $condition
  * @param string $columns
@@ -245,6 +245,7 @@ function result_table($result) {
  * Returns the proper form of a variable for the query.
  * @param mixed $var
  * @return string|unknown|Ambigous <unknown, number>
+ * @deprecated
  */
 function _db_validate_value($var) {
 	if (is_null($var)){
@@ -335,7 +336,7 @@ function _db_build_where(array $where) {
 	return $ret;
 }
 /** Queries the database and returns the result set or NULL if it failed.
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array|string $columns Array or comma delimited string of column names
  * @param array $where See _db_build_where(..).
@@ -419,7 +420,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 	}
 }
 /** Deletes data from the database. Returns the error message on failure or false on success.
- * @param resource $db mysql database link. Set to null to use the default settings.
+ * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array $conditions See _db_build_where(..).
  * @return mixed false on success or the error
@@ -446,7 +447,7 @@ function db_delete($db, $table, array $conditions = null) {
 	return db_run_query($stm,$conditions);
 }
 /**
- * Enter description here ...
+ * Returns the number of rows the conditions match.
  * @param PDO $db
  * @param string $table
  * @param array $conditions see _db_build_where(...)
@@ -528,6 +529,12 @@ function db_run_query($stm, array $params=null){
 	}
 	return false;
 }
+/**
+ * Attempts to take a PDOStatement and create the final SQL statement.
+ * @param PDOStatement $stm
+ * @param array $params
+ * @return string
+ */
 function db_stm_to_string($stm,array $params=null){
 	if($params==null)return is_object($stm)?$stm->queryString:$stm;
 	if(is_object($stm))
@@ -560,6 +567,11 @@ function db_prepare(PDO $db,$query){
 function db_now(){
 	return date('Y-m-d',time());
 }
+/**
+ * For building WHERE clauses.
+ * @author Ken
+ *
+ */
 class WhereBuilder{
 	private static $icnt=0;
 	private $where='',$values=array(),$pre,$ci=0;
@@ -739,19 +751,19 @@ class PDOTable{
 	const OP_NONE=0,OP_LOAD=1,OP_INSERT=2,OP_UPDATE=3,OP_DELETE=4;
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
+	 * By default, it will not track changes.
 	 * @param boolean $v Optional. Sets the state if supplied
 	 * @return boolean
 	 */
 	public function trackChanges($v=null){
 		if($v===null)return $this->trackChanges;
 		$v=$v===true;
-		if($this->trackChanges){
-			if(!$v){
-				$t=new ChangeTrackingPropertyList();
-				$t->initFrom($this->data->copyTo(array()));
-				$this->data=$t;
-			}
-		}elseif($v){
+		if($v == $this->trackChanges)return;
+		if($v){
+			$t=new ChangeTrackingPropertyList();
+			$t->initFrom($this->data->copyTo(array()));
+			$this->data=$t;
+		}else{
 			$t=new PropertyList();
 			$t->initFrom($this->data->copyTo(array()));
 			$this->data=$t;
