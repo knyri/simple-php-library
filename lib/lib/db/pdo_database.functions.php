@@ -207,38 +207,30 @@ function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO:
 /**
  * Prints a table displaying the result.
  * @param PDOStatement $result
+ * @param array $attrib Key=>Value pair of attributes to put on the table.
+ * @return boolean False if an error occured on the first fetch
  */
-function result_table($result) {
-	echo '<table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse" id="table1">';
-		$rowc = 0;
-		$color = "";
-		$index = 0;
-		$row=$result->fetch(PDO::FETCH_ASSOC);
-		echo '<tr>';
-		foreach(array_keys($row) as $column)
-			echo '<th>'.$column.'</th>';
-		echo '</tr><tr>';
-		foreach($row as $col) {
-				echo "<td bgcolor='#FFFFFF'>".nl2br(htmlspecialchars($col))."</td>";
-			$index++;
+function result_table($result, array $attrib=array()){
+	$row=$result->fetch(PDO::FETCH_ASSOC);
+	if(!$row)return false;
+	echo '<table '.combine_attrib($attrib).'>';
+	echo '<tr>';
+	foreach(array_keys($row) as $column)
+		echo '<th>'.$column.'</th>';
+	echo '</tr><tr>';
+	foreach($row as $col){
+		echo "<td>".nl2br(htmlspecialchars($col))."</td>";
+	}
+	echo '</tr>';
+	while ($row = $result->fetch(PDO::FETCH_NUM)) {
+		echo "<tr>";
+		foreach($row as $col){
+			echo "<td>".nl2br(htmlspecialchars($col))."</td>";
 		}
-		echo '</tr>';
-		$rowc++;
-		while ($row = $result->fetch(PDO::FETCH_NUM)) {
-			$index = 0;
-			if ($rowc%2 == 0)
-				$color = "#FFFFFF";
-			else
-				$color = "#DDDDDD";
-			echo "<tr>";
-			foreach($row as $col) {
-					echo "<td bgcolor='$color'>".nl2br(htmlspecialchars($col))."</td>";
-				$index++;
-			}
-			$rowc++;
-			echo "</tr>";
-		}
-		echo '</table>';
+		echo "</tr>";
+	}
+	echo '</table>';
+	return true;
 }
 
 /**
