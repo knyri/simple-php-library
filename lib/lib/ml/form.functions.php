@@ -372,7 +372,12 @@ function form_radio($name,$id,array $values,$default,array $attrib=null,$before=
 	}
 }
 function form_radioYN($name,$id,$default,array $attrib=null,$before=null,$after=null){
-	form_radio($name,$id,array('y'=>'Yes','n'=>'No'),strtolower($default),$attrib,$before,$after);
+	$values=array('y'=>'Yes','n'=>'No');
+	$attrib=combine_attrib($attrib).' ';
+	$val=strtolower(form_get($name,$default));
+	foreach($values as $value=>$disp){
+		echo $before.'<label for="'.$id.$value.'"><input type=radio name="'.$name.'" value="'.$value.'" id="'.$id.$value.'"'.(($value==$val)?' checked ':' ').$attrib.'>&nbsp;'.$disp.'</label>'.$after;
+	}
 }
 /**
  * Echoes a series of checkboxes.
