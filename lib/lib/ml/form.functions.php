@@ -297,11 +297,11 @@ for($h=0;$h<$second;$h++){?>
  * @param array $extra [optional]Array of attribute values. array('tag'=>'value'[,'tag'=>'value'])
  */
 function form_select($name,array $data,$default=null,array $extra=null){
-	if($default==null)$default=form_get($name);
+	if($default===null)$default=form_get($name);
 	echo "<select name=\"$name\" ";
 	echo combine_attrib($extra);
 	echo '>'.EOL;
-	if($default!=null){
+	if($default!==null){
 		foreach($data as $key=> $value){
 			echo "<option value=\"$key\"";
 			if($key==$default)echo ' selected';
