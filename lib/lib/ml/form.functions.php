@@ -372,7 +372,7 @@ function form_radio($name,$id,array $values,$default,array $attrib=null,$before=
 	}
 }
 function form_radioYN($name,$id,$default,array $attrib=null,$before=null,$after=null){
-	form_radio($name,$id,array('y'=>'Yes','n'=>'No'),$default,$attrib,$before,$after);
+	form_radio($name,$id,array('y'=>'Yes','n'=>'No'),strtolower($default),$attrib,$before,$after);
 }
 /**
  * Echoes a series of checkboxes.
