@@ -570,21 +570,30 @@ class WhereBuilder{
 	public function __construct($prefix='wh'){
 		$this->pre=":$prefix".(++self::$icnt);
 	}
-	public function appendWhere($andor,WhereBuilder $where,$parens=false){
+	/**
+	 * @param string $andor 'and' or 'or;
+	 * @param WhereBuilder $where The conditon to be appended
+	 * @param string $parens Wrap the appended WHERE conditions in parenthesis
+	 * @return WhereBuilder $this for chaining
+	 */
+	public function &appendWhere($andor,WhereBuilder $where,$parens=false){
 		if($parens)
 			$this->where.="$andor (".$where->where.')';
 		else
 			$this->where.="$andor ".$where->where;
+		return $this;
 	}
-	public function openParen($andor){
+	public function &openParen($andor){
 		$this->where.="$andor (";
+		return $this;
 	}
-	public function closeParen(){
+	public function &closeParen(){
 		$this->where.=')';
+		return $this;
 	}
 	/**
 	 * Accepts multiple arguments.
-	 * Assumes AND if this is not the first condition
+	 * Assumes AND if not supplied
 	 * (['and'|'or',]col,val[,negate])
 	 * (['and'|'or',]col,'in',vals[,negate])
 	 * (['and'|'or',]col,'like',val[,negate])
@@ -1064,12 +1073,49 @@ class PDOTable{
 		return $error;
 	}
 	/**
-	 * Forces an insert. Useful if you want to specify an Auto Increment field.
+	 * Forces an insert.
 	 * @return string,boolean false on success or the error.
 	 */
 	public function insert(){
 		$data=$this->data->copyTo(array());
 		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
+		$stm=db_prepare($this->db, $query);
+		foreach($data as $k=>$v)
+			$stm->bindValue(":$k",$v,$this->columns[$k]);
+		$error=db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
+			$this->data->set($this->pkey,$this->db->lastInsertId());
+		$this->lastOperation=self::OP_INSERT;
+		if($error)$this->lastError=$error;
+		return $error;
+	}
+	/**
+	 * Forces an insert. Ignores duplicate key errors.
+	 * @return string,boolean false on success or the error.
+	 */
+	public function insertIgnore(){
+		$data=$this->data->copyTo(array());
+		$query='INSERT IGNORE INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
+		$stm=db_prepare($this->db, $query);
+		foreach($data as $k=>$v)
+			$stm->bindValue(":$k",$v,$this->columns[$k]);
+		$error=db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
+			$this->data->set($this->pkey,$this->db->lastInsertId());
+		$this->lastOperation=self::OP_INSERT;
+		if($error)$this->lastError=$error;
+		return $error;
+	}
+	/**
+	 * Forces an insert. Does an update on duplicate key errors.
+	 * @return string,boolean false on success or the error.
+	 */
+	public function insertUpdate(){
+		$data=$this->data->copyTo(array());
+		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).') ON DUPLICATE KEY UPDATE';
+		foreach($data as $k=>$v)
+			$query.=" `$k`=:$k,";
+		$query=trim($query,',');
 		$stm=db_prepare($this->db, $query);
 		foreach($data as $k=>$v)
 			$stm->bindValue(":$k",$v,$this->columns[$k]);
