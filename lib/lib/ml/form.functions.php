@@ -242,8 +242,58 @@ function form_date_cust($name,$yearsAhead=10,$yearsBehind=10,$date=null){
 /**
  * Outputs a date element.
  * Element names are name[month],name[day],name[year]
+ * @param string $name
+ * @param number $yearsAhead default is 10
+ * @param number $yearsBehind default is 10
+ * @param string $date
+ */
+function form_date_cust($name,$yearsAhead=10,$yearsBehind=10,$date=null){
+	$year=0;$month=1;$day=1;
+	if($date===null)
+		$date=form_get($name);
+
+	if(is_array($date)){
+		$date=array_map('intval',$date);
+		$year=	$date['year'];
+		$month=	$date['month'];
+		$day=	$date['day'];
+	} elseif(!empty($date)){
+		list($year,$month,$day)=array_map('intval',explode('-',$date));
+	}else{
+		list($year,$month,$day)=array_map('intval',explode('-',date('Y-m-d')));
+	}
+	?><select name="<?php echo $name;?>[month]"><option value="01"<?php echo $month==1?' selected':'';?>>Jan</option><option value="02"<?php echo $month==2?' selected':'';?>>Feb</option><option value="03"<?php echo $month==3?' selected':'';?>>Mar</option><option value="04"<?php echo $month==4?' selected':'';?>>Apr</option><option value="05"<?php echo $month==5?' selected':'';?>>May</option><option value="06"<?php echo $month==6?' selected':'';?>>Jun</option><option value="07"<?php echo $month==7?' selected':'';?>>Jul</option><option value="08"<?php echo $month==8?' selected':'';?>>Aug</option><option value="09"<?php echo $month==9?' selected':'';?>>Sep</option><option value="10"<?php echo $month==10?' selected':'';?>>Oct</option><option value="11"<?php echo $month==11?' selected':'';?>>Nov</option><option value="12"<?php echo $month==12?' selected':'';?>>Dec</option></select>
+<select name="<?php echo $name;?>[day]"><option value="01"<?php echo $day==1?' selected':'';?>>1</option><option value="02"<?php echo $day==2?' selected':'';?>>2</option><option value="03"<?php echo $day==3?' selected':'';?>>3</option><option value="04"<?php echo $day==4?' selected':'';?>>4</option><option value="05"<?php echo $day==5?' selected':'';?>>5</option><option value="06"<?php echo $day==6?' selected':'';?>>6</option><option value="07"<?php echo $day==7?' selected':'';?>>7</option><option value="08"<?php echo $day==8?' selected':'';?>>8</option><option value="09"<?php echo $day==9?' selected':'';?>>9</option><option value="10"<?php echo $day==10?' selected':'';?>>10</option><option value="11"<?php echo $day==11?' selected':'';?>>11</option><option value="12"<?php echo $day==12?' selected':'';?>>12</option><option value="13"<?php echo $day==13?' selected':'';?>>13</option><option value="14"<?php echo $day==14?' selected':'';?>>14</option><option value="15"<?php echo $day==15?' selected':'';?>>15</option><option value="16"<?php echo $day==16?' selected':'';?>>16</option><option value="17"<?php echo $day==17?' selected':'';?>>17</option><option value="18"<?php echo $day==18?' selected':'';?>>18</option><option value="19"<?php echo $day==19?' selected':'';?>>19</option><option value="20"<?php echo $day==20?' selected':'';?>>20</option><option value="21"<?php echo $day==21?' selected':'';?>>21</option><option value="22"<?php echo $day==22?' selected':'';?>>22</option><option value="23"<?php echo $day==23?' selected':'';?>>23</option><option value="24"<?php echo $day==24?' selected':'';?>>24</option><option value="25"<?php echo $day==25?' selected':'';?>>25</option><option value="26"<?php echo $day==26?' selected':'';?>>26</option><option value="27"<?php echo $day==27?' selected':'';?>>27</option><option value="28"<?php echo $day==28?' selected':'';?>>28</option><option value="29"<?php echo $day==29?' selected':'';?>>29</option><option value="30"<?php echo $day==30?' selected':'';?>>30</option><option value="31"<?php echo $day==31?' selected':'';?>>31</option></select>
+<select name="<?php echo $name;?>[year]"><?php
+	$date=getdate();
+	if($year && $year!=$date['year']){
+		if($year>$date['year']){
+			for($i=$yearsAhead;$i>0;$i--)
+				echo '<option value="'.($date['year']+$i).'"'.($year==($date['year']+$i)?' selected':'').'>'.($date['year']+$i).'</option>';
+			echo '<option value="'.($date['year']).'">'.($date['year']).'</option>';
+			for($i=1;$i<$yearsBehind;$i++)
+				echo '<option value="'.($date['year']-$i).'">'.($date['year']-$i).'</option>';
+		}else{
+			for($i=$yearsAhead;$i>0;$i--)
+				echo '<option value="'.($date['year']+$i).'">'.($date['year']+$i).'</option>';
+			echo '<option value="'.($date['year']).'" selected>'.($date['year']).'</option>';
+			for($i=1;$i<$yearsBehind;$i++)
+				echo '<option value="'.($date['year']-$i).'"'.($year==($date['year']-$i)?' selected':'').'>'.($date['year']-$i).'</option>';
+		}
+	}else{
+		for($i=$yearsAhead;$i>0;$i--)
+			echo '<option value="'.($date['year']+$i).'">'.($date['year']+$i).'</option>';
+		echo '<option value="'.($date['year']).'" selected>'.($date['year']).'</option>';
+		for($i=1;$i<$yearsBehind;$i++)
+			echo '<option value="'.($date['year']-$i).'">'.($date['year']-$i).'</option>';
+	}
+?></select><?php
+}
+/**
+ * Outputs a time element.
+ * Element names are name[minute],name[second],name[hour]
  * @param string $name suffix for the elements.
- * @param string $date [optional]A unix datestamp(year-month-day) or an array('day'=>day,'month'=>month,'year'=>year).
+ * @param string $time [optional]A unix datestamp(hour:minute:second) or an array('hour'=>hour,'minute'=>minute,'second'=>second).
  */
 function form_time($name,$time=null){
 	$second=0;$hour=1;$minute=1;$h=0;
