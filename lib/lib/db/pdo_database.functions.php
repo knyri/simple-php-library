@@ -1032,7 +1032,16 @@ class PDOTable{
 	 * @return bool false on success or the error.
 	 */
 	public function delete(){
-		$error=db_delete($this->db,$this->table,$this->getPkey());
+		if($this->isPkeySet())
+			$error=db_delete($this->db,$this->table,$this->getPkey());
+		else{
+			$where=array();
+			foreach($this->data->copyTo(array()) as $key=>$value){
+				$where[]=array($key,$value,'AND');
+			}
+			unset($where[count($where)-1][2]);
+			$error=db_delete($this->db,$this->table,$where);
+		}
 		$this->lastOperation=self::OP_DELETE;
 		if($error)	$this->lastError=$error;
 		return $error;
