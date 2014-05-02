@@ -76,4 +76,5 @@ class PackageManager {
 		return PackageManager::requireFileOnce(str_replace('.', '/', $package).'.functions.php');
 	}
 }
-?>
+if(defined('LIB'))
+	PackageManager::addPath(LIB);
