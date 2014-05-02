@@ -817,15 +817,14 @@ class PDOTable{
 	/**
 	 * Enter description here ...
 	 * @param string $table
-	 * @param array $columns column names
-	 * @param array $colTypes columns types. One of PDO::PARAM_*
+	 * @param array $columns column=>columnType(PDO::PARAM_*)
 	 * @param string|array $pkey The primary key(s) for the table
 	 * @param resource $db
 	 * @param bool $trackChanges defaults to false
 	 */
-	public function __construct($table,array $columns,array $colTypes,$pkey,$db,$trackChanges=false){
+	public function __construct($table,array $columns,$pkey,$db,$trackChanges=false){
 		$this->table=$table;
-		$this->columns=array_combine($columns,$colTypes);
+		$this->columns=$columns;
 		$this->pkey=$pkey;
 		$this->db=$db;
 		$this->data=$trackChanges?new ChangeTrackingPropertyList:new PropertyList;
