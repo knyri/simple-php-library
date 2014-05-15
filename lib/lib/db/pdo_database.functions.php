@@ -721,9 +721,10 @@ class PDOStatementWrapper extends PropertyList{
 		return !db_run_query($this->dataset,$args);
 	}
 	public function loadNext(){
-		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
-		$this->data=$this->dataset->fetch();
-		return $this->data!=false;
+		if(!$this->dataset)throw new IllegalStateException('No query run or last query failed.');
+		$row=$this->dataset->fetch(PDO::FETCH_ASSOC);
+		$this->data->initFrom($row?$row:array());
+		return $row!=false;
 	}
 	public function recycle(){
 		if($this->dataset)$this->dataset->closeCursor();
@@ -893,6 +894,18 @@ class PDOTable{
 		}else
 			return $this->data->get($this->pkey,false);
 	}
+	public function getOldId(){
+		if(!$this->trackChanges)return $this->getId();
+		if(is_array($this->pkey)){
+			$ret=array();
+			foreach($this->pkey as $k){
+				$ret[$k]=$this->data->getPrevious($k);
+				if(null===$ret[$k])return false;
+			}
+			return $ret;
+		}else
+			return $this->data->getPrevious($this->pkey,false);
+	}
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
 				$ret=array();
@@ -938,6 +951,17 @@ class PDOTable{
 			}else
 				return array(array($this->pkey,$this->data->get($this->pkey)));
 		}
+	}
+	protected function getOldPkey(){
+		if(is_array($this->pkey)){
+			$ret=array();
+			foreach($this->pkey as $key){
+				$ret[]=array($key,$this->data->getPrevious($key),'AND');
+			}
+			unset($ret[count($ret)-1][2]);
+			return $ret;
+		}else
+			return array(array($this->pkey,$this->data->getPrevious($this->pkey)));
 	}
 	/**
 	 * Useful function for helper classes
@@ -1071,7 +1095,10 @@ class PDOTable{
 			$query.="$k=:$k,";
 			$data[':'.$k]=$v;
 		}
-		$where=_db_build_where($this->getPkey());
+		if($this->trackChanges())
+			$where=_db_build_where($this->getOldPkey());
+		else
+			$where=_db_build_where($this->getPkey());
 		$query=substr($query,0,-1).' '.$where[0];
 		$stm=db_prepare($this->db, $query);
 		$data=array_merge($data,$where[1]);
