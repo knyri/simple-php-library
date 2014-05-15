@@ -119,6 +119,17 @@ class ChangeTrackingPropertyList extends PropertyList{
 		return $default;
 	}
 	/**
+	 * Gets the previous value for the key.
+	 * @param string $key
+	 * @param string $default
+	 * @return mixed
+	 */
+	public function getPrevious($key,$default=null){
+		if(array_key_exists($key,$this->data))
+			return $this->data[$key];
+		return $default;
+	}
+	/**
 	 * @param string $k
 	 */
 	public function uset($k){
