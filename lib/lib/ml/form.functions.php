@@ -650,25 +650,26 @@ function is_notselected($name,$value){
  *
  */
 class FormKey{
-	private static $salt='saltymoonsailor';
-	public static function setSalt($salt){
-		self::$salt=$salt;
+	private static $salt=array('form_key'=>'saltymoonsailor');
+	public static function setSalt($salt,$k='form_key'){
+		self::$salt[$k]=$salt;
 	}
 	/**
 	 * Generates a new key the first time it is called;
 	 * Is called automatically by the other functions.
 	 * @param bool $forceNew Force a new key
+	 * @param string $k Name of the key
 	 */
-	public static function generate($forceNew=false){
-		static $generated=false;
-		if($generated==false || $forceNew){
+	public static function generate($forceNew=false,$k='form_key'){
+		static $generated=array();
+		if(!isset($generated[$k]) || $forceNew){
 			//copy the old value to the old spot
-			if(isset($_SESSION['FormKey']) && isset($_SESSION['FormKey']['cur']))
-				$_SESSION['FormKey']['old']=$_SESSION['FormKey']['cur'];
+			if(isset($_SESSION['FormKey']) && isset($_SESSION['FormKey'][$k]['cur']))
+				$_SESSION['FormKey'][$k]['old']=$_SESSION['FormKey'][$k]['cur'];
 			else
-				$_SESSION['FormKey']['old']=null;
-			$_SESSION['FormKey']['cur']=md5(time().self::$salt);
-			$generated=true;
+				$_SESSION['FormKey'][$k]['old']=null;
+			$_SESSION['FormKey'][$k]['cur']=md5(time().(isset(self::$salt[$k])?self::$salt[$k]:self::$salt['form_key']));
+			$generated[$k]=true;
 		}
 	}
 	/**
@@ -676,34 +677,37 @@ class FormKey{
 	 * @param string $name Defaults to form_key
 	 */
 	public static function echoKey($name='form_key'){
-		echo '<input type="hidden" name="'.$name.'" value="'.self::getKey().'">';
+		echo '<input type="hidden" name="'.$name.'" value="'.self::getKey($name).'">';
 	}
 	/**
 	 * Returns the current key. This should be echoed to the form
+	 * @param string $k
 	 * @return string The current key
 	 */
-	public static function getKey(){
-		self::generate();
-		return $_SESSION['FormKey']['cur'];
+	public static function getKey($k='form_key'){
+		self::generate(false,$k);
+		return $_SESSION['FormKey'][$k]['cur'];
 	}
 	/**
 	 * Returns the previous key. This should be used to check a submitted form.
+	 * @param string $k
 	 * @return string The previous key or NULL
 	 */
-	public static function getOldKey(){
-		self::generate();
-		return $_SESSION['FormKey']['old'];
+	public static function getOldKey($k='form_key'){
+		self::generate(false,$k);
+		return $_SESSION['FormKey'][$k]['old'];
 	}
-	public static function invalidate(){
-		$_SESSION['FormKey']['old']=null;
+	public static function invalidate($k='form_key'){
+		$_SESSION['FormKey'][$k]['old']=null;
 	}
 	/**
 	 * Compares the the submitted form key to the old key.
 	 * @param string $challenge The form key from the submitted form
+	 * @param string $k
 	 * @return boolean true if they match.
 	 */
-	public static function matches($challenge){
-		return $challenge==self::getOldKey();
+	public static function matches($challenge,$k='form_key'){
+		return $challenge==self::getOldKey($k);
 	}
 }
 
