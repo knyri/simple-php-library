@@ -69,6 +69,14 @@ class File{
 	 * @param resource $context
 	 */
 	public function rename($to,$context=null){$this->move($to,$context);}
+	/**
+	 * @param unknown $operation
+	 * 		LOCK_SH to acquire a shared lock (reader).
+	 * 		LOCK_EX to acquire an exclusive lock (writer).
+	 * 		LOCK_UN to release a lock (shared or exclusive).
+	 * @param int $wouldBlock
+	 * @return boolean
+	 */
 	public function lock($operation,&$wouldBlock=null){
 		if($wouldBlock==null)
 			$this->locked= flock($this->handle,$operation);
