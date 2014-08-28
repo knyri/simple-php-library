@@ -8,7 +8,7 @@ PackageManager::requireClassOnce('io.file');
  */
 class GZFile extends File{
 	public function open($mode){
-		$this->handle=gzopen($this->file,$mode);
+		$this->handle=gzopen($this->uri,$mode);
 		if($this->handle){
 			$this->open=true;
 			$this->closed=false;
@@ -61,5 +61,5 @@ class GZFile extends File{
 		return $ret;
 	}
 	public function truncate($size=0){return false;}
-	public function readToOutput(){return readgzfile($this->file);}
+	public function readToOutput(){return readgzfile($this->uri);}
 }

@@ -32,9 +32,9 @@ class CacheFile extends CachePart{
 	}
 	public function open($mode){
 		if(self::$gz)
-			$this->handle=gzopen($this->file,$mode);
+			$this->handle=gzopen($this->uri,$mode);
 		else
-			$this->handle=fopen($this->file,$mode);
+			$this->handle=fopen($this->uri,$mode);
 		if($this->handle){
 			$this->open=true;
 			$this->closed=false;
@@ -72,7 +72,7 @@ class CacheFile extends CachePart{
 	}
 	public function putContents($string){
 		if(self::$gz){
-			if(!$rfile=gzopen($this->file,'wb'))return false;
+			if(!$rfile=gzopen($this->uri,'wb'))return false;
 			gzwrite($rfile,$string);
 			gzclose($rfile);
 			return true;
@@ -94,16 +94,16 @@ class CacheFile extends CachePart{
 	 */
 	public function readToOutput(){
 		clearstatcache();
-		$modTime=filemtime($this->file);
+		$modTime=filemtime($this->uri);
 		header('Cache-Control: public,max-age='.$this->ttl,true);
 		header('Pragma:',true);
 		header('Last-Modified: '. gmdate('D, d M Y H:i:s',$modTime).' GMT' ,true);
-		header('Content-Length: '.filesize($this->file),true);
+		header('Content-Length: '.filesize($this->uri),true);
 		header('ETag: "'.$this->etag.'"');
 		header('Vary: Accept-Encoding');
 		if(self::$gz)
 			header('Content-Encoding: gzip',true);
 		header('Expires: '.gmdate('D, d M Y H:i:s',$modTime+$this->ttl) .' GMT',true);
-		return readfile($this->file);
+		return readfile($this->uri);
 	}
 }
