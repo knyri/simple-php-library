@@ -262,3 +262,73 @@ function date_get_last_day($month,$year){
 	else
 		return date_hasThirtyOneDays($month)?31:30;
 }
+/**
+ * Returns the number of week days between 2 dates. Dates on the same day, except Saturday and Sunday, return 1.
+ * @param mixed $start May be an array with indecies 'month','day', and 'year', a date/time string that can be parsed by strtotime(), or a unix timestamp
+ * @param mixed $end May be an array with indecies 'month','day', and 'year', a date/time string that can be parsed by strtotime(), or a unix timestamp
+ * @return number Number of days minus weekends
+ */
+function date_get_weekdays($start,$end){
+	if(is_array($start))
+		$start=strtotime($start['year'].'-'.$start['month'].'-'.$start['day']);
+	elseif(is_string($start))
+		$start=strtotime($start);
+	if(is_array($end))
+		$end=strtotime($end['year'].'-'.$end['month'].'-'.$end['day']);
+	elseif(is_string($end))
+		$end=strtotime($end);
+	/* ******************
+	 * ** secial cases **
+	 * ******************/
+	# 3 days or less
+	if(($end-$start)<259201){
+		# 2 days or less
+		if(($end-$start)<172801){
+			# Same day
+			if(($end-$start)<86401){
+				$start=getdate($start);
+				# Sunday or Saturday
+				if($start['wday']==0 || $start['wday']==7)return 0;
+				return 1;
+			}else{# 2 days
+				$start=getdate($start);
+				switch($start['wday']){
+					case 7:# Saturday
+						return 0;
+					case 0:# Sunday
+					case 6:# Friday
+						return 1;
+					default:
+						return 2;
+				}
+			}
+		}else{# 3 days
+			$start=getdate($start);
+			switch($start['wday']){
+				case 6:# Friday
+				case 7:# Saturday
+					return 1;
+				case 5:# Thursday
+				case 0:# Sunday
+					return 2;
+				default:
+					return 3;
+			}
+		}
+	}
+	# get the number of days
+	$days=floor(($end-$start)/86400)+1;
+	$start=getdate($start);
+	# get the number of extra days and add the day of week index(0-6)
+	$extra=$days%7+$start['wday'];
+	# subtract the weekends(weeks*2)
+	$days-=floor($days/7)*2;
+	# if less than 7 then the end date is not a weekend
+	if($extra<7)
+		return $days;
+	# if 7 then the end date is on a Saturday
+	if($extra==7)
+		return $days-1;
+	# greater than 7. End date is on or after Sunday
+	return $days-2;
+}
