@@ -70,14 +70,18 @@ class CacheFile extends CachePart{
 		else
 			return fread($this->handle,$len);
 	}
-	public function putContents($string){
+	/* (non-PHPdoc)
+	 * $flags and $ctx are ignored if using gzip.
+	 * @see File::putContents()
+	 */
+	public function putContents($string,$flags=0,$ctx=null){
 		if(self::$gz){
 			if(!$rfile=gzopen($this->uri,'wb'))return false;
 			gzwrite($rfile,$string);
 			gzclose($rfile);
 			return true;
 		}else{
-			return parent::putContents($string)!==false;
+			return parent::putContents($string,$flags,$ctx)!==false;
 		}
 	}
 	/* Sets headers and reads file to output.
