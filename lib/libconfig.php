@@ -18,7 +18,7 @@ class LibConfig{
 		self::$conf['util.counter']['multidomain']=false;//enable this to track multiple domains(including subdomains)
 		self::$init=true;
 	}
-	public static function getConfig($conf){
+	public static function &getConfig($conf){
 		if(isset(self::$conf[$conf]))return self::$conf[$conf];
 		return null;
 	}

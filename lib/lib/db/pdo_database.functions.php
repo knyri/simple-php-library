@@ -40,7 +40,7 @@ $_DB_OPEN_CON = false;
  * @return boolean If the db_* functions provide debugging info.
  */
 function db_debug($toggle=null){
-	$conf=LibConfig::getConfig('db');
+	$conf=&LibConfig::getConfig('db');
 	if($toggle!==null)
 		$conf['debug']=$toggle;
 	if($conf['debug']==true)
