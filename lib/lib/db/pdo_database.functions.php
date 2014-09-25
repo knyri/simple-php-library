@@ -722,13 +722,13 @@ class PDOStatementWrapper extends PropertyList{
 	}
 	public function loadNext(){
 		if(!$this->dataset)throw new IllegalStateException('No query run or last query failed.');
-		$row=$this->dataset->fetch(PDO::FETCH_ASSOC);
-		$this->data->initFrom($row?$row:array());
+		$row=$this->dataset->fetch();
+		$this->initFrom($row?$row:array());
 		return $row!=false;
 	}
 	public function recycle(){
 		if($this->dataset)$this->dataset->closeCursor();
-		$this->data=array();
+		$this->clear();
 	}
 }
 /**
