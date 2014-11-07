@@ -12,19 +12,19 @@ class Logger extends File{
 		if(($level&$this->logLevel)==$level){
 			switch($level){
 				case self::ERR:
-					$this->write('[ERR]'.date('[Y-m-d H:i:sO]').$str.EOL);
+					$this->write('[ERR]  '.date('[Ymd HisO]').$str.EOL);
 				break;
 				case self::WARN:
-					$this->write('[WARN]'.date('[Y-m-d H:i:sO]').$str.EOL);
+					$this->write('[WARN] '.date('[Ymd HisO]').$str.EOL);
 				break;
 				case self::INFO:
-					$this->write('[INFO]'.date('[Y-m-d H:i:sO]').$str.EOL);
+					$this->write('[INFO] '.date('[Ymd HisO]').$str.EOL);
 				break;
 				case self::DEBUG:
-					$this->write('[DEBUG]'.date('[Y-m-d H:i:sO]').$str.EOL);
+					$this->write('[DEBUG]'.date('[Ymd HisO]').$str.EOL);
 				break;
 				default:
-					$this->write('[UNK]'.date('[Y-m-d H:i:sO]').$str.EOL);
+					$this->write('[UNK]  '.date('[Ymd HisO]').$str.EOL);
 			}
 		}
 	}

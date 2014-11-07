@@ -2,7 +2,9 @@
 PackageManager::requireClassOnce('io.cachepart');
 
 /**
- * For caching entire files. Automatically determines whether to use gzip or not
+ * For caching entire files. Automatically determines whether to use gzip
+ * or not by seeing if the zlib extension is loaded.
+ * Please note that this class does NOT use contexts.
  * @author Ken
  *
  */
@@ -10,10 +12,9 @@ class CacheFile extends CachePart{
 	private static $gz=null;
 	private $etag;
 	/**
-	 * Enter description here ...
-	 * @param string $file
-	 * @param int $ttl Time to live in seconds
-	 * @param string $etag Optional. Is generated using the file's name if not set.
+	 * @param string $file '.gz' is appended to the file if the zlib extension is found
+	 * @param number $ttl Time to live in seconds
+	 * @param string $etag Optional. Is generated using md5() on the file's name if not set.
 	 */
 	public function __construct($file,$ttl,$etag=null){
 		if(self::$gz==null)self::$gz=extension_loaded('zlib');
