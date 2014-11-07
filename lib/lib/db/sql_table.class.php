@@ -10,6 +10,7 @@
  * For the format of a cell, the current column's value is referenced by $value$. A hidden column's value can be referenced by $col name$.
  * WARNING: Spaces ARE allowed in the column names! There is no escape character. You CAN have $ in the column value.
  * @author Kenneth Pierce
+ * @deprecated Uses mysql_* functions
  */
 class sql_table {
 	private $prefix='';

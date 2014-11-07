@@ -37,7 +37,7 @@ $_DB = null;
 $_DB_OPEN_CON = false;
 /**
  * Sets/returns the state of the debugging status for the db_* functions
- * @param boolean $toggle Optional.
+ * @param boolean $toggle (null) Optional.
  * @return boolean If the db_* functions provide debugging info.
  */
 function db_debug($toggle=null){
@@ -81,14 +81,11 @@ function db_close_connection() {
 	$_DB_OPEN_CON = false;
 }
 /** Logs a database error.
- * Common usage:
- * if (!$res)
- *		echo db_log_error(mysql_error(), $query);
- * @param string $msg Error message
- * @param string $qry The query that caused it. Optional.
- * @return string $msg
+ * @param PDOStatement $statement
+ * @param array $args (null) Arguments used
+ * @return string string form of the error
  */
-function db_log_error($statement,$args=null) {
+function db_log_error($statement,array $args=null) {
 	static $stm=null;
 	if($stm==null){
 		$db = db_get_connection();
@@ -130,8 +127,8 @@ function db_record_exist($db, $table, array $condition) {
  * @param PDO $db Set to null to use the default settings.
  * @param string $table
  * @param string $column
- * @param array $condition see _db_build_where
- * @param mixed $default Default value if the query failed or no value was found.
+ * @param array $condition (null) see _db_build_where
+ * @param mixed $default (null) Default value if the query failed or no value was found.
  * @return mixed The found value or $default
  */
 function db_get_column($db, $table, $column, array $condition = null, $default = null) {
@@ -146,8 +143,8 @@ function db_get_column($db, $table, $column, array $condition = null, $default =
  * @param PDO $db Set to null to use the default settings.
  * @param string $table
  * @param string $column
- * @param string $condition
- * @param mixed $default
+ * @param string $condition (null)
+ * @param mixed $default (null)
  * @return mixed The found value or $default
  */
 function db_get_field($db, $table, $column, array $condition = null, $default = null) {
@@ -157,9 +154,8 @@ function db_get_field($db, $table, $column, array $condition = null, $default = 
  * Shortcut for db_get_row($db,$table,$condition,$columns,$cache,MYSQL_ASSOC);
  * @param PDO $db
  * @param string $table
- * @param string $condition
- * @param string $columns
- * @param boolean $cache
+ * @param string $condition (null)
+ * @param string $columns ('*')
  * @return array the resulting array or null.
  */
 function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
@@ -168,9 +164,9 @@ function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
 /** Fetches a single row from the database.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table
- * @param string $condition
- * @param string $columns
- * @param int $type one (or more with && or +) of PDO::FETCH_*
+ * @param string $conditions (null)
+ * @param string $columns ('*')
+ * @param int $type (PDO::FETCH_BOTH) one (or more with | or +) of PDO::FETCH_*
  * @return array the resulting array or null.
  */
 function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO::FETCH_BOTH) {
@@ -208,7 +204,7 @@ function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO:
 /**
  * Prints a table displaying the result.
  * @param PDOStatement $result
- * @param array $attrib Key=>Value pair of attributes to put on the table.
+ * @param array $attrib (array()) Key=>Value pair of attributes to put on the table.
  * @return boolean False if an error occured on the first fetch
  */
 function result_table($result, array $attrib=array()){
@@ -237,7 +233,7 @@ function result_table($result, array $attrib=array()){
 /**
  * Returns the proper form of a variable for the query.
  * @param mixed $var
- * @return string|unknown|Ambigous <unknown, number>
+ * @return string|int
  * @deprecated
  */
 function _db_validate_value($var) {
@@ -331,14 +327,14 @@ function _db_build_where(array $where) {
 /** Queries the database and returns the result set or NULL if it failed.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
- * @param array|string $columns Array or comma delimited string of column names
- * @param array $where See _db_build_where(..).
- * @param array $sort array(array(column1, dir)[, array(column2, dir)[, ...]]) where dir=['ASC'|'DESC']
- * @param string $groupBy Column to group by.
- * @param string $having See mysql documentation on the HAVING clause.
- * @param int $limit Max number of rows to return
- * @param int $offset Row to start at
- * @return mixed resource or false on error.
+ * @param array $columns (null) Array or comma delimited string of column names
+ * @param array $where (null) See _db_build_where(..).
+ * @param array $sort (null) array(array(column1, dir)[, array(column2, dir)[, ...]]) where dir=['ASC'|'DESC']
+ * @param string $groupBy (null) Column to group by.
+ * @param string $having (null) See mysql documentation on the HAVING clause.
+ * @param int $limit (0) Max number of rows to return
+ * @param int $offset (0) Row to start at
+ * @return PDOStatement|string The resulting PDOStatement or the error
  */
 function db_query($db, $table, array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 	DBProfile::query('select');
@@ -379,6 +375,7 @@ function db_query($db, $table, array $columns = null,array $where = null,array $
 		}
 	}
 	$stm=db_prepare($db,$query);
+	if(!$stm)return 'Failed to prepare the statement.';
 	if($where)
 		$error=db_run_query($stm,$where);
 	else
@@ -415,7 +412,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 /** Deletes data from the database. Returns the error message on failure or false on success.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
- * @param array $conditions See _db_build_where(..).
+ * @param array (null) $conditions See _db_build_where(..).
  * @return mixed false on success or the error
  */
 function db_delete($db, $table, array $conditions = null) {
@@ -443,7 +440,7 @@ function db_delete($db, $table, array $conditions = null) {
  * Returns the number of rows the conditions match.
  * @param PDO $db
  * @param string $table
- * @param array $conditions see _db_build_where(...)
+ * @param array $conditions (null) see _db_build_where(...)
  * @return mixed false on error or the count.
  */
 function db_num_rows($db,$table,array $conditions=null){
@@ -474,9 +471,10 @@ function db_num_rows($db,$table,array $conditions=null){
 	return $ret[0];
 }
 /**
- * @param unknown $db
- * @param unknown $table
- * @param array $conditions
+ * Tests to see if any record matching the criteria exists.
+ * @param PDO $db
+ * @param string $table
+ * @param array $conditions (null)
  * @throws PDOException
  * @return boolean|string false on error. '0' or '1'
  */
@@ -511,8 +509,8 @@ function db_exists($db,$table,array $conditions=null){
 /**
  * Exists for logging purposes.
  * @param PDOStatement $stm
- * @param array $params
- * @return Ambigous <string>|boolean The error if failed or false on success.
+ * @param array $params (null)
+ * @return string|boolean The error if failed or false on success.
  */
 function db_run_query($stm, array $params=null){
 	DBProfile::query('run');
@@ -525,7 +523,7 @@ function db_run_query($stm, array $params=null){
 /**
  * Attempts to take a PDOStatement and create the final SQL statement.
  * @param PDOStatement $stm
- * @param array $params
+ * @param array $params (null)
  * @return string
  */
 function db_stm_to_string($stm,array $params=null){
@@ -541,8 +539,8 @@ function db_stm_to_string($stm,array $params=null){
  * Attempts to prepare the statement.
  * @param PDO $db
  * @param string $query
- * @throws PDOException
- * @return boolean|PDOStatement
+ * @throws PDOException on error if db_debug() returns true
+ * @return boolean|PDOStatement false on error
  */
 function db_prepare(PDO $db,$query){
 	try{
@@ -557,6 +555,10 @@ function db_prepare(PDO $db,$query){
 	return $query;
 }
 
+/**
+ * Convenience method for <code>date('Y-m-d',time())</code>
+ * @return string
+ */
 function db_now(){
 	return date('Y-m-d',time());
 }
@@ -572,9 +574,10 @@ class WhereBuilder{
 		$this->pre=":$prefix".(++self::$icnt);
 	}
 	/**
+	 * Appends a finished WhereBuilder to this
 	 * @param string $andor 'and' or 'or;
 	 * @param WhereBuilder $where The conditon to be appended
-	 * @param string $parens Wrap the appended WHERE conditions in parenthesis
+	 * @param boolean $parens (false) Wrap the appended WHERE conditions in parenthesis
 	 * @return WhereBuilder $this for chaining
 	 */
 	public function &appendWhere($andor,WhereBuilder $where,$parens=false){
@@ -584,10 +587,17 @@ class WhereBuilder{
 			$this->where.="$andor ".$where->where;
 		return $this;
 	}
+	/**
+	 * @param string $andor 'AND' or 'OR'
+	 * @return WhereBuilder itself for chaining
+	 */
 	public function &openParen($andor){
 		$this->where.="$andor (";
 		return $this;
 	}
+	/**
+	 * @return WhereBuilder Itself for chaining
+	 */
 	public function &closeParen(){
 		$this->where.=')';
 		return $this;
@@ -692,48 +702,85 @@ class WhereBuilder{
 		}
 		return $this;
 	}
+	/**
+	 * The current WHERE statement.
+	 * (note: does not start with 'WHERE')
+	 * @return string
+	 */
 	public function getWhere(){
 		return $this->where;
 	}
+	/**
+	 * @return array Values to be substituted
+	 */
 	public function getValues(){
 		return $this->values;
 	}
 }
+/**
+ * Convenience wrapper for <var>PDOStatement</var>s
+ * @author Ken
+ */
 class PDOStatementWrapper extends PropertyList{
 	protected $dataset=null;
+	/**
+	 * @param PDOStatement $stm
+	 * @param int $fetch_mode (PDO::FETCH_ASSOC)
+	 * @throws IllegalArgumentException
+	 */
 	public function __construct($stm,$fetch_mode=PDO::FETCH_ASSOC){
-		if(!$stm instanceof PDOStatement)throw new ErrorException('$stm is not a PDOStatement');
+		if(!$stm instanceof PDOStatement)throw new IllegalArgumentException('$stm is not a PDOStatement');
 		$this->dataset=$stm;
 		$this->dataset->setFetchMode($fetch_mode);
 	}
+	/**
+	 * See PDOStatement::bindParam() {http://www.php.net/manual/en/pdostatement.bindparam.php}
+	 * @param string|int $key
+	 * @param mixed $value
+	 * @param int $type
+	 */
 	public function bindParam($key,&$value,$type){
 		$this->dataset->bindParam($key,$value,$type);
 	}
+	/**
+	 * See PDOStatement::bindValue() {http://www.php.net/manual/en/pdostatement.bindvalue.php}
+	 * @param string|int $key
+	 * @param mixed $value
+	 * @param int $type
+	 */
 	public function bindValue($key,$value,$type){
 		$this->dataset->bindValue($key,$value,$type);
 	}
 	/**
 	 * Closes the cursor and runs the statement.
-	 * @param array $args [optional] The arguements for the statement
+	 * @param array $args (null) The arguements for the statement
 	 * @return boolean true on success, false on failure
 	 */
 	public function run(array $args=null){
 		$this->dataset->closeCursor();
 		return !db_run_query($this->dataset,$args);
 	}
+	/**
+	 * Loads the next row found by this query.
+	 * @throws IllegalStateException
+	 * @return boolean false if the fetch failed or if the end was reached
+	 */
 	public function loadNext(){
-		if(!$this->dataset)throw new IllegalStateException('No query run or last query failed.');
+		if(!$this->dataset)throw new IllegalStateException('Query was not ran or query failed.');
 		$row=$this->dataset->fetch();
 		$this->initFrom($row?$row:array());
 		return $row!=false;
 	}
+	/**
+	 * Closes the cursor and clears the loaded data.
+	 */
 	public function recycle(){
 		if($this->dataset)$this->dataset->closeCursor();
 		$this->clear();
 	}
 }
 /**
- * Class for working a PDO table.
+ * Class for working with a PDO table.
  * @author Ken
  *
  */
@@ -755,7 +802,8 @@ class PDOTable{
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
 	 * By default, it will not track changes.
-	 * @param boolean $v Optional. Sets the state if supplied
+	 * If set to false, any changes made cannot be undone.
+	 * @param boolean $v (null) Sets the state if supplied
 	 * @return boolean
 	 */
 	public function trackChanges($v=null){
@@ -773,6 +821,10 @@ class PDOTable{
 		}
 		$this->trackChanges=$v;
 	}
+	/**
+	 * Clears the value stored for $k
+	 * @param string $k
+	 */
 	public function uset($k){
 		$this->data->uset($k);
 	}
@@ -785,7 +837,7 @@ class PDOTable{
 			$this->data->mergeChanges();
 	}
 	/**
-	 * Forgets any changes to the model.
+	 * Forgets any changes to the model if set to track changes.
 	 * Will NOT undo changes commited to the database by calling save().
 	 */
 	public function forgetChanges(){
@@ -822,7 +874,7 @@ class PDOTable{
 	 * @param array $columns column=>columnType(PDO::PARAM_*)
 	 * @param string|array $pkey The primary key(s) for the table
 	 * @param resource $db
-	 * @param bool $trackChanges defaults to false
+	 * @param bool $trackChanges (false)
 	 */
 	public function __construct($table,array $columns,$pkey,$db,$trackChanges=false){
 		$this->table=$table;
@@ -832,18 +884,35 @@ class PDOTable{
 		$this->data=$trackChanges?new ChangeTrackingPropertyList:new PropertyList;
 		$this->trackChanges=$trackChanges;
 	}
+	/**
+	 * Copies the loaded row to $ary
+	 * @param array $ary
+	 * @return array The merged array
+	 */
 	public function copyTo(array $ary){
 		return $this->data->copyTo($ary);
 	}
+	/**
+	 * Get the value for $k
+	 * @param string $k
+	 * @param mixed $d (null) default value
+	 * @return mixed
+	 */
 	public function get($k,$d=null){
 		return $this->data->get($k,$d);
 	}
+	/**
+	 * Set the value for $k
+	 * @param string $k
+	 * @param mixed $v
+	 */
 	public function set($k,$v){
 		$this->data->set($k,$v);
 	}
 	/**
+	 * Gets the number of rows in the table
 	 * @throws ErrorException
-	 * @return number the number of rows in the table.
+	 * @return int the number of rows in the table.
 	 */
 	public function getTotalRows(){
 		if($this->rowCountstm==null){
@@ -856,6 +925,7 @@ class PDOTable{
 		return $ret[0];
 	}
 	/**
+	 * Number of rows matched by the query
 	 * @throws ErrorException
 	 * @return int The number of rows matched by the query.
 	 */
@@ -882,7 +952,7 @@ class PDOTable{
 	/**
 	 * Get's the primary key.
 	 * If it is a compound key, an array in the form of ($key=>$value) containing the values is returned.
-	 * @return multitype:|Ambiguous false if the ID is not set
+	 * @return mixed false if the ID is not set
 	 */
 	public function getId(){
 		if(is_array($this->pkey)){
@@ -895,6 +965,10 @@ class PDOTable{
 		}else
 			return $this->data->get($this->pkey,false);
 	}
+	/**
+	 * Used to get the old primary key if track changes is on
+	 * @return mixed
+	 */
 	public function getOldId(){
 		if(!$this->trackChanges)return $this->getId();
 		if(is_array($this->pkey)){
@@ -907,6 +981,11 @@ class PDOTable{
 		}else
 			return $this->data->getPrevious($this->pkey,false);
 	}
+	/**
+	 * Checks to see if the primary key is set.
+	 * Assumes the primary key cannot be null.
+	 * @return boolean
+	 */
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
 				$ret=array();
@@ -953,6 +1032,9 @@ class PDOTable{
 				return array(array($this->pkey,$this->data->get($this->pkey)));
 		}
 	}
+	/**
+	 * @return mixed
+	 */
 	protected function getOldPkey(){
 		if(is_array($this->pkey)){
 			$ret=array();
@@ -994,6 +1076,14 @@ class PDOTable{
 		$this->lastOperation=self::OP_LOAD;
 		return $row!=null;
 	}
+	/**
+	 * @param array $columns (null)
+	 * @param array $sortBy (null)
+	 * @param string $groupBy (null)
+	 * @param int $limit (0)
+	 * @param int $offset (0)
+	 * @return boolean True if successful
+	 */
 	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
 		if($this->dataset)$this->dataset->closeCursor();
 		if($columns || $sortBy || $groupBy || $limit || $offset){
@@ -1011,6 +1101,16 @@ class PDOTable{
 		$this->lastOperation=self::OP_LOAD;
 		return $this->dataset!=false;
 	}
+	/**
+	 * @param array $columns (null)
+	 * @param array $where (null)
+	 * @param array $sortBy (null)
+	 * @param string $groupBy (null)
+	 * @param string $having (null)
+	 * @param int $limit (0)
+	 * @param int $offset (0)
+	 * @return boolean True if successfule
+	 */
 	public function find(array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 		if($this->dataset)$this->dataset->closeCursor();
 		if($where==null){
@@ -1028,6 +1128,10 @@ class PDOTable{
 		$this->lastOperation=self::OP_LOAD;
 		return $this->dataset!=null;
 	}
+	/**
+	 * @param array $where (null)
+	 * @return boolean
+	 */
 	public function exists(array $where=null){
 		if($this->dataset)$this->dataset->closeCursor();
 		if($where==null){
@@ -1041,11 +1145,18 @@ class PDOTable{
 		$count=db_exists($this->db, $this->table,$where);
 		return $count=='1';
 	}
+	/**
+	 * @return PDOStatement The last PDOStatement or null
+	 */
 	public function getLoadAllResult(){
 		return $this->dataset;
 	}
+	/**
+	 * @throws IllegalStateException If no query was run or if the last query failed.
+	 * @return boolean True if there is a next row and the next row was loaded
+	 */
 	public function loadNext(){
-		if(!$this->dataset)throw new IllegalStateException('No query run or last query faled.');
+		if(!$this->dataset)throw new IllegalStateException('No query run or last query failed.');
 		$row=$this->dataset->fetch(PDO::FETCH_ASSOC);
 		$this->data->initFrom($row?$row:array());
 		$this->lastOperation=self::OP_LOAD;
@@ -1071,9 +1182,9 @@ class PDOTable{
 		return $error;
 	}
 	/**
-	 * Automatically chooses between insert and update based on the availability of the
+	 * Automatically chooses between insert() and update() based on the availability of the
 	 * primary keys.
-	 * @return string,boolean false on success or the error.
+	 * @return string|boolean false on success or the error.
 	 */
 	public function save(){
 		$error=false;
@@ -1086,7 +1197,7 @@ class PDOTable{
 	}
 	/**
 	 * Forces an update.
-	 * @return string,boolean FALSE on success or the error.
+	 * @return string|boolean FALSE on success or the error.
 	 */
 	public function update(){
 		$query='UPDATE `'.$this->table.'`  SET ';
@@ -1110,7 +1221,7 @@ class PDOTable{
 	}
 	/**
 	 * Forces an insert.
-	 * @return string,boolean false on success or the error.
+	 * @return string|boolean false on success or the error.
 	 */
 	public function insert(){
 		$data=$this->data->copyTo(array());
@@ -1127,7 +1238,7 @@ class PDOTable{
 	}
 	/**
 	 * Forces an insert. Ignores duplicate key errors.
-	 * @return string,boolean false on success or the error.
+	 * @return string|boolean false on success or the error.
 	 */
 	public function insertIgnore(){
 		$data=$this->data->copyTo(array());
@@ -1144,7 +1255,7 @@ class PDOTable{
 	}
 	/**
 	 * Forces an insert. Does an update on duplicate key errors.
-	 * @return string,boolean false on success or the error.
+	 * @return string|boolean false on success or the error.
 	 */
 	public function insertUpdate(){
 		$data=$this->data->copyTo(array());
@@ -1162,6 +1273,10 @@ class PDOTable{
 		if($error)$this->lastError=$error;
 		return $error;
 	}
+	/**
+	 * @param string $type
+	 * @throws ErrorException
+	 */
 	protected function saveOperation($type){
 		if($this->saveopstm==null){
 			$this->saveopstm=db_prepare($this->db,'INSERT INTO `updates` (`type`,`data`) VALUES (:type,:data)');
@@ -1182,7 +1297,7 @@ class PDOTable{
 		$this->data=clone $this->data;
 	}
 	/**
-	 * @return Ambigous <Ambigous, boolean, mixed, string> The last error.
+	 * @return string The last error.
 	 */
 	public function getLastError(){
 		return $this->lastError;
@@ -1566,6 +1681,10 @@ class sql_table_simple {
 	public function setTable($table) {
 		$this->table = $table;
 	}
+	/**
+	 * @param string $col
+	 * @param string $alias
+	 */
 	function addAlias($col,$alias){
 		$this->aliases_columns[$alias]=$col;
 		if(!isset($this->hidden_columns[$col]))
@@ -1574,8 +1693,8 @@ class sql_table_simple {
 	/**
 	 * Adds a hidden column. It is in the select statement, but not displayed.
 	 * @param string $column The column name.
-	 * @param string $alias Column alias(for easier reference)
-	 * @param string $callback Function to be called on the value
+	 * @param string $alias (null) Column alias(for easier reference)
+	 * @param string $callback (null) Function to be called on the value
 	 */
 	public function addHiddenColumn($column,$alias=null,$callback=null) {
 		$this->select_columns[] = $column;
@@ -1597,7 +1716,7 @@ class sql_table_simple {
 	 * Adds a column that will only use other columns to build it's content. This column will NOT be in the select statement. As such, you cannot set an alias for or sort by this column.
 	 * @param string $column
 	 * @param string $format
-	 * @param array $tdattib
+	 * @param array $tdattib (null) name=>key array of HTML attributes to put on TDs in the column
 	 */
 	public function addDummyColumn($column,$format,array $tdattib=null){
 		$this->shown_columns[]=$column;
@@ -1617,8 +1736,8 @@ class sql_table_simple {
 	 * Specifies a column that needs to be referred by a different name. The problem that sparked this addition:
 	 * Column in the select statement: roster.pos
 	 * Column in the array: pos
-	 * @param unknown_type $col The original column name
-	 * @param unknown_type $resolved The name that should be used
+	 * @param string $col The original column name
+	 * @param string $resolved The name that should be used
 	 */
 	public function addQuirkCol($col,$resolved){
 		$this->quirk_col[$col]=$resolved;
@@ -1626,10 +1745,10 @@ class sql_table_simple {
 	/**
 	 * Adds a column to the select query.
 	 * @param string $column The table column
-	 * @param string $alias The name to be displayed.
-	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
-	 * @param array $tdattrib array of key=>value mappings to be added to the TD element containing this value.
-	 * @param string $callback A string containing the name of a function that will be called on this value. It should take one argument and return a value.
+	 * @param string $alias (null) The name to be displayed.
+	 * @param string $format (null) String containing the format for the column. Use $value$ to specify where the column value should be.
+	 * @param array $tdattrib (null) array of key=>value mappings to be added to the TD element containing this value.
+	 * @param string $callback (null) A string containing the name of a function that will be called on this value. It should take one argument and return a value.
 	 */
 	public function addColumn($column, $alias=null,$format=null,array $tdattrib=null,$callback=null) {
 		$this->select_columns[] = $column;
@@ -1674,8 +1793,8 @@ class sql_table_simple {
 	/**
 	 * Queries and returns the table.
 	 * @param resource $db MySQL database connection.
-	 * @param string $conditions SQL query conditions.
-	 * @param string $extra Extra appended to the link.
+	 * @param string $conditions (null) SQL query conditions.
+	 * @param string $extra ('') Extra appended to the link.
 	 * @return string The table.
 	 */
 	public function printTable($db, $conditions = null, $extra = '') {
@@ -1782,6 +1901,15 @@ class sql_table_simple {
 	}
 }// -- end class sql_table
 
+/**
+ * Pagination links
+ * @param int $totalRows
+ * @param int $currentRow
+ * @param int $rowsPerPage
+ * @param string $extra ('')
+ * @param string $prefix ('')
+ * @return string
+ */
 function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='') {
 	$cPages = ceil($totalRows/$rowsPerPage);
 	if ($cPages == 1){return ' ';}
