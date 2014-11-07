@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+    <meta charset="utf-8"/>
+    <title>API Documentation</title>
+    <meta name="author" content=""/>
+    <meta name="description" content=""/>
+
+    <link href="../css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/prism.css" rel="stylesheet" media="all"/>
+    <link href="../css/template.css" rel="stylesheet" media="all"/>
+    
+    <!--[if lt IE 9]>
+    <script src="../js/html5.js"></script>
+    <![endif]-->
+    <script src="../js/jquery-1.11.0.min.js"></script>
+    <script src="../js/ui/1.10.4/jquery-ui.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/jquery.smooth-scroll.js"></script>
+    <script src="../js/prism.min.js"></script>
+    <!-- TODO: Add http://jscrollpane.kelvinluck.com/ to style the scrollbars for browsers not using webkit-->
+        <script type="text/javascript">
+        function loadExternalCodeSnippets() {
+            Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function (pre) {
+                var src = pre.getAttribute('data-src');
+                var extension = (src.match(/\.(\w+)$/) || [, ''])[1];
+                var language = 'php';
+
+                var code = document.createElement('code');
+                code.className = 'language-' + language;
+
+                pre.textContent = '';
+
+                code.textContent = 'Loading…';
+
+                pre.appendChild(code);
+
+                var xhr = new XMLHttpRequest();
+
+                xhr.open('GET', src, true);
+
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4) {
+
+                        if (xhr.status < 400 && xhr.responseText) {
+                            code.textContent = xhr.responseText;
+
+                            Prism.highlightElement(code);
+                        }
+                        else if (xhr.status >= 400) {
+                            code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
+                        }
+                        else {
+                            code.textContent = '✖ Error: File does not exist or is empty';
+                        }
+                    }
+                };
+
+                xhr.send(null);
+            });
+        }
+
+        $(document).ready(function(){
+            loadExternalCodeSnippets();
+        });
+        $('#source-view').on('shown', function () {
+            loadExternalCodeSnippets();
+        })
+    </script>
+
+    <link rel="shortcut icon" href="../images/favicon.ico"/>
+    <link rel="apple-touch-icon" href="../images/apple-touch-icon.png"/>
+    <link rel="apple-touch-icon" sizes="72x72" href="../images/apple-touch-icon-72x72.png"/>
+    <link rel="apple-touch-icon" sizes="114x114" href="../images/apple-touch-icon-114x114.png"/>
+</head>
+<body>
+
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <i class="icon-ellipsis-vertical"></i>
+            </a>
+            <a class="brand" href="../index.html">API Documentation</a>
+
+            <div class="nav-collapse">
+                <ul class="nav pull-right">
+                                        <li class="dropdown" id="charts-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Charts <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="../graphs/class.html">
+                                    <i class="icon-list-alt"></i>&#160;Class hierarchy diagram
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown" id="reports-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Reports <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="../reports/errors.html">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="icon-list-alt"></i>&#160;Errors <span class="label label-info pull-right">1281</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="../reports/markers.html">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="icon-list-alt"></i>&#160;Markers <span class="label label-info pull-right">497</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="../reports/deprecated.html">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <i class="icon-list-alt"></i>&#160;Deprecated <span class="label label-info pull-right">5</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--<div class="go_to_top">-->
+    <!--<a href="#___" style="color: inherit">Back to top&#160;&#160;<i class="icon-upload icon-white"></i></a>-->
+    <!--</div>-->
+</div>
+
+<div id="___" class="container-fluid">
+        <section class="row-fluid">
+        <div class="span2 sidebar">
+                                <div class="accordion" style="margin-bottom: 0">
+        <div class="accordion-group">
+            <div class="accordion-heading">
+                                    <a class="accordion-toggle " data-toggle="collapse" data-target="#namespace-709484322"></a>
+                                <a href="../namespaces/default.html" style="margin-left: 30px; padding-left: 0">\</a>
+            </div>
+            <div id="namespace-709484322" class="accordion-body collapse in">
+                <div class="accordion-inner">
+
+                    
+                    <ul>
+                                                    <li class="interface"><a href="../classes/IException.html">IException</a></li>
+                                                                                                    <li class="class"><a href="../classes/CacheFile.html">CacheFile</a></li>
+                                                    <li class="class"><a href="../classes/CachePart.html">CachePart</a></li>
+                                                    <li class="class"><a href="../classes/ChangeTrackingPropertyList.html">ChangeTrackingPropertyList</a></li>
+                                                    <li class="class"><a href="../classes/Counter.html">Counter</a></li>
+                                                    <li class="class"><a href="../classes/CsvReader.html">CsvReader</a></li>
+                                                    <li class="class"><a href="../classes/CSVReader.html">CSVReader</a></li>
+                                                    <li class="class"><a href="../classes/CsvReader2.html">CsvReader2</a></li>
+                                                    <li class="class"><a href="../classes/CustomException.html">CustomException</a></li>
+                                                    <li class="class"><a href="../classes/DatabaseException.html">DatabaseException</a></li>
+                                                    <li class="class"><a href="../classes/DBProfile.html">DBProfile</a></li>
+                                                    <li class="class"><a href="../classes/File.html">File</a></li>
+                                                    <li class="class"><a href="../classes/FileNotFoundException.html">FileNotFoundException</a></li>
+                                                    <li class="class"><a href="../classes/FormKey.html">FormKey</a></li>
+                                                    <li class="class"><a href="../classes/gd_image.html">gd_image</a></li>
+                                                    <li class="class"><a href="../classes/GZFile.html">GZFile</a></li>
+                                                    <li class="class"><a href="../classes/HTML.html">HTML</a></li>
+                                                    <li class="class"><a href="../classes/HTML_form.html">HTML_form</a></li>
+                                                    <li class="class"><a href="../classes/HTML_Header.html">HTML_Header</a></li>
+                                                    <li class="class"><a href="../classes/IllegalArgumentException.html">IllegalArgumentException</a></li>
+                                                    <li class="class"><a href="../classes/IllegalStateException.html">IllegalStateException</a></li>
+                                                    <li class="class"><a href="../classes/IOException.html">IOException</a></li>
+                                                    <li class="class"><a href="../classes/Link.html">Link</a></li>
+                                                    <li class="class"><a href="../classes/Logger.html">Logger</a></li>
+                                                    <li class="class"><a href="../classes/mail.html">mail</a></li>
+                                                    <li class="class"><a href="../classes/PackageManager.html">PackageManager</a></li>
+                                                    <li class="class"><a href="../classes/Pagination.html">Pagination</a></li>
+                                                    <li class="class"><a href="../classes/PDOStatementWrapper.html">PDOStatementWrapper</a></li>
+                                                    <li class="class"><a href="../classes/PDOTable.html">PDOTable</a></li>
+                                                    <li class="class"><a href="../classes/PropertyList.html">PropertyList</a></li>
+                                                    <li class="class"><a href="../classes/result_table.html">result_table</a></li>
+                                                    <li class="class"><a href="../classes/SDate.html">SDate</a></li>
+                                                    <li class="class"><a href="../classes/SDateRange.html">SDateRange</a></li>
+                                                    <li class="class"><a href="../classes/ServerSocket.html">ServerSocket</a></li>
+                                                    <li class="class"><a href="../classes/Socket.html">Socket</a></li>
+                                                    <li class="class"><a href="../classes/sql_class.html">sql_class</a></li>
+                                                    <li class="class"><a href="../classes/sql_model.html">sql_model</a></li>
+                                                    <li class="class"><a href="../classes/sql_table.html">sql_table</a></li>
+                                                    <li class="class"><a href="../classes/sql_table.html">sql_table</a></li>
+                                                    <li class="class"><a href="../classes/sql_table_simple.html">sql_table_simple</a></li>
+                                                    <li class="class"><a href="../classes/sql_table_simple.html">sql_table_simple</a></li>
+                                                    <li class="class"><a href="../classes/Stream.html">Stream</a></li>
+                                                    <li class="class"><a href="../classes/StreamSocket.html">StreamSocket</a></li>
+                                                    <li class="class"><a href="../classes/StreamSocketClient.html">StreamSocketClient</a></li>
+                                                    <li class="class"><a href="../classes/StreamSocketServer.html">StreamSocketServer</a></li>
+                                                    <li class="class"><a href="../classes/user.html">user</a></li>
+                                                    <li class="class"><a href="../classes/WhereBuilder.html">WhereBuilder</a></li>
+                                                    <li class="class"><a href="../classes/WML.html">WML</a></li>
+                                            </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </section>
+    <section class="row-fluid">
+        <div class="span10 offset2">
+            <div class="row-fluid">
+                <div class="span8 content file">
+                    <nav>
+                                                                    </nav>
+
+                    <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal"><i class="icon-code"></i></a>
+                    <h1><small></small>form.functions.php</h1>
+                    <p><em></em></p>
+                    
+
+                    
+                    
+                                        <h2>Classes</h2>
+                    <table class="table table-hover">
+                                            <tr>
+                            <td><a href="../classes/FormKey.html">FormKey</a></td>
+                            <td><em>Class for easily managing form keys used to test for form validity and prevent
+double submissions. Uses $_SESSION[&#039;FormKey&#039;] to store it&#039;s data.</em></td>
+                        </tr>
+                                        </table>
+                                    </div>
+
+                <aside class="span4 detailsbar">
+                    <dl>
+                                                    <dt>Package</dt>
+                            <dd><div class="namespace-wrapper">\markup_language</div></dd>
+                        
+                        
+                    </dl>
+                    <h2>Tags</h2>
+                    <table class="table table-condensed">
+                                                    <tr>
+                                <th>
+                                    author
+                                </th>
+                                <td>
+                                                                            <p>Kenneth Pierce kcpiercejr@gmail.com</p>
+                                                                    </td>
+                            </tr>
+                                            </table>
+
+                </aside>
+            </div>
+
+                        <div class="row-fluid">
+                <section class="span8 content file">
+                    <h2>Constants</h2>
+                </section>
+                <aside class="span4 detailsbar"></aside>
+            </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_REG_STATE" name="constant_REG_STATE" class="anchor"></a>
+            <article id="constant_REG_STATE" class="constant">
+                <h3 class="">REG_STATE</h3>
+                <pre class="signature">REG_STATE</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_EMPTY" name="constant_E_FORM_EMPTY" class="anchor"></a>
+            <article id="constant_E_FORM_EMPTY" class="constant">
+                <h3 class="">E_FORM_EMPTY</h3>
+                <pre class="signature">E_FORM_EMPTY</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_LIMITEXCEEDED" name="constant_E_FORM_LIMITEXCEEDED" class="anchor"></a>
+            <article id="constant_E_FORM_LIMITEXCEEDED" class="constant">
+                <h3 class="">E_FORM_LIMITEXCEEDED</h3>
+                <pre class="signature">E_FORM_LIMITEXCEEDED</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_MINNOTMET" name="constant_E_FORM_MINNOTMET" class="anchor"></a>
+            <article id="constant_E_FORM_MINNOTMET" class="constant">
+                <h3 class="">E_FORM_MINNOTMET</h3>
+                <pre class="signature">E_FORM_MINNOTMET</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_DATEFORMAT" name="constant_E_FORM_DATEFORMAT" class="anchor"></a>
+            <article id="constant_E_FORM_DATEFORMAT" class="constant">
+                <h3 class="">E_FORM_DATEFORMAT</h3>
+                <pre class="signature">E_FORM_DATEFORMAT</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_DATEDAY" name="constant_E_FORM_DATEDAY" class="anchor"></a>
+            <article id="constant_E_FORM_DATEDAY" class="constant">
+                <h3 class="">E_FORM_DATEDAY</h3>
+                <pre class="signature">E_FORM_DATEDAY</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_DATEMONTH" name="constant_E_FORM_DATEMONTH" class="anchor"></a>
+            <article id="constant_E_FORM_DATEMONTH" class="constant">
+                <h3 class="">E_FORM_DATEMONTH</h3>
+                <pre class="signature">E_FORM_DATEMONTH</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_DATEYEAR" name="constant_E_FORM_DATEYEAR" class="anchor"></a>
+            <article id="constant_E_FORM_DATEYEAR" class="constant">
+                <h3 class="">E_FORM_DATEYEAR</h3>
+                <pre class="signature">E_FORM_DATEYEAR</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_PHONEAREA" name="constant_E_FORM_PHONEAREA" class="anchor"></a>
+            <article id="constant_E_FORM_PHONEAREA" class="constant">
+                <h3 class="">E_FORM_PHONEAREA</h3>
+                <pre class="signature">E_FORM_PHONEAREA</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_PHONEPREFIX" name="constant_E_FORM_PHONEPREFIX" class="anchor"></a>
+            <article id="constant_E_FORM_PHONEPREFIX" class="constant">
+                <h3 class="">E_FORM_PHONEPREFIX</h3>
+                <pre class="signature">E_FORM_PHONEPREFIX</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_PHONELINE" name="constant_E_FORM_PHONELINE" class="anchor"></a>
+            <article id="constant_E_FORM_PHONELINE" class="constant">
+                <h3 class="">E_FORM_PHONELINE</h3>
+                <pre class="signature">E_FORM_PHONELINE</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="constant_E_FORM_PHONEFORMAT" name="constant_E_FORM_PHONEFORMAT" class="anchor"></a>
+            <article id="constant_E_FORM_PHONEFORMAT" class="constant">
+                <h3 class="">E_FORM_PHONEFORMAT</h3>
+                <pre class="signature">E_FORM_PHONEFORMAT</pre>
+                <p><em></em></p>
+                
+            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                        <dl>
+                                <dt>File</dt>
+                <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                            <p>markup_language</p>
+                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                            
+                        <div class="row-fluid">
+                <section class="span8 content file">
+                    <h2>Functions</h2>
+                </section>
+                <aside class="span4 detailsbar"></aside>
+            </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_get" name="method_form_get" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_get()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_get(mixed  <span class="argument">$index</span>, mixed  <span class="argument">$default = null</span>) : mixed</pre>
+                <p><em>Gets the value of at $index in $_GET or $_POST.</em></p>
+                <p><em>Checks $_POST first.</em>
+If neither have the value then $default is returned.</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>mixed</td>
+                                <td>$index </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>mixed</td>
+                                <td>$default </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    mixed
+                                            &mdash; <p>The value found in $_GET or $_POST or $default if neither had the index defined.</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_select_mysql" name="method_form_select_mysql" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_select_mysql()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_select_mysql(resource  <span class="argument">$result</span>, array|string  <span class="argument">$attrib</span>, string|integer  <span class="argument">$selected = null</span>) </pre>
+                <p><em>Creates a select element from a mysql result set where the first field is the value and the
+second field is the display.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>resource</td>
+                                <td>$result </td>
+                                <td><p>The first field is the value,the second field is the display.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array|string</td>
+                                <td>$attrib </td>
+                                <td><p>A string containing the name or an array of 'key'=>'value' mappings that will be added to the attribute list.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string|integer</td>
+                                <td>$selected </td>
+                                <td><p>Defaults to null. If left blank it will be set to the value found in $_GET or $_POST.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_select_PDO" name="method_form_select_PDO" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_select_PDO()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_select_PDO(resource  <span class="argument">$result</span>, array|string  <span class="argument">$attrib</span>, string|integer  <span class="argument">$selected = null</span>) </pre>
+                <p><em>Creates a select element from a mysql result set where the first field is the value and the
+second field is the display.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>resource</td>
+                                <td>$result </td>
+                                <td><p>The first field is the value,the second field is the display.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array|string</td>
+                                <td>$attrib </td>
+                                <td><p>A string containing the name or an array of 'key'=>'value' mappings that will be added to the attribute list.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string|integer</td>
+                                <td>$selected </td>
+                                <td><p>Defaults to null. If left blank it will be set to the value found in $_GET or $_POST.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_checkbox_mysql" name="method_form_checkbox_mysql" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_checkbox_mysql()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_checkbox_mysql(string  <span class="argument">$name</span>, string  <span class="argument">$id</span>, resource  <span class="argument">$values</span>, array  <span class="argument">$checked = null</span>, array  <span class="argument">$attrib = null</span>, string  <span class="argument">$before = null</span>, string  <span class="argument">$after = null</span>) </pre>
+                <p><em>Echoes a series of checkboxes.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the group</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$id </td>
+                                <td><p>Id of the group(used to associate labels with the checkbox)</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>resource</td>
+                                <td>$values </td>
+                                <td><p>a 2 column Mysql resource object.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$checked </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td><p>Optional. Array of attribute=>value mappings.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$before </td>
+                                <td><p>Optional. Prepends this to each iteration.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$after </td>
+                                <td><p>Optional. Appends this to each iteration.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_checkbox_PDO" name="method_form_checkbox_PDO" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_checkbox_PDO()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_checkbox_PDO(string  <span class="argument">$name</span>, string  <span class="argument">$id</span>, resource  <span class="argument">$values</span>, array  <span class="argument">$checked = null</span>, array  <span class="argument">$attrib = null</span>, string  <span class="argument">$before = null</span>, string  <span class="argument">$after = null</span>) </pre>
+                <p><em>Echoes a series of checkboxes.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the group</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$id </td>
+                                <td><p>Id of the group(used to associate labels with the checkbox)</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>resource</td>
+                                <td>$values </td>
+                                <td><p>a 2 column Mysql resource object.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$checked </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td><p>Optional. Array of attribute=>value mappings.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$before </td>
+                                <td><p>Optional. Prepends this to each iteration.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$after </td>
+                                <td><p>Optional. Appends this to each iteration.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_hidden_from_array" name="method_form_hidden_from_array" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_hidden_from_array()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_hidden_from_array(array  <span class="argument">$list</span>) </pre>
+                <p><em>Takes the array and outputs a hidden form element for each
+array element. The array must be &#039;name&#039;=&gt;&#039;value&#039; format.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>array</td>
+                                <td>$list </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_date" name="method_form_date" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_date()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_date(string  <span class="argument">$name</span>, string|array  <span class="argument">$date = null</span>) </pre>
+                <p><em>Outputs a date element.</em></p>
+                <p>Element names are name[month],name[day],name[year]</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>suffix for the elements.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string|array</td>
+                                <td>$date </td>
+                                <td><p>[optional]A unix datestamp(year-month-day) or an array('day'=>day,'month'=>month,'year'=>year).</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_date_cust" name="method_form_date_cust" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_date_cust()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_date_cust(string  <span class="argument">$name</span>, \number  <span class="argument">$yearsAhead = 10</span>, \number  <span class="argument">$yearsBehind = 10</span>, string  <span class="argument">$date = null</span>) </pre>
+                <p><em>Outputs a date element.</em></p>
+                <p>Element names are name[month],name[day],name[year]</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$yearsAhead </td>
+                                <td><p>default is 10</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$yearsBehind </td>
+                                <td><p>default is 10</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$date </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_time" name="method_form_time" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_time()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_time(string  <span class="argument">$name</span>, string  <span class="argument">$time = null</span>) </pre>
+                <p><em>Outputs a time element.</em></p>
+                <p>Element names are name[minute],name[second],name[hour]</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>suffix for the elements.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$time </td>
+                                <td><p>[optional]A unix datestamp(hour:minute:second) or an array('hour'=>hour,'minute'=>minute,'second'=>second).</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_select" name="method_form_select" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_select()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_select(string  <span class="argument">$name</span>, array  <span class="argument">$data</span>, mixed  <span class="argument">$default = null</span>, array  <span class="argument">$extra = null</span>) </pre>
+                <p><em>Creates a select HTML element.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>The name of the element</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$data </td>
+                                <td><p>Array of values and their displays. array('value'=>'display'[,'value'=>'display'])</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>mixed</td>
+                                <td>$default </td>
+                                <td><p>[optional]The default value.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$extra </td>
+                                <td><p>[optional]Array of attribute values. array('tag'=>'value'[,'tag'=>'value'])</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_input" name="method_form_input" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_input()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_input(string  <span class="argument">$name</span>, string  <span class="argument">$type = &#039;text&#039;</span>, string  <span class="argument">$value = &#039;&#039;</span>, array  <span class="argument">$attrib = array()</span>) </pre>
+                <p><em>Creates an input field of the specified type with the specified value.</em></p>
+                <p>Type defaults to 'text'. If value is empty then it will try to find the value from the $_REQUEST super global.</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the input element.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$type </td>
+                                <td><p>[optional]Type of the element. Defaults to text.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td><p>[optional]Value of the element. Defaults to value returned by form_get()</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td><p>[optional]Array of key=>value mappings. These are appended to the tag's attributes.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_phone" name="method_form_phone" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_phone()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_phone(  <span class="argument">$name</span>,   <span class="argument">$area = &#039;&#039;</span>,   <span class="argument">$prefix = &#039;&#039;</span>,   <span class="argument">$line = &#039;&#039;</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td></td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$area </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$prefix </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$line </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_phone_tostr" name="method_form_phone_tostr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_phone_tostr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_phone_tostr(array  <span class="argument">$phone_ary</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>array</td>
+                                <td>$phone_ary </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_date_tostr" name="method_form_date_tostr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_date_tostr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_date_tostr(array  <span class="argument">$date_ary</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>array</td>
+                                <td>$date_ary </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_time_tostr" name="method_form_time_tostr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_time_tostr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_time_tostr(array  <span class="argument">$time_ary</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>array</td>
+                                <td>$time_ary </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_text" name="method_form_text" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_text()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_text(  <span class="argument">$name</span>,   <span class="argument">$value = null</span>, array  <span class="argument">$extra = null</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td></td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$extra </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_text_labeled" name="method_form_text_labeled" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_text_labeled()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_text_labeled(  <span class="argument">$name</span>,   <span class="argument">$id</span>,   <span class="argument">$label</span>,   <span class="argument">$value = null</span>, array  <span class="argument">$attrib = null</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td></td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$id </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$label </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_radio" name="method_form_radio" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_radio()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_radio(string  <span class="argument">$name</span>, string  <span class="argument">$id</span>, array  <span class="argument">$values</span>,   <span class="argument">$default</span>, array  <span class="argument">$attrib = null</span>, string  <span class="argument">$before = null</span>, string  <span class="argument">$after = null</span>) </pre>
+                <p><em>Echoes a series of radio buttons.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the group</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$id </td>
+                                <td><p>Id of the group(used to associate labels with the radio button)</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$values </td>
+                                <td><p>Array of value=>display mappings.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$default </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$before </td>
+                                <td><p>Optional. Prepends this to each iteration.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$after </td>
+                                <td><p>Optional. Appends this to each iteration.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_radioYN" name="method_form_radioYN" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_radioYN()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_radioYN(  <span class="argument">$name</span>,   <span class="argument">$id</span>,   <span class="argument">$default</span>, array  <span class="argument">$attrib = null</span>,   <span class="argument">$before = null</span>,   <span class="argument">$after = null</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td></td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$id </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$default </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$before </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$after </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_checkbox" name="method_form_checkbox" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_checkbox()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_checkbox(string  <span class="argument">$name</span>, string  <span class="argument">$id</span>, array  <span class="argument">$values</span>, array  <span class="argument">$attrib = null</span>, string  <span class="argument">$before = null</span>, string  <span class="argument">$after = null</span>) </pre>
+                <p><em>Echoes a series of checkboxes.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the group</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$id </td>
+                                <td><p>Id of the group(used to associate labels with the checkbox)</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$values </td>
+                                <td><p>Array of value=>display mappings.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td><p>Optional. Array of attribute=>value mappings.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$before </td>
+                                <td><p>Optional. Prepends this to each iteration.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$after </td>
+                                <td><p>Optional. Appends this to each iteration.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_textarea" name="method_form_textarea" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_textarea()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_textarea(  <span class="argument">$sName</span>,   <span class="argument">$iCols</span>,   <span class="argument">$iRows</span>, array  <span class="argument">$attrib = array()</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td></td>
+                                <td>$sName </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$iCols </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td></td>
+                                <td>$iRows </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$attrib </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_date" name="method_is_date" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_date()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_date(string  <span class="argument">$name</span>) : boolean|integer</pre>
+                <p><em>Enter description here .</em></p>
+                <p>..</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>name of the element</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>false if valid, error constant if error</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_phone" name="method_is_phone" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_phone()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_phone(string  <span class="argument">$value</span>) : boolean|integer</pre>
+                <p><em>Enter description here .</em></p>
+                <p>..</p>
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_regex_test" name="method_form_regex_test" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_regex_test()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_regex_test(string  <span class="argument">$test</span>, string  <span class="argument">$separator</span>, string  <span class="argument">$value</span>, integer  <span class="argument">$min = 1</span>, integer  <span class="argument">$max = 1</span>) : \Ambigous</pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$test </td>
+                                <td><p>Just the allowed characters. Not the full regex. Do not include space.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$separator </td>
+                                <td><p>Allowed word separator characters</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>integer</td>
+                                <td>$min </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>integer</td>
+                                <td>$max </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    \Ambigous
+                                            &mdash; <p><boolean, string>|boolean|Ambigous <string, boolean>|string</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_alphastr" name="method_is_alphastr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_alphastr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_alphastr(string  <span class="argument">$value</span>, \number  <span class="argument">$min = 1</span>, \number  <span class="argument">$max = 1</span>) : boolean|integer</pre>
+                <p><em>Tests to see if the field only contains A-Z and a-z.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$min </td>
+                                <td><p>Defaults to 1. Minimum number of space delimited words allowed. 0 returns true instead of E_FORM_EMPTY.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$max </td>
+                                <td><p>Defaults to 1. Maximum number of space delimited words allowed. 0 means unlimited.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or an error constant</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_alphanumstr" name="method_is_alphanumstr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_alphanumstr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_alphanumstr(string  <span class="argument">$value</span>, \number  <span class="argument">$min = 1</span>, \number  <span class="argument">$max = 1</span>) : boolean|integer</pre>
+                <p><em>Tests to see if the field only contains A-Z, a-z, and 0-9.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$min </td>
+                                <td><p>Defaults to 1. Minimum number of space delimited words allowed. 0 returns true instead of E_FORM_EMPTY.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$max </td>
+                                <td><p>Defaults to 1. Maximum number of space delimited words allowed. 0 means unlimited.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or an error constant</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_namestr" name="method_is_namestr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_namestr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_namestr(string  <span class="argument">$value</span>, \number  <span class="argument">$min = 1</span>, \number  <span class="argument">$max = 1</span>) : boolean|integer</pre>
+                <p><em>Tests to see if the field only contains A-Z, a-z, apostrophe, hyphen, comma and period.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$min </td>
+                                <td><p>Defaults to 1. Minimum number of space delimited words allowed. 0 returns true instead of E_FORM_EMPTY.</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$max </td>
+                                <td><p>Defaults to 1. Maximum number of space delimited words allowed. 0 means unlimited.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or an error constant</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_address" name="method_is_address" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_address()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_address(string  <span class="argument">$value</span>) : boolean|integer</pre>
+                <p><em>Tests to see if the field only contains starts with a number or PO followed by a number and one or more alpha strings maybe ending with a period.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_zip" name="method_is_zip" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_zip()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_zip(string  <span class="argument">$value</span>) : boolean|integer</pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_wordstr" name="method_is_wordstr" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_wordstr()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_wordstr(string  <span class="argument">$value</span>, \number  <span class="argument">$min = 1</span>, \number  <span class="argument">$max = 1</span>) : boolean|integer</pre>
+                <p><em>Tests to see if the field only contains A-Z, a-z, 0-9 and punctuation marks.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td><p>Value to be tested</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$min </td>
+                                <td><p>Defaults to 1. Minimum number of space delimited words allowed. 0 returns true if blank</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$max </td>
+                                <td><p>Defaults to 1. Maximum number of space delimited words allowed. 0 means unlimited.</p></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|integer
+                                            &mdash; <p>true if valid, false if not, or an error constant</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_email" name="method_is_email" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_email()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_email(string  <span class="argument">$value</span>) : boolean|\number</pre>
+                <p><em>Checks to see if the email address conforms to RFC 822.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|\number
+                                            &mdash; <p>true,false,or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_url" name="method_is_url" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_url()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_url(string  <span class="argument">$url</span>) : \number|boolean</pre>
+                <p><em>Tests to see if the URL is in a valid form. Does not check for validity of the path(would be quite complicated)</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$url </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    \number|boolean
+                                            &mdash; <p>true,false or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_validselection" name="method_is_validselection" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_validselection()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_validselection(mixed  <span class="argument">$key</span>, array  <span class="argument">$valid</span>) : boolean|\number</pre>
+                <p><em>NOT A REPLACEMENT FOR in_array(). This checks to see if the selected value is a defined key in $valid. Will work for
+multiple selection fields assuming the name of the field in the HTML is in the form of name[].</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>mixed</td>
+                                <td>$key </td>
+                                <td><p>The value from the form</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>array</td>
+                                <td>$valid </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean|\number
+                                            &mdash; <p>true,false or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_minselected" name="method_is_minselected" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_minselected()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_minselected(string  <span class="argument">$name</span>, \number  <span class="argument">$iMin</span>) : \number|boolean</pre>
+                <p><em>Checks to see if the selected amount is equal to or greater then $iMin.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td></td>
+                            </tr>
+                                                    <tr>
+                                <td>\number</td>
+                                <td>$iMin </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    \number|boolean
+                                            &mdash; <p>true,false or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_selected" name="method_is_selected" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_selected()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_selected(string  <span class="argument">$name</span>, string|\number  <span class="argument">$value</span>) : \number|boolean</pre>
+                <p><em>Checks to see if th value is selected.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>Name of the field</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string|\number</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    \number|boolean
+                                            &mdash; <p>true,false or E_FORM_EMPTY</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_is_notselected" name="method_is_notselected" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">is_notselected()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">is_notselected(string  <span class="argument">$name</span>, string|\number  <span class="argument">$value</span>) : boolean</pre>
+                <p><em>Checks to see if $value is not checked. Will return true instead of E_FORM_EMPTY if the field is empty.</em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>string</td>
+                                <td>$name </td>
+                                <td><p>name of the field</p></td>
+                            </tr>
+                                                    <tr>
+                                <td>string|\number</td>
+                                <td>$value </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                                    <h4>Returns</h4>
+                    boolean
+                                            &mdash; <p>True if the value is not checked.</p>
+                                    				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                                        <div class="row-fluid">
+        <div class="span8 content class">
+            <a id="method_form_error" name="method_form_error" class="anchor"></a>
+            <article class="method">
+                <h3 class=" ">form_error()</h3>
+                <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
+                <pre class="signature" style="margin-right: 54px;">form_error(array  <span class="argument">$errors</span>) </pre>
+                <p><em></em></p>
+                
+
+                                    <h4>Parameters</h4>
+                    <table class="table table-condensed table-hover">
+                                                    <tr>
+                                <td>array</td>
+                                <td>$errors </td>
+                                <td></td>
+                            </tr>
+                                            </table>
+                
+                
+                				
+                            </article>
+        </div>
+        <aside class="span4 detailsbar">
+            <h1><i class="icon-arrow-down"></i></h1>
+                                                            <dl>
+                                    <dt>File</dt>
+                    <dd><a href=""><div class="path-wrapper">ml\form.functions.php</div></a></dd>
+                                                                            </dl>
+            <h2>Tags</h2>
+            <table class="table table-condensed">
+                                    <tr>
+                        <th>
+                            package
+                        </th>
+                        <td>
+                                                                                            <p>markup_language</p>
+                                                                                            <p>markup_language</p>
+                                                    </td>
+                    </tr>
+                            </table>
+        </aside>
+    </div>
+
+                            
+        </div>
+    </section>
+
+    <div id="source-view" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="source-view-label" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="source-view-label"></h3>
+        </div>
+        <div class="modal-body">
+            <pre data-src="../files/ml\form.functions.php.txt" class="language-php line-numbers"></pre>
+        </div>
+    </div>
+
+    <footer class="row-fluid">
+        <section class="span10 offset2">
+            <section class="row-fluid">
+                <section class="span10 offset1">
+                    <section class="row-fluid footer-sections">
+                        <section class="span4">
+                                                        <h1><i class="icon-code"></i></h1>
+                            <div>
+                                <ul>
+                                                                    </ul>
+                            </div>
+                        </section>
+                        <section class="span4">
+                                                        <h1><i class="icon-bar-chart"></i></h1>
+                            <div>
+                                <ul>
+                                    <li><a href="../graphs/class.html">Class Hierarchy Diagram</a></li>
+                                </ul>
+                            </div>
+                        </section>
+                        <section class="span4">
+                                                        <h1><i class="icon-pushpin"></i></h1>
+                            <div>
+                                <ul>
+                                    <li><a href="../reports/errors.html">Errors</a></li>
+                                    <li><a href="../reports/markers.html">Markers</a></li>
+                                </ul>
+                            </div>
+                        </section>
+                    </section>
+                </section>
+            </section>
+            <section class="row-fluid">
+                <section class="span10 offset1">
+                    <hr />
+                    Documentation is powered by <a href="http://www.phpdoc.org/">phpDocumentor </a> and authored
+                    on November 7th, 2014 at 16:19.
+                </section>
+            </section>
+        </section>
+    </footer>
+</div>
+
+</body>
+</html>
