@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package util
+ */
 
 /**
  * Credit: http://www.php.net/manual/en/function.mb-detect-encoding.php#68607

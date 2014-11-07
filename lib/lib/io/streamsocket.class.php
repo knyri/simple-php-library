@@ -1,5 +1,14 @@
 <?php
+/**
+ * @package io
+ */
+
+
 require_once 'stream.class.php';
+/**
+ * Extention of the Stream class intended to be used for sockets.
+ * @author Ken
+ */
 abstract class StreamSocket extends Stream{
 	protected $canread=false,$canwrite=false;
 	protected $error_number=0,$error_string='';
@@ -102,6 +111,11 @@ abstract class StreamSocket extends Stream{
 		return $this->canwrite;
 	}
 }
+/**
+ * Client socket
+ *
+ * @author Ken
+ */
 class StreamSocketClient extends StreamSocket{
 	/**
 	 * @see stream_socket_client()
@@ -116,7 +130,18 @@ class StreamSocketClient extends StreamSocket{
 		return $this->open;
 	}
 }
+
+/**
+ * Default server socket type: STREAM_SERVER_BIND | STREAM_SERVER_LISTEN
+ * @var integer
+ */
 define('STREAM_SERVER_DEFAULT',STREAM_SERVER_BIND | STREAM_SERVER_LISTEN);
+
+
+/**
+ * Server socket
+ * @author Ken
+ */
 class StreamSocketServer extends StreamSocket{
 	/**
 	 * @see stream_socket_server()

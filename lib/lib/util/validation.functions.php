@@ -1,6 +1,7 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
+ * @package util
  */
 //echo "included";
 /* ISVALID REGULAR EXPRESSIONS */

@@ -1,4 +1,12 @@
 <?php
+/**
+ * @package util
+ */
+
+/**
+ *
+ * @author Ken
+ */
 class PropertyList{
 	protected $data=array();
 	/**
@@ -54,6 +62,10 @@ class PropertyList{
 		return count($this->data);
 	}
 }
+/**
+ * PropertyList that can track the changes
+ * @author Ken
+ */
 class ChangeTrackingPropertyList extends PropertyList{
 	protected $changes=array();
 	protected $cleared=array();

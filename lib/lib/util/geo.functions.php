@@ -1,5 +1,8 @@
 <?php
 /**
+ * @package util
+ */
+/**
  * Distance between 2 points in miles.
  * @param float $lat1
  * @param float $lon1

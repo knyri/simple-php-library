@@ -1,9 +1,25 @@
 <?php
+/**
+ * @package util
+ */
+
+
+/**
+ * Strips magic quotes if enabled
+ * @param string $var
+ * @return string
+ */
 function filter_mq($var){
 	if(get_magic_quotes_gpc())
 		return stripcslashes($var);
 	return $var;
 }
+/**
+ * @param string $var
+ * @param string $nl2br (false)
+ * @return string
+ * @deprecated
+ */
 function filter_special($var,$nl2br = false){
 	if (is_array($var)) {
 		foreach ($var as $key=>$value) {
@@ -46,6 +62,13 @@ function filter_special($var,$nl2br = false){
 		return $var;
 	}
 }
+/**
+ * Replaces special characters like smart quotes with their equivalent
+ * @param string $var
+ * @param string $charset (utf-8)
+ * @param string $htmlent (true) replace with HTML entities
+ * @return string
+ */
 function filter_msword($var,$charset='utf-8',$htmlent=true) {
 	static $chars=null;
 	$charset=strtolower($charset);

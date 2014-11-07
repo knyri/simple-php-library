@@ -1,4 +1,13 @@
 <?php
+/**
+ * @package markup_language
+ */
+
+/**
+ *
+ * @author Ken
+ *
+ */
 class HTML_form {
 	const METHOD_GET=0;
 	const METHOD_POST=1;

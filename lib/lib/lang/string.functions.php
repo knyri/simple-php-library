@@ -1,6 +1,7 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
+ * @package lang
  */
 
 /**
@@ -12,8 +13,8 @@ function str_empty($str) {
 	return $str==NULL || strlen($str)===0;
 }
 /**
- *
  * Tests to see if the string starts with the needle.
+ * Case sensitive.
  * @param string $haystack
  * @param string $needle
  */
@@ -22,13 +23,36 @@ function str_starts_with($haystack, $needle) {
 	return substr($haystack,0,strlen($needle))==$needle;
 }
 /**
+ * Tests to see if the string starts with the needle.
+ * Case insensitive.
+ * @param string $haystack
+ * @param string $needle
+ */
+function str_starts_withci($haystack, $needle) {
+	if(strlen($haystack)<strlen($needle))return false;
+	return strtolower(substr($haystack,0,strlen($needle)))==strtolower($needle);
+}
+/**
  * Tests to see if the string ends with the needle.
+ * Case sensitive.
  * @param string $needle
  * @param string $haystack
  * @return boolean
  */
 function str_ends_with($haystack, $needle) {
+	if(strlen($haystack)<strlen($needle))return false;
 	return (substr($haystack, -strlen($needle))==$needle);
+}
+/**
+ * Tests to see if the string ends with the needle.
+ * Case insensitive.
+ * @param string $needle
+ * @param string $haystack
+ * @return boolean
+ */
+function str_ends_withci($haystack, $needle) {
+	if(strlen($haystack)<strlen($needle))return false;
+	return (strtolower(substr($haystack, -strlen($needle)))==strtolower($needle));
 }
 /**
  * Allows use of the char list argument when calling trim on an array.

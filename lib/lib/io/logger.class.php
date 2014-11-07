@@ -1,9 +1,12 @@
 <?php
+/**
+ * @package io
+ * @subpackage logging
+ */
 PackageManager::requireClassOnce('io.file');
 /**
  * Simple File Logger
  * @author Ken
- *
  */
 class Logger extends File{
 	const ERR=1,WARN=2,INFO=4,DEBUG=8,ALL=-1;

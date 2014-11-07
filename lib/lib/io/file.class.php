@@ -1,4 +1,10 @@
 <?php
+/**
+ * @package io
+ */
+
+
+
 require_once 'stream.class.php';
 /**
  * A class that represents a file.

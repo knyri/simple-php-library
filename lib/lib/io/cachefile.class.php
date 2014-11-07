@@ -1,4 +1,10 @@
 <?php
+/**
+ * @package io
+ * @subpackage cache
+ */
+
+
 PackageManager::requireClassOnce('io.cachepart');
 
 /**

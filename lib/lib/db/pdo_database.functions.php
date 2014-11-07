@@ -1,6 +1,7 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
+ * @package database
  */
 
 PackageManager::requireClassOnce('util.propertylist');
@@ -8,7 +9,6 @@ PackageManager::requireClassOnce('util.propertylist');
 /**
  *
  * Basic database profiling class.
- * @author Ken
  *
  */
 class DBProfile{
@@ -31,6 +31,7 @@ PackageManager::requireClassOnce('error.IllegalArgumentException');
 PackageManager::requireClassOnce('error.IllegalStateException');
 //require_once LIB.'lib/ml/class_html.inc.php';
 //require_once LIB.'lib/error/class_IllegalArgumentException.php';
+
 global $_DB, $_DB_OPEN_CON;
 $_DB = null;
 $_DB_OPEN_CON = false;

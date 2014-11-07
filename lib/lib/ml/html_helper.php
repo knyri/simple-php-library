@@ -1,4 +1,12 @@
 <?php
+/**
+ * @package markup_language
+ */
+/**
+ * Takes a key=>value array and creates HTML tag attibutes
+ * @param array $attrib
+ * @return string
+ */
 function combine_attrib(array $attrib=null){
 	if($attrib==null)return '';
 	$res='';

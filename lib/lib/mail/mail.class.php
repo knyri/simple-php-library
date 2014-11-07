@@ -1,5 +1,14 @@
 <?php
+/**
+ * @package mail
+ * @author Ken
+ *
+ */
 
+/**
+ * Simplifies creating and sending email messages.
+ * This class does NOT sanitize input and does NOT check for correctness.
+ */
 class mail{
 	private $to=array(),
 		$from=null,
@@ -18,10 +27,19 @@ class mail{
 			self::$httpctx=stream_context_create(array('http'=>array('method'=>'GET')));
 		}
 	}
+	/**
+	 * @param string $file Path to the file
+	 * @param string $type MIME type of the file
+	 * @param boolean $deleteonsend default is false
+	 */
 	public function addAttachment($file,$type,$deleteonsend=false){
 		$this->attachments[$file]=array($type,$deleteonsend);
 		$this->generated=false;
 	}
+	/**
+	 * Add a recipient
+	 * @param string $addr
+	 */
 	public function addTo($addr){
 		if(is_array($this->to))
 			$this->to[]=$addr;
@@ -35,29 +53,75 @@ class mail{
 	public function setTo($to){
 		$this->to=$to;
 	}
+	/**
+	 * Add a carbon copy recipient
+	 * @param string $to
+	 */
 	public function addCC($to){
 		$this->cc[]=$to;
 	}
+	/**
+	 * Add a blind carbon copy recipient
+	 * @param string $to
+	 */
 	public function addBCC($to){
 		$this->bcc[]=$to;
 	}
+	/**
+	 * Set the fron address
+	 * @param string $from
+	 */
 	public function setFrom($from){
 		$this->from=$from;
 	}
+	/**
+	 * Set the subject
+	 * @param string $subject
+	 */
 	public function setSubject($subject){
 		$this->subject=$subject;
 	}
+	/**
+	 * Set the message
+	 * @param string $message
+	 */
 	public function setMessage($message){
 		$this->message=$message;
 		$this->generated=false;
 	}
+	/**
+	 * The current message
+	 * @return string
+	 */
 	public function getMessage(){return $this->message;}
+	/**
+	 * List of recipients
+	 * @return array|string
+	 */
 	public function getTo(){return $this->to;}
+	/**
+	 * The current from address
+	 * @return string
+	 */
 	public function getFrom(){return $this->from;}
+	/**
+	 * Get the value of the header named $name
+	 * @param string $name
+	 * @return string The value of the header or NULL
+	 */
 	public function getHeader($name){return isset($this->headers[$name])?$this->headers[$name]:null;}
+	/**
+	 * Set the value of the header named $name
+	 * @param string $name
+	 * @param string $value
+	 */
 	public function setHeader($name,$value){
 		$this->headers[$name]=$value;
 	}
+	/**
+	 * @param bolean $html If supplied, set the isHtml flag
+	 * @return boolean
+	 */
 	public function isHtml($html=-1){
 		if(!is_bool($html))return $this->ishtml;
 		$this->ishtml=$html;

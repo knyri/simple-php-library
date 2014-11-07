@@ -1,4 +1,14 @@
 <?php
+/**
+ * @package io
+ */
+
+
+
+/**
+ * Base class for all IO classes
+ * @author Ken
+ */
 class Stream{
 	protected $handle,$uri,$use_include_path,$ctx;
 	protected $open=false,$closed=false,$locked=false;

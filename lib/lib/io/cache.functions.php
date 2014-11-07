@@ -1,4 +1,15 @@
 <?php
+/**
+ * @package io
+ */
+
+
+/**
+ * @param array $data
+ * @param string $template
+ * @param string $destination
+ * @param string $php
+ */
 function cache_template(array $data,$template,$destination,$php=false){
 	if($php){
 		ob_start();

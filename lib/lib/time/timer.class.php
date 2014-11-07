@@ -20,4 +20,3 @@ function getElapsed($name) {
 	global $__timers;
 	return microtime(true)-$__timers[$name];
 }
-?>

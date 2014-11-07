@@ -1,4 +1,9 @@
 <?php
+/**
+ * @package io
+ */
+
+
 PackageManager::requireClassOnce('error.FileNotFoundException');
 /**
  * Clas to parse a CSV file. Delimiter, enclosure, and escape characters can be set. The first line is automatically read when

@@ -4,6 +4,7 @@
  * Those ending in '_ary' take array('year'=>year, 'month'=>month, 'day'=>day) as the date.
  *
  * @author Kenneth Pierce
+ * @package time
  */
 
 
@@ -124,7 +125,7 @@ function date_create_unix_timestamp_ary($date){
  * @param integer $month 0 values decrement a year and is set to 12.
  * @param integer $day 0 values decrement a month and is set to the last day of that month.
  * @param integer $year
- * @param boolean $unix Optional. Default is true. Use UNIX date format
+ * @param boolean $unix (true) Use UNIX date format
  * @return string The resulting string
  */
 function date_fix_date($month,$day,$year,$unix=true){
@@ -217,12 +218,21 @@ function date_hasThirtyOneDays($month){
 function is_leap_year($year){
 	return (0==$year%4&&0!=$year%100||0==$year%400);
 }
+/**
+ * @param string $timestamp (false)
+ * @return string
+ */
 function getdatetimestamp($timestamp=false){
 	if ($timestamp===false)
 		return date("YmdHis");
 	else
 		return date("YmdHis",$timestamp);
 }
+/**
+ * Assumes the timestamp has the date first and is seperated by a space.
+ * @param string $timestamp
+ * @return string
+ */
 function date_get_date($timestamp){
 	$split=explode(' ',$timestamp);
 	return $split[0];

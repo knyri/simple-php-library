@@ -1,5 +1,6 @@
 <?php
 /**
+ * @package io
  * @author Kenneth Pierce kcpiercejr@gmail.com
  */
 //require_once LIB.'lib/error/class_FileNotFoundException.php';

@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package database
+ */
 PackageManager::requireClassOnce('error.IllegalArgumentException');
 /**
  * For use with the mysql_* base database functions

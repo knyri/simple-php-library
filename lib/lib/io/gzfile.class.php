@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package io
+ */
 PackageManager::requireClassOnce('io.file');
 /**
  * A class that represents a gz file.
@@ -33,6 +36,9 @@ class GZFile extends File{
 		else
 			return gzwrite($this->handle,$string,$len);
 	}
+	/* Always returns true
+	 * @see Stream::flush()
+	 */
 	public function flush(){return true;}
 	public function isEof(){
 		return gzeof($this->handle) || $this->getPosition()>=$this->getLength();

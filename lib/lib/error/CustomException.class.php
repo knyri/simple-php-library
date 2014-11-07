@@ -1,4 +1,13 @@
 <?php
+/**
+ * @package exceptions
+ */
+
+
+/**
+ *
+ *
+ */
 interface IException{
 	/* Protected methods inherited from Exception class */
 	public function getMessage();		// Exception message
@@ -13,6 +22,10 @@ interface IException{
 	public function __construct($message = null, $code = 0);
 }
 
+/**
+ * Base class for all exceptions.
+ * Can't remember where I got this code from.
+ */
 abstract class CustomException extends Exception implements IException{
 	protected $message = 'Unknown exception';	// Exception message
 	private $string;							// Unknown

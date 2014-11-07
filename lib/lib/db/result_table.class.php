@@ -1,6 +1,8 @@
 <?php
 /**
+ * Use the sql_table class instead
  * @author Kenneth Pierce kcpiercejr@gmail.com
+ * @package database
  * @deprecated
  */
 class result_table {

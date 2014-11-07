@@ -1,4 +1,9 @@
 <?php
+/**
+ * @package io
+ * @subpackage upload_helper
+ */
+
 /*
 $_FILES['userfile']['name']
 	The original name of the file on the client machine.
@@ -11,6 +16,11 @@ $_FILES['userfile']['tmp_name']
 $_FILES['userfile']['error']
 	The error code associated with this file upload. This element was added in PHP 4.2.0
 */
+/**
+ *
+ * @param integer $error_code
+ * @return string Description of the error
+ */
 function file_upload_error_message($error_code) {
 	if(!is_numeric($error_code))
 		$error_code=file_upload_get_error($error_code);

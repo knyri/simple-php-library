@@ -1,4 +1,12 @@
 <?php
+/**
+ * @package lang
+ */
+/**
+ * Shallow test to see if all elements are empty.
+ * @param array $arr
+ * @return boolean
+ */
 function isEmpty(array $arr) {
 	foreach ($arr as $ele) {
 		if (!empty($ele)) return false;

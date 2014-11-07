@@ -1,4 +1,13 @@
 <?php
+/**
+ *
+ * Wrapper for all the socket_* functions
+ *
+ * @author Ken
+ * @package io
+ * @subpackage net
+ *
+ */
 class Socket{
 	protected
 		$socket=false,
@@ -7,6 +16,9 @@ class Socket{
 		$canwrite=false,
 		$readlen=2048,
 		$readtype=PHP_BINARY_READ;
+	/**
+	 * @param resource $socket (false)
+	 */
 	public function __construct($socket=false){
 		$this->socket=$socket;
 	}
@@ -27,7 +39,7 @@ class Socket{
 	}
 	/**
 	 * @param string $address
-	 * @param number $port
+	 * @param number $port (0)
 	 * @return boolean
 	 */
 	public function connect($address,$port=0){
@@ -36,9 +48,9 @@ class Socket{
 		return $this->canread=$this->canwrite=$this->connected=socket_connect($address,$port);
 	}
 	/**
-	 * @param string $domain default is AF_INET
-	 * @param string $type default is SOCK_STREAM
-	 * @param string $protocol default is SOL_TCP
+	 * @param string $domain (AF_INET)
+	 * @param string $type (SOCK_STREAM)
+	 * @param string $protocol (SOL_TCP)
 	 * @return boolean
 	 */
 	public function create($domain=AF_INET,$type=SOCK_STREAM,$protocol=SOL_TCP){
@@ -93,7 +105,7 @@ class Socket{
 	}
 	/**
 	 * @param string $address
-	 * @param number $port
+	 * @param int $port (0)
 	 * @return boolean
 	 */
 	public function bind($address,$port=0){
@@ -105,26 +117,50 @@ class Socket{
 		else
 			return socket_set_nonblock($this->socket);
 	}
+	/**
+	 * @param int $len (false)
+	 * @param int $type (false)
+	 * @return string
+	 */
 	public function read($len=false,$type=false){
 		return socket_read($this->socket,$len?$len:$this->readlen,$type?$type:$this->readtype);
 	}
-	public function send($buf,$len=-1,$flags=0){
+	/**
+	 * @param string $buf
+	 * @param int $len (false)
+	 * @param int $flags (0)
+	 * @return int
+	 */
+	public function send($buf,$len=false,$flags=0){
 		if($flags&MSG_EOF==MSG_EOF)$this->canwrite=false;
-		if($len==-1)$len=strlen($buf);
+		if($len===false)$len=strlen($buf);
 		return socket_send($buf,$len,$flags);
 	}
-	public function write($buf,$len=0){
-		return socket_write($this->socket,$buf,$len);
+	/**
+	 * @param string $buf
+	 * @param int $len (false)
+	 * @return int the number of bytes successfully written to the socket or false on failure. The error code can be retrieved with socket_last_error. This code may be passed to socket_strerror to get a textual explanation of the error.
+	 * 	It is perfectly valid for socket_write to return zero which means no bytes have been written. Be sure to use the === operator to check for false in case of an error.
+	 */
+	public function write($buf,$len=false){
+		if($len)
+			return socket_write($this->socket,$buf,$len);
+		else
+			return socket_write($this->socket,$buf);
 	}
 	public function sendTo($buf, $len,$flags,$addr,$port=0){
 		return socket_sendto($this->socket,$buf,$len,$flags,$addr,$port);
 	}
 }
+/**
+ * @author Ken
+ *
+ */
 class ServerSocket extends Socket{
 	/**
 	 * See socket_create_listen
 	 * @param int $port
-	 * @param int $queuelen
+	 * @param int $queuelen (SOMAXCONN)
 	 * @return boolean
 	 */
 	public function createServerSocket($port,$queuelen=SOMAXCONN){
@@ -139,6 +175,10 @@ class ServerSocket extends Socket{
 		if($sock===false)return false;
 		return new Socket($sock);
 	}
+	/**
+	 * @param int $queueLen (0)
+	 * @return boolean
+	 */
 	public function listen($queueLen=0){
 		return socket_listen($this->socket,$queueLen);
 	}

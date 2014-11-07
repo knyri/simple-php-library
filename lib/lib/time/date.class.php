@@ -1,4 +1,8 @@
 <?php
+/**
+ * @package time
+ */
+
 include_once 'date.functions.php';
 class SDate{
 	/**
@@ -197,7 +201,7 @@ class SDateRange{
 	 * @param int $h hours
 	 * @param int $i minutes
 	 * @param int $s seconds
-	 * @param string $o GMT offset (ex. +200; -1030; -0600)
+	 * @param string $o (null) GMT offset (ex. +200; -1030; -0600)
 	 */
 	public function __construct($y,$m,$d,$h,$i,$s,$o=null){
 		$this->dt[0]=intval($y,10);
