@@ -35,6 +35,20 @@ class File extends Stream{
 			return copy($this->uri,$to,$this->ctx);
 	}
 	/**
+	 * Attempts to create the full path
+	 * @param string $path The directory tree to create.
+	 * @param number $mask Default is 0777
+	 * @param resource $context
+	 * @return boolean false if the path does not exist and could not be created
+	 */
+	public static function createPath($path,$mask=0777,$context=null){
+		if(file_exists($path)) return true;
+		if($context)
+			return mkdir($path,$mask,true,$context);
+		else
+			return mkdir($path,$mask,true);
+	}
+	/**
 	 * Attempts to create the directory structure for this file if it does not exist.
 	 * Context can be set with setContext()
 	 * @param number $mask default is 0777
