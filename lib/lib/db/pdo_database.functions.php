@@ -1060,6 +1060,7 @@ class PDOTable{
 	 * @return boolean
 	 */
 	public function load($id){
+		if(!$this->beforeLoad())return 'Cancelled by subclass.';
 		if($this->dataset)$this->dataset->closeCursor();
 		$where=_db_build_where($this->getPkey($id));
 		if($this->loadstm==null){
@@ -1069,11 +1070,13 @@ class PDOTable{
 		$error=db_run_query($this->loadstm,$where[1]);
 		if($error){
 			$this->lastError=$error;
+			$this->afterLoad(false);
 			return false;
 		}
 		$row=$this->loadstm->fetch(PDO::FETCH_ASSOC);
 		$this->data->initFrom($row?$row:array());
 		$this->lastOperation=self::OP_LOAD;
+		$this->afterLoad($row!=null);
 		return $row!=null;
 	}
 	/**
@@ -1167,6 +1170,7 @@ class PDOTable{
 	 * @return bool false on success or the error.
 	 */
 	public function delete(){
+		if(!$this->beforeDelete())return 'Cancelled by subclass.';
 		if($this->isPkeySet())
 			$error=db_delete($this->db,$this->table,$this->getPkey());
 		else{
@@ -1179,6 +1183,7 @@ class PDOTable{
 		}
 		$this->lastOperation=self::OP_DELETE;
 		if($error)	$this->lastError=$error;
+		$this->afterDelete($error===false);
 		return $error;
 	}
 	/**
@@ -1200,6 +1205,7 @@ class PDOTable{
 	 * @return string|boolean FALSE on success or the error.
 	 */
 	public function update(){
+		if(!$this->beforeUpdate())return 'Cancelled by subclass.';
 		$query='UPDATE `'.$this->table.'`  SET ';
 		$update=$this->data->copyTo(array());
 		$data=array();
@@ -1217,6 +1223,7 @@ class PDOTable{
 		$error=db_run_query($stm,$data);
 		$this->lastOperation=self::OP_UPDATE;
 		if($error)$this->lestError=$error;
+		$this->afterUpdate($error===false);
 		return $error;
 	}
 	/**
@@ -1224,6 +1231,7 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insert(){
+		if(!$this->beforeInsert())return 'Cancelled by subclass.';
 		$data=$this->data->copyTo(array());
 		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
 		$stm=db_prepare($this->db, $query);
@@ -1234,6 +1242,7 @@ class PDOTable{
 			$this->data->set($this->pkey,$this->db->lastInsertId());
 		$this->lastOperation=self::OP_INSERT;
 		if($error)$this->lastError=$error;
+		$this->afterInsert($error===false);
 		return $error;
 	}
 	/**
@@ -1241,6 +1250,7 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insertIgnore(){
+		if(!$this->beforeInsert())return 'Cancelled by subclass.';
 		$data=$this->data->copyTo(array());
 		$query='INSERT IGNORE INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
 		$stm=db_prepare($this->db, $query);
@@ -1251,10 +1261,12 @@ class PDOTable{
 			$this->data->set($this->pkey,$this->db->lastInsertId());
 		$this->lastOperation=self::OP_INSERT;
 		if($error)$this->lastError=$error;
+		$this->afterInsert($error===false);
 		return $error;
 	}
 	/**
 	 * Forces an insert. Does an update on duplicate key errors.
+	 * Does not call the insert or update hooks!
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insertUpdate(){
@@ -1292,6 +1304,7 @@ class PDOTable{
 		$this->data->initFrom(array());
 		$this->lastOperation=self::OP_NONE;
 		$this->lastError=null;
+		$this->childRecycle();
 	}
 	public function __clone(){
 		$this->data=clone $this->data;
@@ -1302,6 +1315,68 @@ class PDOTable{
 	public function getLastError(){
 		return $this->lastError;
 	}
+	##########
+	# Hooks
+	##########
+	/**
+	 * Called before load()
+	 * @return boolean True if the load should continue
+	 */
+	protected function beforeLoad(){return true;}
+	/**
+	 * Called after load.
+	 * Not called if canceled by beforeLoad()
+	 * @param boolean $sucess true if it suceeded
+	 */
+	protected function afterLoad($sucess){}
+	/**
+	 * Called before insert()
+	 * @return boolean True if the insert should continue
+	 */
+	protected function beforeInsert(){return true;}
+	/**
+	 * Called after insert()
+	 * Not called if canceled by beforeInsert()
+	 * @param boolean $sucess
+	 */
+	protected function afterInsert($sucess){}
+	/**
+	 * Called before update()
+	 * @return boolean True if the update should continue
+	 */
+	protected function beforeUpdate(){return true;}
+	/**
+	 * Called after update()
+	 * Not called if canceled by beforeUpdate()
+	 * @param boolean $sucess
+	 */
+	protected function afterUpdate($sucess){}
+	/**
+	 * Called before delete
+	 * @return boolean True if the delete should continue
+	 */
+	protected function beforeDelete(){return true;}
+	/**
+	 * Called after delete
+	 * Not called if canceled by beforeDelete()
+	 * @param boolean $sucess
+	 */
+	protected function afterDelete($sucess){}
+	/**
+	 * Called before find()
+	 * @return boolean True if the find should continue
+	 */
+	protected function beforeFind(){return true;}
+	/**
+	 * Called after find()
+	 * Not called if canceled by beforeFind()
+	 * @param boolean $sucess
+	 */
+	protected function afterFind($sucess){}
+	/**
+	 * Called after recycle()
+	 */
+	protected function childRecycle(){}
 }
 
 
