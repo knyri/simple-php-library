@@ -569,9 +569,18 @@ function db_now(){
  */
 class WhereBuilder{
 	private static $icnt=0;
-	private $where='',$values=array(),$pre,$ci=0;
+	private
+		$where= '',
+		$values= array(),
+		$pre,
+		$ci= 0;
 	public function __construct($prefix='wh'){
-		$this->pre=":$prefix".(++self::$icnt);
+		$this->pre= ":$prefix" . (++self::$icnt);
+	}
+	public function reset(){
+		$this->where= '';
+		$this->values= array();
+		$this->ci= 0;
 	}
 	/**
 	 * Appends a finished WhereBuilder to this
@@ -581,126 +590,134 @@ class WhereBuilder{
 	 * @return WhereBuilder $this for chaining
 	 */
 	public function &appendWhere($andor,WhereBuilder $where,$parens=false){
-		if($parens)
-			$this->where.="$andor (".$where->where.')';
-		else
-			$this->where.="$andor ".$where->where;
+		$this->values= array_merge($this->values, $where->getValues());
+		if($this->ci == 0){
+			$andor= '';
+			$this->ci++;
+		}
+		if($parens){
+			$this->where.= " $andor (". $where->where. ')';
+		}else{
+			$this->where.= " $andor ". $where->where;
+		}
 		return $this;
 	}
-	/**
-	 * @param string $andor 'AND' or 'OR'
-	 * @return WhereBuilder itself for chaining
-	 */
-	public function &openParen($andor){
-		$this->where.="$andor (";
+	public function &andLiteral($literal, $wrap=false) {
+		if($this->ci != 0){
+			$this->where.= ' AND ';
+		}
+		if($wrap){
+			$this->where.= '('. $literal .')';
+		}else{
+			$this->where.= $literal;
+		}
+		$this->ci++;
 		return $this;
 	}
-	/**
-	 * @return WhereBuilder Itself for chaining
-	 */
-	public function &closeParen(){
-		$this->where.=')';
+	public function &orLiteral($literal, $wrap=false) {
+		if($this->ci != 0){
+			$this->where.= ' OR ';
+		}
+		if($wrap){
+			$this->where.= '('. $literal .')';
+		}else{
+			$this->where.= $literal;
+		}
+		$this->ci++;
 		return $this;
 	}
 	/**
 	 * Accepts multiple arguments.
-	 * Assumes AND if not supplied
-	 * (['and'|'or',]col,val[,negate])
-	 * (['and'|'or',]col,'in',vals[,negate])
-	 * (['and'|'or',]col,'like',val[,negate])
-	 * (['and'|'or',]col,'between',start,end[,negate])
-	 * (['and'|'or',]col,comparator,val)
-	 * comparator='>' | '<' | '>=' | '<='
+	 * (col, NULL[, negate])
+	 * (col,'in',vals[,negate])
+	 * (col,'like',val[,negate])
+	 * (col,'between',start,end[,negate])
+	 * (col,comparator,val)
+	 * comparator='=' | '!=' | '>' | '<' | '>=' | '<='
 	 * @return WhereBuilder A reference to itself for chaining.
 	 */
-	public function &addCond(){
-		$arg=func_get_args();
-		if(strlen($arg[0]) < 4 && (strtolower($arg[0])=='and' || strtolower($arg[0])=='or')){
-			$this->where.=' '.array_pop($arg).' ';
-		}elseif($this->ci>0){
-			$this->where.=' AND ';
+	public function &andWhere(){
+		$arg= func_get_args();
+		if($this->ci != 0){
+			$this->where.= ' AND ';
 		}
-		$ac=count($arg);
-		if($ac===1)throw new ErrorException('At least 2 parameters are expected.');
-		if($ac==3)$arg[1]=strtolower($arg[1]);
-		if($ac==2){
-			if($arg[1]==null){
-				$this->where.="$arg[0] IS NULL";
-			}else{
-				$this->where.="$arg[0]=".$this->pre.$this->ci;
-				$this->values[$this->pre.$this->ci]=$args[1];
-				$this->ci++;
-			}
-		}elseif($ac==3 && (is_bool($arg[2]) || $arg[1][0]=='>' || $arg[1][0]=='<')){
-			if(is_bool($arg[2])){
-				if($arg[1]==null){
-					if($arg[2])
-						$this->where.="$arg[0] IS NULL";
-					else
-						$this->where.="$arg[0] IS NOT NULL";
-				}else{
-					if($arg[2])
-						$this->where.="$arg[0]=".$this->pre.$this->ci;
-					else
-						$this->where.="$arg[0]!=".$this->pre.$this->ci;
-					$this->values[$this->pre.$this->ci]=$args[1];
-					$this->ci++;
-				}
-			}else{
-				$this->where.="$arg[0]$arg[1]".$this->pre.$this->ci;
-				$this->values[$this->pre.$this->ci]=$args[2];
-				$this->ci++;
-			}
-		}elseif($arg[1]=='in'){
-			switch($ac){
-				case 3:
-					$this->values[$this->pre.$this->ci]=$arg[2];
-					$this->where.="$arg[0] IN (".$this->pre.$this->ci.')';
-					$this->ci++;
-				break;
-				case 4:
-					$this->values[$this->pre.$this->ci]=$arg[2];
-					$this->where.=$arg[0].($arg[3]?' NOT IN (':' IN (').$this->pre.$this->ci.')';
-					$this->ci++;
-				break;
-				default:
-					throw new IllegalStateException('Arguement count not correct for IN clause.');
-			}
-		}elseif($arg[1]=='like'){
-			switch($ac){
-				case 3:
-					$this->values[$this->pre.$this->ci]=$arg[2];
-					$this->where.="$arg[0] LIKE ".$this->pre.$this->ci;
-					$this->ci++;
-				break;
-				case 4:
-					$this->values[$this->pre.$this->ci]=$arg[2];
-					$this->where.=$arg[0].($arg[3]?' NOT LIKE ':' LIKE ').$this->pre.$this->ci;
-					$this->ci++;
-				break;
-				default:
-					throw new IllegalStateException('Arguement count not correct for LIKE clause.');
-			}
-		}elseif($arg[1]=='between'){
-			switch($ac){
-				case 4:
-					$this->values[$this->pre.($this->ci)]=$arg[2];
-					$this->values[$this->pre.($this->ci+1)]=$arg[3];
-					$this->where.= $arg[0].' BETWEEN '.$this->pre.$this->ci .' AND '. $this->pre.($this->ci+1);
-				break;
-				case 5:
-					$this->values[$this->pre.($this->ci)]=$arg[2];
-					$this->values[$this->pre.($this->ci+1)]=$arg[3];
-					$this->where.= $arg[0].($arg[4]?' NOT BETWEEN ':' BETWEEN ').$this->pre.$this->ci .' AND '. $this->pre.$this->ci+1;
-					$this->ci+=2;
-				break;
-				default:
-					throw new IllegalStateException('Arguement count not correct for BETWEEN clause.');
-			}
-		}else{
-			throw new ErrorException('Unknown Clause:'.$arg[1]);
-		}
+
+		$this->addCondition($arg);
+
+		$this->ci++;
 		return $this;
+	}
+	/**
+	 * Accepts multiple arguments.
+	 * (col, NULL[, negate])
+	 * (col,'in',vals[,negate])
+	 * (col,'like',val[,negate])
+	 * (col,'between',start,end[,negate])
+	 * (col,comparator,val)
+	 * comparator='=' | '!=' | '>' | '<' | '>=' | '<='
+	 * @return WhereBuilder A reference to itself for chaining.
+	 */
+	public function &orWhere(){
+		$arg=func_get_args();
+		if($this->ci != 0){
+			$this->where.= ' OR ';
+		}
+
+		$this->addCondition($arg);
+
+		$this->ci++;
+		return $this;
+	}
+	private function addCondition($arg){
+		$ac= count($arg);
+		if($ac < 3){
+			if($arg[1] !== null){
+				throw new ErrorException('At least 3 parameters are expected.');
+			}
+			$this->where.= ' '. $arg[0] .' IS NULL';
+			return;
+		}
+		if($arg[1] === null){
+			if($arg[2]){
+				$this->where.= ' '. $arg[0] .' IS NOT NULL';
+			}else{
+				$this->where.= ' '. $arg[0] .' IS NULL';
+			}
+			return;
+		}
+		
+		switch($arg[1]){
+			case 'in':
+				$this->values[$this->pre.$this->ci]= $arg[2];
+				if($ac == 4 && $arg[3] == true){
+					$this->where.= "$arg[0] NOT IN (". $this->pre . $this->ci .')';
+				} else {
+					$this->where.= "$arg[0] IN (". $this->pre . $this->ci .')';
+				}
+			break;
+			case 'like':
+				$this->values[$this->pre.$this->ci]= $arg[2];
+				if($ac == 4 && $arg[3] == true){
+					$this->where.= "$arg[0] NOT LIKE ". $this->pre . $this->ci;
+				} else {
+					$this->where.= "$arg[0] LIKE ". $this->pre . $this->ci;
+				}
+			break;
+			case 'between':
+				$this->values[$this->pre . ($this->ci++)]= $arg[2];
+				$this->values[$this->pre . ($this->ci)]= $arg[3];
+				if($ac == 5 && $arg[4] == true){
+					$this->where.= $arg[0] .' NOT BETWEEN '. $this->pre.($this->ci - 1) .' AND '. $this->pre . $this->ci;
+				} else {
+					$this->where.= $arg[0] .' BETWEEN '. $this->pre.($this->ci - 1) .' AND '. $this->pre . $this->ci;
+				}
+				
+			break;
+			default:
+				$this->values[$this->pre.$this->ci]= $arg[2];
+				$this->where.= "$arg[0]$arg[1]" . $this->pre . $this->ci;
+				//echo $this->pre.$this->ci .'====='. $this->values[$this->pre.$this->ci].PHP_EOL;
+		}
 	}
 	/**
 	 * The current WHERE statement.
