@@ -1,10 +1,14 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
- * @package database
- */
+* @package database
+*/
 
 PackageManager::requireClassOnce('util.propertylist');
+if(file_exists('PDOOCI/PDO.php')){
+	// available here: http://github.com/taq/pdooci
+	include_once 'PDOOCI/PDO.php';
+}
 
 /**
  *
@@ -23,7 +27,7 @@ class DBProfile{
 		$sum=0;
 		foreach(self::$queries as $v)
 			$sum+=$v;
-		return $sum;
+			return $sum;
 	}
 }
 PackageManager::requireClassOnce('ml.html');
@@ -42,11 +46,10 @@ $_DB_OPEN_CON = false;
  */
 function db_debug($toggle=null){
 	$conf=&LibConfig::getConfig('db');
-	if($toggle!==null)
-		$conf['debug']=$toggle;
-	if($conf['debug']==true)
-			return true;
-	return false;
+	if($toggle!==null){
+		$conf['debug']= $toggle;
+	}
+	return $conf['debug'] == true;
 }
 /**
  * creates a connection to the database if none exists
@@ -54,31 +57,63 @@ function db_debug($toggle=null){
  * @param boolean $forcenew Forces the creation of a new connection.
  * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
-function &db_get_connection($forcenew = false) {
+function &db_get_connection($forcenew = false, $db = 'default') {
 	global $_DB, $_DB_OPEN_CON;
-	if ($forcenew){db_close_connection();}
-	if (!$_DB_OPEN_CON || $_DB == null) {
-		$conf = LibConfig::getConfig('db');
+	if ($forcenew){db_close_connection($db);}
+
+	if (!isset($_DB_OPEN_CON)){
+		$_DB_OPEN_CON= array();
+	}
+	if (!isset($_DB)){
+		$_DB= array();
+	}
+
+	if (!$_DB_OPEN_CON[$db] || $_DB[$db] == null) {
+		$conf = LibConfig::getConfig('db')[$db];
 		try{
-		$_DB = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
-		$_DB_OPEN_CON=true;
-		//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
+			if($conf['engine'] == 'oci'){
+				if($conf['host']){
+					$_DB[$db] = new PDOOCI\PDO('oci:dbname=//'. $conf['host'] .'/'. $conf['dbname'], $conf['user'], $conf['password']);
+				}else{
+					$_DB[$db] = new PDOOCI\PDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
+				}
+			}else{
+				$_DB[$db] = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
+			}
+			$_DB_OPEN_CON[$db]= true;
+			//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 		}catch(PDOException $e){
-			if(db_debug())
+			if(db_debug()){
 				throw $e;
-			$_DB=null;
-			$_DB_OPEN_CON=false;
+			}
+			$_DB[$db]= null;
+			$_DB_OPEN_CON[$db]= false;
 		}
 	}
-	return $_DB;
+	return $_DB[$db];
+}
+function db_make_connection($engine, $host, $dbname, $user, $password){
+	if($engine == 'oci'){
+		if($host){
+			return new PDOOCI\PDO('oci:dbname=//'. $host .'/'. $dbname, $user, $password);
+		}else{
+			return new PDOOCI\PDO('oci:dbname='. $dbname, $user, $password);
+		}
+	}else{
+		return new PDO($engine .':host='. $host .';dbname=' .$dbname, $user, $password);
+	}
 }
 /**
  * Closes the connection to the database.
  */
-function db_close_connection() {
+function db_close_connection($db= 'default') {
 	global $_DB, $_DB_OPEN_CON;
-	$_DB=null;
-	$_DB_OPEN_CON = false;
+	if (isset($_DB)){
+		$_DB[$db]= null;
+	}
+	if (isset($_DB_OPEN_CON)){
+		$_DB_OPEN_CON[$db]= false;
+	}
 }
 /** Logs a database error.
  * @param PDOStatement $statement
@@ -96,8 +131,8 @@ function db_log_error($statement,array $args=null) {
 	if(!is_object($statement))throw new IllegalArgumentException('$statement is not an object.');
 	$err=$statement->errorInfo();
 	$params=array(
-		':query'=>db_stm_to_string($statement->queryString,$args),
-		':message'=>'Err array:'.var_export($err,true)
+			':query'=>db_stm_to_string($statement->queryString,$args),
+			':message'=>'Err array:'.var_export($err,true)
 	);
 	try{
 		$stm->execute($params);
@@ -109,95 +144,18 @@ function db_log_error($statement,array $args=null) {
 /** Checks to see if a record exists that matches the conditions.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table required
- * @param string $condition required
+ * @param array|WhereBuilder $condition required
  * @return mixed boolean on success or a string containing the error message.
  */
-function db_record_exist($db, $table, array $condition) {
-	if ($db===null)
-		$db = db_get_connection();
+function db_record_exist($db, $table, $condition) {
 	if ($condition) {
-		$ret = db_num_rows($db,$table,$condition);
-		if(is_numeric($ret))return $ret>0;
+		$ret= db_num_rows($db, $table, $condition);
+		if(is_numeric($ret)){
+			return $ret > 0;
+		}
 		return false;
 	} else {
 		throw new IllegalArgumentException('$condition MUST be set.');
-	}
-}
-/** Fetches a single column value from the database.
- * @param PDO $db Set to null to use the default settings.
- * @param string $table
- * @param string $column
- * @param array $condition (null) see _db_build_where
- * @param mixed $default (null) Default value if the query failed or no value was found.
- * @return mixed The found value or $default
- */
-function db_get_column($db, $table, $column, array $condition = null, $default = null) {
-	if ($db===null)
-		$db = db_get_connection();
-	$row=db_get_row($db,$table,$condition,$column,PDO::FETCH_NUM);
-	if(!is_array($row)||count($row)===0)return $default;
-	return $row[0];
-}
-/**
- * Alias of db_get_column(..)
- * @param PDO $db Set to null to use the default settings.
- * @param string $table
- * @param string $column
- * @param string $condition (null)
- * @param mixed $default (null)
- * @return mixed The found value or $default
- */
-function db_get_field($db, $table, $column, array $condition = null, $default = null) {
-	return db_get_column($db, $table, $column, $condition, $default);
-}
-/**
- * Shortcut for db_get_row($db,$table,$condition,$columns,$cache,MYSQL_ASSOC);
- * @param PDO $db
- * @param string $table
- * @param string $condition (null)
- * @param string $columns ('*')
- * @return array the resulting array or null.
- */
-function db_get_row_assoc($db, $table, $condition = null, $columns = '*') {
-	return db_get_row($db, $table, $condition, $columns, PDO::FETCH_ASSOC);
-}
-/** Fetches a single row from the database.
- * @param PDO $db Set to null to use the default settings.
- * @param string $table
- * @param string $conditions (null)
- * @param string $columns ('*')
- * @param int $type (PDO::FETCH_BOTH) one (or more with | or +) of PDO::FETCH_*
- * @return array the resulting array or null.
- */
-function db_get_row($db, $table,array $conditions=null, $columns='*', $type=PDO::FETCH_BOTH) {
-	DBProfile::query('select');
-	if ($db===null)
-		$db = db_get_connection();
-
-	if($conditions===null){
-		$stm = "SELECT :columns FROM :table LIMIT 0,1";
-		$conditions=array(null,null);
-	}else{
-		$conditions=_db_build_where($conditions);
-		$stm = "SELECT :columns FROM :table ".$conditions[0].' LIMIT 0,1';
-	}
-	$conditions[1][':table']=$table;
-	$conditions[1][':columns']=$columns;
-	try{
-		$stm = $db->prepare($stm);
-	}catch(PDOException $e){
-		if(db_debug()){
-			throw $e;
-		}else{
-			return 'Could not prepare the statement.';
-		}
-	}
-	if (!db_run_query($stm,$conditions[1])) {
-		return db_log_error($stm,$conditions[1]);
-	}else{
-		$row=$stm->fetch($type);
-		$stm->closeCursor();
-		return $row;
 	}
 }
 
@@ -214,20 +172,20 @@ function result_table($result, array $attrib=array()){
 	echo '<tr>';
 	foreach(array_keys($row) as $column)
 		echo '<th>'.$column.'</th>';
-	echo '</tr><tr>';
-	foreach($row as $col){
-		echo "<td>".nl2br(htmlspecialchars($col))."</td>";
-	}
-	echo '</tr>';
-	while ($row = $result->fetch(PDO::FETCH_NUM)) {
-		echo "<tr>";
+		echo '</tr><tr>';
 		foreach($row as $col){
 			echo "<td>".nl2br(htmlspecialchars($col))."</td>";
 		}
-		echo "</tr>";
-	}
-	echo '</table>';
-	return true;
+		echo '</tr>';
+		while ($row = $result->fetch(PDO::FETCH_NUM)) {
+			echo "<tr>";
+			foreach($row as $col){
+				echo "<td>".nl2br(htmlspecialchars($col))."</td>";
+			}
+			echo "</tr>";
+		}
+		echo '</table>';
+		return true;
 }
 
 /**
@@ -238,13 +196,13 @@ function result_table($result, array $attrib=array()){
  */
 function _db_validate_value($var) {
 	if (is_null($var)){
-			return 'NULL';
-		}elseif (is_string($var)){
-			if ($var == "NOW()")return $var;
-			return "'" . clean_text($var) . "'";
-		}else{
-			return (is_bool($var)) ? intval($var) : $var;
-		}
+		return 'NULL';
+	}elseif (is_string($var)){
+		if ($var == "NOW()")return $var;
+		return "'" . clean_text($var) . "'";
+	}else{
+		return (is_bool($var)) ? intval($var) : $var;
+	}
 }
 /** Builds the WHERE clause.
  * @param array $where Array of conditions to be met. Each element must be array(column, value[, 'AND'|'OR'|negate[, negate]]) (negate is optional).
@@ -256,10 +214,13 @@ function _db_validate_value($var) {
  *		+array(column, 'BETWEEN', lower, upper, negate[, 'AND'|'OR'])
  *		+array(column, 'LIKE', string value, negate[, 'AND'|'OR'])
  *		+array('LITERAL', literal[, 'AND'|'OR'])
+ * @deprecated
  * @return array the resulting where string and array of values for a PDOStatement
  */
 function _db_build_where(array $where) {
-	if($where==null || count($where)==0)return '';
+	if($where==null || count($where)==0){
+		return '';
+	}
 	$ret=array('',array());
 	$wcount=0;
 	$where_2 = array();
@@ -281,15 +242,15 @@ function _db_build_where(array $where) {
 			}elseif($arg[1]===null){
 				if($arg[3])
 					$where_2[] ="$arg[0] IS NOT NULL $arg[2] ";
-				else
-					$where_2[] ="$arg[0] IS NULL $arg[2] ";
+					else
+						$where_2[] ="$arg[0] IS NULL $arg[2] ";
 			}else{//What case is this?
 				$ret[1][':where'.$wcount]=$arg[1];
 				if($arg[4])
 					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
-				else
-					$where_2[] ="$arg[0]!=:where$wcount $arg[2] ";
-				$wcount++;
+					else
+						$where_2[] ="$arg[0]!=:where$wcount $arg[2] ";
+						$wcount++;
 			}
 		}else{
 			if(count($arg) == 3){
@@ -299,8 +260,8 @@ function _db_build_where(array $where) {
 					if(is_bool($arg[2])){
 						if($arg[2])
 							$where_2[] ="$arg[0] IS NOT NULL";
-						else
-							$where_2[] ="$arg[0] IS NULL";
+							else
+								$where_2[] ="$arg[0] IS NULL";
 					}else
 						$where_2[] ="$arg[0] IS NULL $arg[2] ";
 				}else{
@@ -324,11 +285,99 @@ function _db_build_where(array $where) {
 	$ret[0]=' WHERE '.implode('', $where_2);
 	return $ret;
 }
+/** Builds the WHERE clause.
+ * @param array $where Array of conditions to be met. Each element must be array(column, value[, 'AND'|'OR'|negate[, negate]]) (negate is optional).
+ *		The last element must have the 3rd argument ommited or set to NULL.
+ *		Special elements:
+ *		+array(column, 'IN', list, negate[, 'AND'|'OR'])
+ *			list must NOT be an array nor enclosed in ().
+ *			negate must be true or false and indicates 'NOT IN' when true.
+ *		+array(column, 'BETWEEN', lower, upper, negate[, 'AND'|'OR'])
+ *		+array(column, 'LIKE', string value, negate[, 'AND'|'OR'])
+ *		+array('LITERAL', literal[, 'AND'|'OR'])
+ * @return WhereBuilder the resulting where string and array of values for a PDOStatement
+ */
+function _db_build_where_obj(array $where) {
+	$ret= new WhereBuilder();
+	if($where==null || count($where)==0){
+		return $ret;
+	}
+	foreach($where as $arg){
+		if(count($arg) > 3){
+			if($arg[1] == 'IN'){
+				if(count($arg) == 5 && $arg[4] == 'OR'){
+					$ret->orWhere($arg[0], 'in', $arg[2], $arg[3]);
+				}else{
+					$ret->andWhere($arg[0], 'in', $arg[2], $arg[3]);
+				}
+			}elseif($arg[1] == 'LIKE'){
+				if(count($arg) == 5 && $arg[4] == 'OR'){
+					$ret->orWhere($arg[0], 'like', $arg[2], $arg[3]);
+				}else{
+					$ret->andWhere($arg[0], 'like', $arg[2], $arg[3]);
+				}
+			}elseif($arg[1] == 'BETWEEN'){
+				if(count($arg) == 6 && $arg[5] == 'OR'){
+					$ret->orWhere($arg[0], 'between', $arg[2], $arg[3], $arg[4]);
+				}else{
+					$ret->andWhere($arg[0], 'between', $arg[2], $arg[3], $arg[4]);
+				}
+			}elseif($arg[1]===null){
+				if($arg[2] == 'OR'){
+					$ret->orWhere($arg[0], null, $arg[3]);
+				}else{
+					$ret->andWhere($arg[0], null, $arg[3]);
+				}
+			}else{
+				if($arg[2] == 'OR'){
+					$ret->orWhere($arg[0], '=', $arg[1]);
+				}else{
+					$ret->orWhere($arg[0], '!=', $arg[1]);
+				}
+			}
+		}else{
+			if(count($arg) == 3){
+				if ($arg[0]=='LITERAL'){
+					if($arg[2] == 'OR'){
+						$ret->orLiteral($arg[1]);
+					}else{
+						$ret->andLiteral($arg[1]);
+					}
+				}elseif($arg[1]===null){
+					if(is_bool($arg[2])){
+						$ret->andWhere($arg[0], null, $arg[2]);
+					}else{
+						if($arg[2] == 'OR'){
+							$ret->orWhere($arg[0], null);
+						}else{
+							$ret->andWhere($arg[0], null);
+						}
+					}
+				}else{
+					if($arg[2] == 'OR'){
+						$ret->orWhere($arg[0], '=', $arg[1]);
+					}else{
+						$ret->andWhere($arg[0], '=', $arg[1]);
+					}
+				}
+			}else{
+				if($arg[0]=='LITERAL'){
+					$ret->andLiteral($arg[1]);
+				}elseif($arg[1]===null){
+					$ret->andWhere($arg[0], null);
+				}else{
+					$ret->andWhere($arg[0], $arg[1]);
+				}
+			}
+		}
+	}
+	return $ret;
+}
 /** Queries the database and returns the result set or NULL if it failed.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array $columns (null) Array or comma delimited string of column names
- * @param array $where (null) See _db_build_where(..).
+ * @param array|WhereBuilder $where (null) See _db_build_where(..).
  * @param array $sort (null) array(array(column1, dir)[, array(column2, dir)[, ...]]) where dir=['ASC'|'DESC']
  * @param string $groupBy (null) Column to group by.
  * @param string $having (null) See mysql documentation on the HAVING clause.
@@ -336,51 +385,65 @@ function _db_build_where(array $where) {
  * @param int $offset (0) Row to start at
  * @return PDOStatement|string The resulting PDOStatement or the error
  */
-function db_query($db, $table, array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+function db_query($db, $table, array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 	DBProfile::query('select');
-	if ($db===null)
+	if($db===null){
 		$db = db_get_connection();
-	if($where!==null){
-		$where=_db_build_where($where);
+	}
+	if($where !== null){
+		if(is_array($where)){
+			$where= _db_build_where_obj($where);
+		}
 	}
 	$query = 'SELECT ';
-	if ($columns!==null){
-		$query.=implode(',',$columns);
-	}else
+	if($columns !== null){
+		$query.= implode(',', $columns);
+	}else{
 		$query .= '*';
-	if (!empty($table)){
+	}
+
+	if(!empty($table)){
 		$query .= ' FROM '.$table;
 	}
-	if ($where){
-		$query .= ' '.$where[0];
-		$where=$where[1];
+
+	if($where){
+		$query .= ' WHERE '.$where->getWhere();
 	}
-	if ($groupBy != null) {
+	if($groupBy != null){
 		$query .= ' GROUP BY '.$groupBy;
-		if ($having != null){
+		if($having != null){
 			$query .=  'HAVING '.$having;
 		}
 	}
-	if ($sortBy != null) {
+	if($sortBy != null){
 		$query .= ' ORDER BY';
 		foreach($sortBy as $sort) {
 			$query .= " $sort[0] $sort[1],";
 		}
 		$query = substr($query, 0, -1);
 	}
-	if($limit>0){
+	if($limit > 0){
 		$query.=" LIMIT $limit";
-		if($offset>0){
+		if($offset > 0){
 			$query.=" OFFSET $offset";
 		}
 	}
-	$stm=db_prepare($db,$query);
-	if(!$stm)return 'Failed to prepare the statement.';
-	if($where)
-		$error=db_run_query($stm,$where);
-	else
+
+	$stm= db_prepare($db, $query);
+	if(!$stm){
+		return 'Failed to prepare the statement.';
+	}
+
+	if($where){
+		$error=db_run_query($stm, $where->getValues());
+	}else{
 		$error=db_run_query($stm);
-	if($error)return $error;
+	}
+
+	if($error){
+		return $error;
+	}
+
 	return $stm;
 }
 
@@ -394,12 +457,14 @@ function db_query($db, $table, array $columns = null,array $where = null,array $
  */
 function db_multi_insert($db, $table, array $columns, array $data) {
 	DBProfile::query('insert');
-	if ($db===null)
+	if ($db===null){
 		$db=db_get_connection();
+	}
 	$query = "INSERT INTO $table (".implode(',',$columns).') VALUES ';
 	$values = array();
-	foreach ($data as $datum)
+	foreach ($data as $datum){
 		$values[]= '('.implode(', ',array_map('_db_validate_value',$datum)).')';
+	}
 	$query.= implode(',', $values);
 	unset($values);
 	$res = mysql_query($query,$db);
@@ -412,18 +477,21 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 /** Deletes data from the database. Returns the error message on failure or false on success.
  * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
- * @param array (null) $conditions See _db_build_where(..).
+ * @param array|WhereBuilder (null) $conditions See _db_build_where(..).
  * @return mixed false on success or the error
  */
-function db_delete($db, $table, array $conditions = null) {
+function db_delete($db, $table, $conditions = null) {
 	DBProfile::query('delete');
-	if ($db===null)
+	if ($db===null){
 		$db= db_get_connection();
+	}
 	$stm= "DELETE FROM `$table`";
-	if ($conditions!==null){
-		$conditions=_db_build_where($conditions);
-		$stm.=' '.$conditions[0];
-		$conditions=$conditions[1];
+	if ($conditions !== null){
+		if(is_array($conditions)){
+			$conditions=_db_build_where_obj($conditions);
+		}
+		$stm.=' WHERE '.$conditions->getWhere();
+		$conditions= $conditions->getValues();
 	}
 	try{
 		$stm = $db->prepare($stm);
@@ -434,29 +502,32 @@ function db_delete($db, $table, array $conditions = null) {
 			return 'Could not prepare the statement.';
 		}
 	}
-	return db_run_query($stm,$conditions);
+	return db_run_query($stm, $conditions);
 }
 /**
  * Returns the number of rows the conditions match.
  * @param PDO $db
  * @param string $table
- * @param array $conditions (null) see _db_build_where(...)
+ * @param array|WhereBuilder $conditions (null) see _db_build_where(...)
  * @return mixed false on error or the count.
  */
-function db_num_rows($db,$table,array $conditions=null){
+function db_num_rows(PDO $db,$table, $conditions=null){
 	DBProfile::query('select');
-	if ($db===null)
+	if ($db == null){
 		$db= db_get_connection();
-	if($conditions===null){
-		$stm = "SELECT COUNT(*) FROM $table";
-		$conditions=array();
+	}
+	if($conditions === null){
+		$stm= "SELECT COUNT(*) FROM $table";
+		$conditions= array();
 	}else{
-		$conditions=_db_build_where($conditions);
-		$stm = "SELECT COUNT(*) FROM $table ".$conditions[0];
-		$conditions=$conditions[1];
+		if(is_array($conditions)){
+			$conditions= _db_build_where_obj($conditions);
+		}
+		$stm = "SELECT COUNT(*) FROM $table WHERE ".$conditions->getWhere();
+		$conditions= $conditions->getValues();
 	}
 	try{
-		$stm = db_prepare($db,$stm);
+		$stm = db_prepare($db, $stm);
 	}catch(PDOException $e){
 		if(db_debug()){
 			throw $e;
@@ -464,31 +535,33 @@ function db_num_rows($db,$table,array $conditions=null){
 			return false;
 		}
 	}
-	if(db_run_query($stm,$conditions))
+	if(db_run_query($stm, $conditions))
 		return false;
-	$ret = $stm->fetch(PDO::FETCH_NUM);
-	$stm->closeCursor();
-	return $ret[0];
+		$ret = $stm->fetch(PDO::FETCH_NUM);
+		$stm->closeCursor();
+		return $ret[0];
 }
 /**
  * Tests to see if any record matching the criteria exists.
  * @param PDO $db
  * @param string $table
- * @param array $conditions (null)
+ * @param array|WhereBuilder $conditions (null)
  * @throws PDOException
  * @return boolean|string false on error. '0' or '1'
  */
-function db_exists($db,$table,array $conditions=null){
+function db_exists($db,$table, $conditions=null){
 	DBProfile::query('select');
-	if ($db===null)
+	if ($db === null){
 		$db= db_get_connection();
-	if($conditions===null){
-		$stm="SELECT EXISTS(SELECT 1 FROM $table)";
-		$conditions=array();
+	}
+	if($conditions === null){
+		$stm= "SELECT EXISTS(SELECT 1 FROM $table)";
 	}else{
-		$conditions=_db_build_where($conditions);
-		$stm="SELECT EXISTS(SELECT 1 FROM $table {$conditions[0]})";
-		$conditions=$conditions[1];
+		if(is_array($conditions)){
+			$conditions=_db_build_where_obj($conditions);
+		}
+		$stm= "SELECT EXISTS(SELECT 1 FROM $table WHERE {$conditions->getWhere()})";
+		$conditions= $conditions->getValues();
 	}
 	try{
 		$stm = db_prepare($db,$stm);
@@ -499,8 +572,9 @@ function db_exists($db,$table,array $conditions=null){
 			return false;
 		}
 	}
-	if(db_run_query($stm,$conditions))
+	if(db_run_query($stm, $conditions)){
 		return false;
+	}
 	$ret = $stm->fetch(PDO::FETCH_NUM);
 	$stm->closeCursor();
 	return $ret[0];
@@ -512,11 +586,13 @@ function db_exists($db,$table,array $conditions=null){
  * @param array $params (null)
  * @return string|boolean The error if failed or false on success.
  */
-function db_run_query($stm, array $params=null){
+function db_run_query($stm, array $params= null){
 	DBProfile::query('run');
-	if(db_debug())echo '[['.db_stm_to_string($stm,$params).']]'."\n";
+	if(db_debug()){
+		echo '[['.db_stm_to_string($stm, $params).']]'."\n";
+	}
 	if ($stm->execute($params)===false && $stm->errorCode()!='00000') {
-		return db_log_error($stm,$params);
+		return db_log_error($stm, $params);
 	}
 	return false;
 }
@@ -526,12 +602,15 @@ function db_run_query($stm, array $params=null){
  * @param array $params (null)
  * @return string
  */
-function db_stm_to_string($stm,array $params=null){
-	if($params==null)return is_object($stm)?$stm->queryString:$stm;
-	if(is_object($stm))
-		$stm=$stm->queryString;
-	foreach($params as $key=>$value){
-		$stm=str_replace($key, "'$value'", $stm);
+function db_stm_to_string($stm, array $params=null){
+	if($params == null){
+		return is_object($stm) ? $stm->queryString : $stm;
+	}
+	if(is_object($stm)){
+		$stm= $stm->queryString;
+	}
+	foreach($params as $key => $value){
+		$stm= str_replace($key, "'$value'", $stm);
 	}
 	return $stm;
 }
@@ -542,9 +621,9 @@ function db_stm_to_string($stm,array $params=null){
  * @throws PDOException on error if db_debug() returns true
  * @return boolean|PDOStatement false on error
  */
-function db_prepare(PDO $db,$query){
+function db_prepare(PDO $db, $query){
 	try{
-		$query = $db->prepare($query);
+		$query= $db->prepare($query);
 	}catch(PDOException $e){
 		if(db_debug()){
 			throw $e;
@@ -570,10 +649,10 @@ function db_now(){
 class WhereBuilder{
 	private static $icnt=0;
 	private
-		$where= '',
-		$values= array(),
-		$pre,
-		$ci= 0;
+	$where= '',
+	$values= array(),
+	$pre,
+	$ci= 0;
 	public function __construct($prefix='wh'){
 		$this->pre= ":$prefix" . (++self::$icnt);
 	}
@@ -633,7 +712,7 @@ class WhereBuilder{
 	 * (col,'like',val[,negate])
 	 * (col,'between',start,end[,negate])
 	 * (col,comparator,val)
-	 * comparator='=' | '!=' | '>' | '<' | '>=' | '<='
+	 * comparator: '=' | '!=' | '>' | '<' | '>=' | '<='
 	 * @return WhereBuilder A reference to itself for chaining.
 	 */
 	public function &andWhere(){
@@ -654,7 +733,7 @@ class WhereBuilder{
 	 * (col,'like',val[,negate])
 	 * (col,'between',start,end[,negate])
 	 * (col,comparator,val)
-	 * comparator='=' | '!=' | '>' | '<' | '>=' | '<='
+	 * comparator: '=' | '!=' | '>' | '<' | '>=' | '<='
 	 * @return WhereBuilder A reference to itself for chaining.
 	 */
 	public function &orWhere(){
@@ -685,7 +764,7 @@ class WhereBuilder{
 			}
 			return;
 		}
-		
+
 		switch($arg[1]){
 			case 'in':
 				$this->values[$this->pre.$this->ci]= $arg[2];
@@ -694,7 +773,7 @@ class WhereBuilder{
 				} else {
 					$this->where.= "$arg[0] IN (". $this->pre . $this->ci .')';
 				}
-			break;
+				break;
 			case 'like':
 				$this->values[$this->pre.$this->ci]= $arg[2];
 				if($ac == 4 && $arg[3] == true){
@@ -702,7 +781,7 @@ class WhereBuilder{
 				} else {
 					$this->where.= "$arg[0] LIKE ". $this->pre . $this->ci;
 				}
-			break;
+				break;
 			case 'between':
 				$this->values[$this->pre . ($this->ci++)]= $arg[2];
 				$this->values[$this->pre . ($this->ci)]= $arg[3];
@@ -711,8 +790,8 @@ class WhereBuilder{
 				} else {
 					$this->where.= $arg[0] .' BETWEEN '. $this->pre.($this->ci - 1) .' AND '. $this->pre . $this->ci;
 				}
-				
-			break;
+
+				break;
 			default:
 				$this->values[$this->pre.$this->ci]= $arg[2];
 				$this->where.= "$arg[0]$arg[1]" . $this->pre . $this->ci;
@@ -745,9 +824,11 @@ class PDOStatementWrapper extends PropertyList{
 	 * @param int $fetch_mode (PDO::FETCH_ASSOC)
 	 * @throws IllegalArgumentException
 	 */
-	public function __construct($stm,$fetch_mode=PDO::FETCH_ASSOC){
-		if(!$stm instanceof PDOStatement)throw new IllegalArgumentException('$stm is not a PDOStatement');
-		$this->dataset=$stm;
+	public function __construct($stm,$fetch_mode= PDO::FETCH_ASSOC){
+		if(!$stm instanceof PDOStatement){
+			throw new IllegalArgumentException('$stm is not a PDOStatement');
+		}
+		$this->dataset= $stm;
 		$this->dataset->setFetchMode($fetch_mode);
 	}
 	/**
@@ -756,8 +837,8 @@ class PDOStatementWrapper extends PropertyList{
 	 * @param mixed $value
 	 * @param int $type
 	 */
-	public function bindParam($key,&$value,$type){
-		$this->dataset->bindParam($key,$value,$type);
+	public function bindParam($key, &$value, $type){
+		$this->dataset->bindParam($key, $value, $type);
 	}
 	/**
 	 * See PDOStatement::bindValue() {http://www.php.net/manual/en/pdostatement.bindvalue.php}
@@ -765,17 +846,17 @@ class PDOStatementWrapper extends PropertyList{
 	 * @param mixed $value
 	 * @param int $type
 	 */
-	public function bindValue($key,$value,$type){
-		$this->dataset->bindValue($key,$value,$type);
+	public function bindValue($key, $value, $type){
+		$this->dataset->bindValue($key, $value, $type);
 	}
 	/**
 	 * Closes the cursor and runs the statement.
 	 * @param array $args (null) The arguements for the statement
 	 * @return boolean true on success, false on failure
 	 */
-	public function run(array $args=null){
+	public function run(array $args= null){
 		$this->dataset->closeCursor();
-		return !db_run_query($this->dataset,$args);
+		return !db_run_query($this->dataset, $args);
 	}
 	/**
 	 * Loads the next row found by this query.
@@ -783,16 +864,20 @@ class PDOStatementWrapper extends PropertyList{
 	 * @return boolean false if the fetch failed or if the end was reached
 	 */
 	public function loadNext(){
-		if(!$this->dataset)throw new IllegalStateException('Query was not ran or query failed.');
+		if(!$this->dataset){
+			throw new IllegalStateException('Query was not ran or query failed.');
+		}
 		$row=$this->dataset->fetch();
-		$this->initFrom($row?$row:array());
-		return $row!=false;
+		$this->initFrom($row ? $row : array());
+		return $row != false;
 	}
 	/**
 	 * Closes the cursor and clears the loaded data.
 	 */
 	public function recycle(){
-		if($this->dataset)$this->dataset->closeCursor();
+		if($this->dataset){
+			$this->dataset->closeCursor();
+		}
 		$this->clear();
 	}
 }
@@ -803,19 +888,24 @@ class PDOStatementWrapper extends PropertyList{
  */
 class PDOTable{
 	protected $table,
-		$columns,
-		$data,
-		$dataset=null,
-		$pkey=null,
-		$db=null,
-		$rowCountstm=null,
-		$saveopstm=null,
-		$loadstm=null,
-		$plainloadall=null,
-		$trackChanges=false,
-		$lastOperation=self::OP_NONE,
-		$lastError=null;
-	const OP_NONE=0,OP_LOAD=1,OP_INSERT=2,OP_UPDATE=3,OP_DELETE=4;
+	$columns,
+	$data,
+	$dataset=null,
+	$pkey=null,
+	$db=null,
+	$rowCountstm=null,
+	$saveopstm=null,
+	$loadstm=null,
+	$plainloadall=null,
+	$trackChanges=false,
+	$lastOperation=self::OP_NONE,
+	$lastError=null;
+	const
+	OP_NONE= 0,
+	OP_LOAD= 1,
+	OP_INSERT= 2,
+	OP_UPDATE= 3,
+	OP_DELETE= 4;
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
 	 * By default, it will not track changes.
@@ -823,20 +913,24 @@ class PDOTable{
 	 * @param boolean $v (null) Sets the state if supplied
 	 * @return boolean
 	 */
-	public function trackChanges($v=null){
-		if($v===null)return $this->trackChanges;
-		$v=$v===true;
-		if($v == $this->trackChanges)return;
-		if($v){
-			$t=new ChangeTrackingPropertyList();
-			$t->initFrom($this->data->copyTo(array()));
-			$this->data=$t;
-		}else{
-			$t=new PropertyList();
-			$t->initFrom($this->data->copyTo(array()));
-			$this->data=$t;
+	public function trackChanges($v= null){
+		if($v === null){
+			return $this->trackChanges;
 		}
-		$this->trackChanges=$v;
+		$v= ($v === true);
+		if($v === $this->trackChanges){
+			return;
+		}
+		if($v){
+			$t= new ChangeTrackingPropertyList();
+			$t->initFrom($this->data->copyTo(array()));
+			$this->data= $t;
+		}else{
+			$t= new PropertyList();
+			$t->initFrom($this->data->copyTo(array()));
+			$this->data= $t;
+		}
+		$this->trackChanges= $v;
 	}
 	/**
 	 * Clears the value stored for $k
@@ -850,19 +944,23 @@ class PDOTable{
 	 * Does NOT save the changes to the database.
 	 */
 	public function mergeChanges(){
-		if($this->trackChanges)
+		if($this->trackChanges){
 			$this->data->mergeChanges();
+		}
 	}
 	/**
 	 * Forgets any changes to the model if set to track changes.
 	 * Will NOT undo changes commited to the database by calling save().
 	 */
 	public function forgetChanges(){
-		if($this->trackChanges)
+		if($this->trackChanges){
 			$this->data->discardChanges();
+		}
 	}
 	/**
-	 * Attempts to undo the last change.
+	 * THIS IS NOT A CALL TO ROLLBACK.
+	 * Attempts to undo the last change by calling opposite operation.
+	 * Reversing an update requires that change tracking be enabled.
 	 * It will NOT revert any auto increment values. Do not use this
 	 * as a replacement for transactions.
 	 * @return boolean|string false on success or the error message.
@@ -874,10 +972,10 @@ class PDOTable{
 			case self::OP_INSERT:
 				return $this->delete();
 			case self::OP_UPDATE:
-				$change=clone $this->data;
+				$change= clone $this->data;
 				$this->data->discardChanges();
-				$err=$this->update();
-				$this->data=$data;
+				$err= $this->update();
+				$this->data= $data;
 				return $err;
 			case self::OP_LOAD:
 			case self::OP_NONE:
@@ -893,13 +991,13 @@ class PDOTable{
 	 * @param resource $db
 	 * @param bool $trackChanges (false)
 	 */
-	public function __construct($table,array $columns,$pkey,$db,$trackChanges=false){
-		$this->table=$table;
-		$this->columns=$columns;
-		$this->pkey=$pkey;
-		$this->db=$db;
-		$this->data=$trackChanges?new ChangeTrackingPropertyList:new PropertyList;
-		$this->trackChanges=$trackChanges;
+	public function __construct($table, array $columns, $pkey, $db, $trackChanges= false){
+		$this->table= $table;
+		$this->columns= $columns;
+		$this->pkey= $pkey;
+		$this->db= $db;
+		$this->data= $trackChanges ? new ChangeTrackingPropertyList : new PropertyList;
+		$this->trackChanges= $trackChanges;
 	}
 	/**
 	 * Copies the loaded row to $ary
@@ -915,16 +1013,16 @@ class PDOTable{
 	 * @param mixed $d (null) default value
 	 * @return mixed
 	 */
-	public function get($k,$d=null){
-		return $this->data->get($k,$d);
+	public function get($k, $d= null){
+		return $this->data->get($k, $d);
 	}
 	/**
 	 * Set the value for $k
 	 * @param string $k
 	 * @param mixed $v
 	 */
-	public function set($k,$v){
-		$this->data->set($k,$v);
+	public function set($k, $v){
+		$this->data->set($k, $v);
 	}
 	/**
 	 * Gets the number of rows in the table
@@ -932,13 +1030,17 @@ class PDOTable{
 	 * @return int the number of rows in the table.
 	 */
 	public function getTotalRows(){
-		if($this->rowCountstm==null){
-			$this->rowCountstm=db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
-			if(!$this->rowCountstm)throw new ErrorException('Could not prepare the statement.');
+		if($this->rowCountstm == null){
+			$this->rowCountstm= db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
+			if(!$this->rowCountstm){
+				throw new ErrorException('Could not prepare the statement.');
+			}
 		}
-		$err=db_run_query($this->rowCountstm);
-		if($err)throw new ErrorException('Could not execute the query.:'.$err);
-		$ret=$this->rowCountstm->fetch(PDO::FETCH_NUM);
+		$err= db_run_query($this->rowCountstm);
+		if($err){
+			throw new ErrorException('Could not execute the query.:'.$err);
+		}
+		$ret= $this->rowCountstm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
 	/**
@@ -947,56 +1049,69 @@ class PDOTable{
 	 * @return int The number of rows matched by the query.
 	 */
 	public function count(){
-		$stm='SELECT COUNT(*) FROM '.$this->table;
-		$args=null;
+		$stm= 'SELECT COUNT(*) FROM '.$this->table;
+		$args= null;
 		if($this->data->count()){
-			$args=array();
-			$stm.=' WHERE ';
-			$data=$this->data->copyTo(array());
-			foreach($data as $k=>$v){
-				$stm.="$k=? AND";
-				$args[]=$v;
+			$args= array();
+			$stm.= ' WHERE ';
+			$where= new WhereBuilder();
+			$data= $this->data->copyTo(array());
+			foreach($data as $k => $v){
+				$where->andWhere($k, '=', $v);
 			}
-			$stm=substr($stm,0,-4);
+			$stm.= $where->getWhere();
+			$args= $where->getValues();
 		}
-		$stm=db_prepare($this->db,$stm);
-		if(!$stm)throw new ErrorException('Could not prepare the statement.');
-		$err=db_run_query($stm,$args);
-		if($err)throw new ErrorException('Could not execute the query:'.$err);
-		$ret=$stm->fetch(PDO::FETCH_NUM);
+		$stm= db_prepare($this->db, $stm);
+		if(!$stm){
+			throw new ErrorException('Could not prepare the statement.');
+		}
+		$err= db_run_query($stm,$args);
+		if($err){
+			throw new ErrorException('Could not execute the query:'.$err);
+		}
+		$ret= $stm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
 	/**
 	 * Get's the primary key.
 	 * If it is a compound key, an array in the form of ($key=>$value) containing the values is returned.
-	 * @return mixed false if the ID is not set
+	 * @return boolean|array|string false if the ID is not set
 	 */
 	public function getId(){
 		if(is_array($this->pkey)){
-			$ret=array();
+			$ret= array();
 			foreach($this->pkey as $k){
-				$ret[$k]=$this->data->get($k);
-				if(null===$ret[$k])return false;
+				$ret[$k]= $this->data->get($k);
+				if(null === $ret[$k]){
+					return false;
+				}
 			}
 			return $ret;
-		}else
+		}else{
 			return $this->data->get($this->pkey,false);
+		}
 	}
 	/**
 	 * Used to get the old primary key if track changes is on
-	 * @return mixed
+	 * @return boolean|array|string
 	 */
 	public function getOldId(){
-		if(!$this->trackChanges)return $this->getId();
+		if(!$this->trackChanges){
+			return $this->getId();
+		}
 		if(is_array($this->pkey)){
-			$ret=array();
+			$ret= array();
 			foreach($this->pkey as $k){
-				$ret[$k]=$this->data->getPrevious($k);
-				if(null===$ret[$k])return false;
+				$ret[$k]= $this->data->getPrevious($k);
+				if(null === $ret[$k]){
+					return false;
+				}
 			}
 			return $ret;
-		}else
+		}else{
 			return $this->data->getPrevious($this->pkey,false);
+		}
 	}
 	/**
 	 * Checks to see if the primary key is set.
@@ -1005,63 +1120,79 @@ class PDOTable{
 	 */
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
-				$ret=array();
-				foreach($this->pkey as $k){
-					if(null===$this->data->get($k))return false;
+			$ret=array();
+			foreach($this->pkey as $k){
+				if(null === $this->data->get($k)){
+					return false;
 				}
-				return true;
-			}else
-				return $this->data->get($this->pkey)!==null;
-	}
-	/**
-	 * Gets the primary key(s) for update and delete operations.
-	 * @param mixed $id
-	 * @throws IllegalArgumentException
-	 * @return array
-	 */
-	protected function getPkey($id=null){
-		if($id!=null){
-			if(is_array($this->pkey)){
-				if(!is_array($id))
-					throw new IllegalArgumentException('Primary key is an array. Supplied IDs must also be an array.');
-				elseif(count($this->pkey)!=count($id))
-					throw new IllegalArgumentException('Key count('.count($this->pkey).') and ID count('.count($id).') are not equal');
-				else{
-					$ret=array();
-					$keys=array_combine($this->pkey,$id);
-					foreach($keys as $k=>$v){
-						$ret[]=array($k,$v,'AND');
-					}
-					unset($ret[count($ret)-1][2]);
-					return $ret;
-				}
-			}else
-				return array(array($this->pkey,$id));
-		}else{//id==null
-			if(is_array($this->pkey)){
-				$ret=array();
-				foreach($this->pkey as $key){
-					$ret[]=array($key,$this->data->get($key),'AND');
-				}
-				unset($ret[count($ret)-1][2]);
-				return $ret;
-			}else
-				return array(array($this->pkey,$this->data->get($this->pkey)));
+			}
+			return true;
+		}else{
+			return $this->data->get($this->pkey) !== null;
 		}
 	}
 	/**
-	 * @return mixed
+	 * Gets the primary key(s) for update and delete operations.
+	 * @param mixed $id value(s) for the primary key
+	 * @throws IllegalArgumentException
+	 * @return WhereBuilder
+	 */
+	protected function getPkey($id= null){
+		$where= new WhereBuilder('pkey');
+		if($id != null){
+			if(is_array($this->pkey)){
+				if(!is_array($id)){
+					throw new IllegalArgumentException('Primary key is an array. Supplied IDs must also be an array.');
+				}elseif(count($this->pkey) != count($id)){
+					throw new IllegalArgumentException('Key count('.count($this->pkey).') and ID count('.count($id).') are not equal');
+				}else{
+					//$ret= array();
+					$keys= array_combine($this->pkey, $id);
+					foreach($keys as $k => $v){
+						$where->andWhere($k, '=', $v);
+						//						$ret[]= array($k, $v, 'AND');
+					}
+					//					unset($ret[count($ret)-1][2]);
+					//					return $ret;
+				}
+			}else{
+				$where->andWhere($this->pkey, '=', $id);
+				//				return array(array($this->pkey,$id));
+			}
+		}else{//id==null
+			if(is_array($this->pkey)){
+				$ret= array();
+				foreach($this->pkey as $key){
+					$where->andWhere($key, '=', $this->data->get($key));
+					//					$ret[]= array($key, $this->data->get($key), 'AND');
+				}
+				//				unset($ret[count($ret)-1][2]);
+				//				return $ret;
+			}else{
+				$where->andWhere($this->pkey, '=', $this->data->get($this->pkey));
+				//				return array(array($this->pkey,$this->data->get($this->pkey)));
+			}
+		}
+		return $where;
+	}
+	/**
+	 * @return WhereBuilder
 	 */
 	protected function getOldPkey(){
+		$where= new WhereBuilder('oldpkey');
 		if(is_array($this->pkey)){
-			$ret=array();
+			$ret= array();
 			foreach($this->pkey as $key){
-				$ret[]=array($key,$this->data->getPrevious($key),'AND');
+				$where->andWhere($key,'=',$this->data->getPrevious($key));
+				//$ret[]= array($key,$this->data->getPrevious($key),'AND');
 			}
-			unset($ret[count($ret)-1][2]);
-			return $ret;
-		}else
-			return array(array($this->pkey,$this->data->getPrevious($this->pkey)));
+			//unset($ret[count($ret)-1][2]);
+			//return $ret;
+		}else{
+			$where->andWhere($this->pkey,'=',$this->data->getPrevious($this->pkey));
+			//return array(array($this->pkey,$this->data->getPrevious($this->pkey)));
+		}
+		return $where;
 	}
 	/**
 	 * Useful function for helper classes
@@ -1069,32 +1200,37 @@ class PDOTable{
 	 */
 	public function setDataset(PDOStatement $data){
 		$this->recycle();
-		$this->dataset=$data;
+		$this->dataset= $data;
 	}
 	/**
-	 * Loads the record.
+	 * Loads the record. Returns false on error or if no records are found.
 	 * @param mixed $id
 	 * @return boolean
 	 */
-	public function load($id){
-		if(!$this->beforeLoad())return 'Cancelled by subclass.';
-		if($this->dataset)$this->dataset->closeCursor();
-		$where=_db_build_where($this->getPkey($id));
-		if($this->loadstm==null){
-			$this->loadstm=db_prepare($this->db,'SELECT * FROM '.$this->table.' '.$where[0]);
-		}else
+	public function load($id= null){
+		if(!$this->beforeLoad()){
+			return 'Cancelled by subclass.';
+		}
+		if($this->dataset){
+			$this->dataset->closeCursor();
+		}
+		$where= $this->getPkey($id);
+		if($this->loadstm == null){
+			$this->loadstm= db_prepare($this->db, 'SELECT * FROM '.$this->table.' WHERE ' . $where->getWhere());
+		}else{
 			$this->loadstm->closeCursor();
-		$error=db_run_query($this->loadstm,$where[1]);
+		}
+		$error= db_run_query($this->loadstm, $where->getValues());
 		if($error){
-			$this->lastError=$error;
+			$this->lastError= $error;
 			$this->afterLoad(false);
 			return false;
 		}
-		$row=$this->loadstm->fetch(PDO::FETCH_ASSOC);
-		$this->data->initFrom($row?$row:array());
-		$this->lastOperation=self::OP_LOAD;
-		$this->afterLoad($row!=null);
-		return $row!=null;
+		$row= $this->loadstm->fetch(PDO::FETCH_ASSOC);
+		$this->data->initFrom($row ? $row : array());
+		$this->lastOperation= self::OP_LOAD;
+		$this->afterLoad($row != null);
+		return $row != null;
 	}
 	/**
 	 * @param array $columns (null)
@@ -1105,25 +1241,40 @@ class PDOTable{
 	 * @return boolean True if successful
 	 */
 	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
-		if($this->dataset)$this->dataset->closeCursor();
+		if($this->dataset){
+			$this->dataset->closeCursor();
+		}
 		if($columns || $sortBy || $groupBy || $limit || $offset){
-			$this->dataset=db_query($this->db, $this->table,$columns,null,$sortBy,$groupBy,null,$limit,$offset);
+			$this->dataset= db_query($this->db, $this->table,$columns,null,$sortBy,$groupBy,null,$limit,$offset);
 		}else{
-			if($this->plainloadall==null){
-				$this->plainloadall=db_prepare($this->db,'SELECT * FROM '.$this->table);
+			if($this->plainloadall == null){
+				$this->plainloadall= db_prepare($this->db,'SELECT * FROM '.$this->table);
 			}
 			$error=db_run_query($this->plainloadall);
 			if(!$error){
-				$this->dataset=$this->plainloadall;
-			}else
-				$this->lastError=$error;
+				$this->dataset= $this->plainloadall;
+			}else{
+				$this->lastError= $error;
+			}
 		}
-		$this->lastOperation=self::OP_LOAD;
-		return $this->dataset!=false;
+		$this->lastOperation= self::OP_LOAD;
+		return $this->dataset != false;
+	}
+	/**
+	 * Returns a WhereBuilder based on the current data values
+	 * @return WhereBuilder
+	 */
+	private function getWhere(){
+		$where= new WhereBuilder('data');
+		$data= $this->data->copyTo(array());
+		foreach($data as $key => $value){
+			$where->andWhere($key, '=', $value);
+		}
+		return $where;
 	}
 	/**
 	 * @param array $columns (null)
-	 * @param array $where (null)
+	 * @param array|WhereBuilder $where (null)
 	 * @param array $sortBy (null)
 	 * @param string $groupBy (null)
 	 * @param string $having (null)
@@ -1131,39 +1282,34 @@ class PDOTable{
 	 * @param int $offset (0)
 	 * @return boolean True if successfule
 	 */
-	public function find(array $columns = null,array $where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
-		if($this->dataset)$this->dataset->closeCursor();
-		if($where==null){
-			$data=$this->data->copyTo(array());
-			$where=array();
-			foreach($data as $key=>$value){
-				$where[]=array($key,$value,'AND');
-			}
-			unset($where[count($where)-1][2]);
+	public function find(array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+		if($this->dataset){
+			$this->dataset->closeCursor();
 		}
-		if($this->exists($where))
-			$this->dataset=db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
-		else
-			$this->dataset=null;
-		$this->lastOperation=self::OP_LOAD;
-		return $this->dataset!=null;
+		if($where == null){
+			$where= $this->getWhere();
+		}
+		if($this->exists($where)){
+			$this->dataset= db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
+		}else{
+			$this->dataset= null;
+		}
+		$this->lastOperation= self::OP_LOAD;
+		return $this->dataset != null;
 	}
 	/**
-	 * @param array $where (null)
+	 * @param array|WhereBuilder $where (null)
 	 * @return boolean
 	 */
-	public function exists(array $where=null){
-		if($this->dataset)$this->dataset->closeCursor();
-		if($where==null){
-			$data=$this->data->copyTo(array());
-			$where=array(array(1,1,'AND'));
-			foreach($data as $k=>$v){
-				$where[]=array($k,$v,'AND');
-			}
-			unset($where[count($where)-1][2]);
+	public function exists($where= null){
+		if($this->dataset){
+			$this->dataset->closeCursor();
 		}
-		$count=db_exists($this->db, $this->table,$where);
-		return $count=='1';
+		if($where == null){
+			$where= $this->getWhere();
+		}
+		$count= db_exists($this->db, $this->table, $where);
+		return $count == '1';
 	}
 	/**
 	 * @return PDOStatement The last PDOStatement or null
@@ -1176,31 +1322,32 @@ class PDOTable{
 	 * @return boolean True if there is a next row and the next row was loaded
 	 */
 	public function loadNext(){
-		if(!$this->dataset)throw new IllegalStateException('No query run or last query failed.');
-		$row=$this->dataset->fetch(PDO::FETCH_ASSOC);
-		$this->data->initFrom($row?$row:array());
-		$this->lastOperation=self::OP_LOAD;
-		return $row!=false;
+		if(!$this->dataset){
+			throw new IllegalStateException('No query run or last query failed.');
+		}
+		$row= $this->dataset->fetch(PDO::FETCH_ASSOC);
+		$this->data->initFrom($row ? $row : array());
+		$this->lastOperation= self::OP_LOAD;
+		return $row != false;
 	}
 	/**
 	 * Deletes the record represented by this object.
 	 * @return bool false on success or the error.
 	 */
 	public function delete(){
-		if(!$this->beforeDelete())return 'Cancelled by subclass.';
-		if($this->isPkeySet())
-			$error=db_delete($this->db,$this->table,$this->getPkey());
-		else{
-			$where=array();
-			foreach($this->data->copyTo(array()) as $key=>$value){
-				$where[]=array($key,$value,'AND');
-			}
-			unset($where[count($where)-1][2]);
-			$error=db_delete($this->db,$this->table,$where);
+		if(!$this->beforeDelete()){
+			return 'Cancelled by subclass.';
 		}
-		$this->lastOperation=self::OP_DELETE;
-		if($error)	$this->lastError=$error;
-		$this->afterDelete($error===false);
+		if($this->isPkeySet()){
+			$error= db_delete($this->db, $this->table, $this->getPkey());
+		}else{
+			$error= db_delete($this->db, $this->table, $this->getWhere());
+		}
+		$this->lastOperation= self::OP_DELETE;
+		if($error){
+			$this->lastError= $error;
+		}
+		$this->afterDelete($error === false);
 		return $error;
 	}
 	/**
@@ -1211,9 +1358,9 @@ class PDOTable{
 	public function save(){
 		$error=false;
 		if($this->isPkeySet()){
-			$error=$this->update();
+			$error= $this->update();
 		}else{
-			$error=$this->insert();
+			$error= $this->insert();
 		}
 		return $error;
 	}
@@ -1222,25 +1369,30 @@ class PDOTable{
 	 * @return string|boolean FALSE on success or the error.
 	 */
 	public function update(){
-		if(!$this->beforeUpdate())return 'Cancelled by subclass.';
-		$query='UPDATE `'.$this->table.'`  SET ';
-		$update=$this->data->copyTo(array());
-		$data=array();
-		foreach($update as $k=>$v){
-			$query.="$k=:$k,";
-			$data[':'.$k]=$v;
+		if(!$this->beforeUpdate()){
+			return 'Cancelled by subclass.';
 		}
-		if($this->trackChanges())
-			$where=_db_build_where($this->getOldPkey());
-		else
-			$where=_db_build_where($this->getPkey());
-		$query=substr($query,0,-1).' '.$where[0];
-		$stm=db_prepare($this->db, $query);
-		$data=array_merge($data,$where[1]);
-		$error=db_run_query($stm,$data);
-		$this->lastOperation=self::OP_UPDATE;
-		if($error)$this->lestError=$error;
-		$this->afterUpdate($error===false);
+		$query= 'UPDATE `'.$this->table.'`  SET ';
+		$update= $this->data->copyTo(array());
+		$data= array();
+		foreach($update as $k => $v){
+			$query.= "$k=:col$k,";
+			$data[':col'.$k]= $v;
+		}
+		if($this->trackChanges()){
+			$where= $this->getOldPkey();
+		}else{
+			$where= $this->getPkey();
+		}
+		$query= substr($query,0,-1).' WHERE '.$where->getWhere();
+		$stm= db_prepare($this->db, $query);
+		$data= array_merge($data, $where->getValues());
+		$error= db_run_query($stm, $data);
+		$this->lastOperation= self::OP_UPDATE;
+		if($error){
+			$this->lastError= $error;
+		}
+		$this->afterUpdate($error === false);
 		return $error;
 	}
 	/**
@@ -1248,18 +1400,25 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insert(){
-		if(!$this->beforeInsert())return 'Cancelled by subclass.';
-		$data=$this->data->copyTo(array());
-		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
-		$stm=db_prepare($this->db, $query);
-		foreach($data as $k=>$v)
-			$stm->bindValue(":$k",$v,$this->columns[$k]);
-		$error=db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
-			$this->data->set($this->pkey,$this->db->lastInsertId());
-		$this->lastOperation=self::OP_INSERT;
-		if($error)$this->lastError=$error;
-		$this->afterInsert($error===false);
+		if(!$this->beforeInsert()){
+			return 'Cancelled by subclass.';
+		}
+		$data= $this->data->copyTo(array());
+		$cols= array_keys($data);
+		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).')';
+		$stm= db_prepare($this->db, $query);
+		foreach($data as $k => $v){
+			$stm->bindValue(":$k", $v, $this->columns[$k]);
+		}
+		$error= db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+			$this->data->set($this->pkey, $this->db->lastInsertId());
+		}
+		$this->lastOperation= self::OP_INSERT;
+		if($error){
+			$this->lastError= $error;
+		}
+		$this->afterInsert($error === false);
 		return $error;
 	}
 	/**
@@ -1267,18 +1426,25 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insertIgnore(){
-		if(!$this->beforeInsert())return 'Cancelled by subclass.';
-		$data=$this->data->copyTo(array());
-		$query='INSERT IGNORE INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).')';
+		if(!$this->beforeInsert()){
+			return 'Cancelled by subclass.';
+		}
+		$data= $this->data->copyTo(array());
+		$cols= array_keys($data);
+		$query= 'INSERT IGNORE INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).')';
 		$stm=db_prepare($this->db, $query);
-		foreach($data as $k=>$v)
-			$stm->bindValue(":$k",$v,$this->columns[$k]);
-		$error=db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
-			$this->data->set($this->pkey,$this->db->lastInsertId());
-		$this->lastOperation=self::OP_INSERT;
-		if($error)$this->lastError=$error;
-		$this->afterInsert($error===false);
+		foreach($data as $k => $v){
+			$stm->bindValue(":$k", $v, $this->columns[$k]);
+		}
+		$error= db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+			$this->data->set($this->pkey, $this->db->lastInsertId());
+		}
+		$this->lastOperation= self::OP_INSERT;
+		if($error){
+			$this->lastError= $error;
+		}
+		$this->afterInsert($error === false);
 		return $error;
 	}
 	/**
@@ -1287,19 +1453,25 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insertUpdate(){
-		$data=$this->data->copyTo(array());
-		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`',array_keys($data)).'`) VALUES (:'.implode(',:',array_keys($data)).') ON DUPLICATE KEY UPDATE';
-		foreach($data as $k=>$v)
-			$query.=" `$k`=:$k,";
-		$query=trim($query,',');
-		$stm=db_prepare($this->db, $query);
-		foreach($data as $k=>$v)
-			$stm->bindValue(":$k",$v,$this->columns[$k]);
-		$error=db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet())
-			$this->data->set($this->pkey,$this->db->lastInsertId());
-		$this->lastOperation=self::OP_INSERT;
-		if($error)$this->lastError=$error;
+		$data= $this->data->copyTo(array());
+		$cols= array_keys($data);
+		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
+		foreach($data as $k => $v){
+			$query.= " `$k`=:$k,";
+		}
+		$query=trim($query, ',');
+		$stm= db_prepare($this->db, $query);
+		foreach($data as $k=>$v){
+			$stm->bindValue(":$k", $v, $this->columns[$k]);
+		}
+		$error= db_run_query($stm);
+		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+			$this->data->set($this->pkey, $this->db->lastInsertId());
+		}
+		$this->lastOperation= self::OP_INSERT;
+		if($error){
+			$this->lastError= $error;
+		}
 		return $error;
 	}
 	/**
@@ -1307,24 +1479,28 @@ class PDOTable{
 	 * @throws ErrorException
 	 */
 	protected function saveOperation($type){
-		if($this->saveopstm==null){
-			$this->saveopstm=db_prepare($this->db,'INSERT INTO `updates` (`type`,`data`) VALUES (:type,:data)');
-			if(!$this->saveopstm)throw new ErrorException('Could not prepare the statement.');
+		if($this->saveopstm == null){
+			$this->saveopstm= db_prepare($this->db, 'INSERT INTO `updates` (`type`,`data`) VALUES (:type,:data)');
+			if(!$this->saveopstm){
+				throw new ErrorException('Could not prepare the statement.');
+			}
 		}
-		db_run_query($this->saveopstm,array(':type'=>$type,':data'=>serialize($this)));
+		db_run_query($this->saveopstm, array(':type'=>$type,':data'=>serialize($this)));
 	}
 	/**
 	 * Resets the internal arrays and frees any open result sets.
 	 */
 	public function recycle(){
-		if($this->dataset)$this->dataset->closeCursor();
+		if($this->dataset){
+			$this->dataset->closeCursor();
+		}
 		$this->data->initFrom(array());
 		$this->lastOperation=self::OP_NONE;
 		$this->lastError=null;
 		$this->childRecycle();
 	}
 	public function __clone(){
-		$this->data=clone $this->data;
+		$this->data= clone $this->data;
 	}
 	/**
 	 * @return string The last error.
@@ -1336,9 +1512,9 @@ class PDOTable{
 	# Hooks
 	##########
 	/**
-	 * Called before load()
-	 * @return boolean True if the load should continue
-	 */
+	* Called before load()
+	* @return boolean True if the load should continue
+	*/
 	protected function beforeLoad(){return true;}
 	/**
 	 * Called after load.
@@ -1451,8 +1627,8 @@ class sql_table {
 		$this->hidden_columns[] = $column;
 		if($alias)
 			$this->aliases_columns[$alias]=$column;
-		if($callback)
-			$this->col_callback[$column]=$callback;
+			if($callback)
+				$this->col_callback[$column]=$callback;
 	}
 	/**
 	 * Adds several hidden columns.
@@ -1499,10 +1675,10 @@ class sql_table {
 		}
 		if($format!=null)
 			$this->column_format[$column] = $format;
-		if($tdattrib!=null)
-			$this->column_attributes[$column] = $tdattrib;
-		if($callback!=null)
-			$this->col_callback[$column] = $callback;
+			if($tdattrib!=null)
+				$this->column_attributes[$column] = $tdattrib;
+				if($callback!=null)
+					$this->col_callback[$column] = $callback;
 	}
 	/**
 	 * Adds the columns to the select query.
@@ -1557,63 +1733,63 @@ class sql_table {
 		}
 		/*if (isset($_GET['letter']) && !empty($_GET['letter'])) {
 			if (ereg('^[a-z]?$', $_GET['letter']))
-			$letter = $_GET['letter'];
-		}*/
-		if (isset($_GET[$this->prefix.'sort']) && !empty($_GET[$this->prefix.'sort'])) {
-			$sort = $_GET[$this->prefix.'sort'];
-			if(!in_array($sort, $this->select_columns)){
-				if(isset($this->aliases_columns[$sort])){
-					$sort=$this->aliases_columns[$sort];
-				}else{$sort=null;}
-			}
-			if (isset($_GET[$this->prefix.'dir'])) {
-				if ($_GET[$this->prefix.'dir'] == 'down') {
-					$sortDir = 'DESC';
-				} else {
-					$sortDir = 'ASC';
+				$letter = $_GET['letter'];
+				}*/
+			if (isset($_GET[$this->prefix.'sort']) && !empty($_GET[$this->prefix.'sort'])) {
+				$sort = $_GET[$this->prefix.'sort'];
+				if(!in_array($sort, $this->select_columns)){
+					if(isset($this->aliases_columns[$sort])){
+						$sort=$this->aliases_columns[$sort];
+					}else{$sort=null;}
 				}
-				$dir = $_GET['dir'];
+				if (isset($_GET[$this->prefix.'dir'])) {
+					if ($_GET[$this->prefix.'dir'] == 'down') {
+						$sortDir = 'DESC';
+					} else {
+						$sortDir = 'ASC';
+					}
+					$dir = $_GET['dir'];
+				}
 			}
-		}
-		if ($sort==null){
-			if(count($this->defaultSort)>0){
-				$sort='';
-				foreach($this->defaultSort as $dsort)
-					$sort.= $dsort[0].' '.$dsort[1].',';
-				$sort=substr($sort,0,-1);
+			if ($sort==null){
+				if(count($this->defaultSort)>0){
+					$sort='';
+					foreach($this->defaultSort as $dsort)
+						$sort.= $dsort[0].' '.$dsort[1].',';
+						$sort=substr($sort,0,-1);
+				}
+			}else{
+				$sort.=" $sortDir";
 			}
-		}else{
-			$sort.=" $sortDir";
-		}
-		$sql = 'SELECT SQL_CACHE ';
-		$sql .= implode(',', $this->select_columns);
-		$where=null;
-		//limit [offset,]row count
-		if ($conditions == '' || $conditions == null)
-			$sql .= " FROM $this->table";
-		else{
-			$where=_db_build_where($conditions);
-			$sql.= " FROM $this->table $where[0]";
-			$where=$where[1];
-		}
-		if($sort)
-			$sql.= " ORDER BY $sort";
-		$sql.= " LIMIT $start, $numrows";
-		if(db_debug())echo $sql;
-		$res=db_prepare($db,$sql);
-		if(!$res->execute($where)) {
-			$err = db_log_error($res,$where);
-			return 'Database error: '.$err;
-		}
-		$res->setFetchMode(PDO::FETCH_ASSOC);
-		//$row_count=mysql_num_rows($res);
-		/*if($row_count==0){
-			return 'Nothing found.';
-		}*/
-		/********************
-		 ********************
-		 ********************/
-		?>
+			$sql = 'SELECT SQL_CACHE ';
+			$sql .= implode(',', $this->select_columns);
+			$where=null;
+			//limit [offset,]row count
+			if ($conditions == '' || $conditions == null)
+				$sql .= " FROM $this->table";
+				else{
+					$where=_db_build_where($conditions);
+					$sql.= " FROM $this->table $where[0]";
+					$where=$where[1];
+				}
+				if($sort)
+					$sql.= " ORDER BY $sort";
+					$sql.= " LIMIT $start, $numrows";
+					if(db_debug())echo $sql;
+					$res=db_prepare($db,$sql);
+					if(!$res->execute($where)) {
+						$err = db_log_error($res,$where);
+						return 'Database error: '.$err;
+					}
+					$res->setFetchMode(PDO::FETCH_ASSOC);
+					//$row_count=mysql_num_rows($res);
+					/*if($row_count==0){
+					return 'Nothing found.';
+					}*/
+					/********************
+					 ********************
+					 ********************/
+					?>
 		<form method="get">
 		Results per page:
 			<select name="<?php echo $this->prefix ?>numrows">
@@ -2035,3 +2211,4 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 	}
 	return $pageLinks;
 } // -- getPages --
+

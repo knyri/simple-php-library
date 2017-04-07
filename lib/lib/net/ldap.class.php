@@ -1,15 +1,23 @@
 <?php
 /**
  * LDAP connection wrapper
- */
+*/
 class Ldap {
-	private $con;
+	private $con, $result;
 	function __construct($host, $port= 389){
 		$this->con= ldap_connect($host, $port);
 	}
+	/** The result from ldap_connect
+	 * @return boolean
+	 */
 	function isValid(){
 		return $this->con !== false;
 	}
+	/**
+	 * @param string $rdn
+	 * @param string $password
+	 * @return boolean
+	 */
 	function bind($rdn= null, $password= null){
 		return ldap_bind($this->con, $rdn, $password);
 	}
@@ -43,6 +51,24 @@ class Ldap {
 	function rename($dn, $newrdn, $newparent, $deleteold){
 		return ldap_rename($this->con, $dn, $newrdn, $newparent, $deleteold);
 	}
+	/**
+	 * The result of the last search, read, or listEntries
+	 * @return boolean|LdapResult
+	 */
+	function getResult(){
+		return $this->result;
+	}
+	/**
+	 * Does not recurse
+	 * @param string|array $base_dn
+	 * @param string|array $filter
+	 * @param array $attributes
+	 * @param boolean $attrsonly
+	 * @param int $sizelimit
+	 * @param int $timelimit
+	 * @param int $deref
+	 * @return boolean|LdapResult
+	 */
 	function listEntries($base_dn, $filter, $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
 		if($attributes){
 			if($attrsonly){
@@ -65,12 +91,24 @@ class Ldap {
 		}else{
 			$res= ldap_list($this->con, $base_dn, $filter);
 		}
-		if($res === false){
-			return false;
+		if(is_array($res)){
+			$this->result= array_map(function($e){return new LdapResult($this->con, $e);}, $res);
 		}else{
-			return new LdapResult($this->con, $res);
+			$this->result= $res === false ? false : new LdapResult($this->con, $res);
 		}
+		return $this->result;
 	}
+	/**
+	 * Searches $base_dn and recurses into child DNs
+	 * @param string|array $base_dn
+	 * @param string|array $filter
+	 * @param array $attributes
+	 * @param boolean $attrsonly
+	 * @param int $sizelimit
+	 * @param int $timelimit
+	 * @param int $deref
+	 * @return boolean|LdapResult
+	 */
 	function search($base_dn, $filter, $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
 		if($attributes){
 			if($attrsonly){
@@ -93,13 +131,25 @@ class Ldap {
 		}else{
 			$res= ldap_search($this->con, $base_dn, $filter);
 		}
-		if($res === false){
-			return false;
+		if(is_array($res)){
+			$this->result= array_map(function($e){return new LdapResult($this->con, $e);}, $res);
 		}else{
-			return new LdapResult($this->con, $res);
+			$this->result= $res === false ? false : new LdapResult($this->con, $res);
 		}
+		return $this->result;
 	}
-	function read($base_dn, $filter, $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
+	/**
+	 * Read a single entry
+	 * @param string|array $base_dn
+	 * @param string|array $filter
+	 * @param array $attributes
+	 * @param boolean $attrsonly
+	 * @param int $sizelimit
+	 * @param int $timelimit
+	 * @param int $deref
+	 * @return boolean|LdapResult
+	 */
+	function read($base_dn, $filter='(objectClass=*)', $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
 		if($attributes){
 			if($attrsonly){
 				if($sizelimit){
@@ -121,11 +171,12 @@ class Ldap {
 		}else{
 			$res= ldap_read($this->con, $base_dn, $filter);
 		}
-		if($res === false){
-			return false;
+		if(is_array($res)){
+			$this->result= array_map(function($e){return new LdapResult($this->con, $e);}, $res);
 		}else{
-			return new LdapResult($this->con, $res);
+			$this->result= $res === false ? false : new LdapResult($this->con, $res);
 		}
+		return $this->result;
 	}
 }
 /**
@@ -134,12 +185,12 @@ class Ldap {
  */
 class LdapResult {
 	private
-		$con,
-		$result,
-		$errcode,
-		$matcheddn,
-		$errmsg,
-		$referrals;
+	$con,
+	$result,
+	$errcode,
+	$matcheddn,
+	$errmsg,
+	$referrals;
 	function __construct($con, $result){
 		$this->con= $con;
 		$this->result= $result;
@@ -157,6 +208,10 @@ class LdapResult {
 	function getEntries(){
 		return ldap_get_entries($this->con, $this->result);
 	}
+	/**
+	 * Parse result meta-data
+	 * @return boolean
+	 */
 	function parse(){
 		return ldap_parse_result($this->con, $this->result, $this->errcode, $this->matcheddn, $this->errmsg, $this->referrals);
 	}
@@ -188,8 +243,8 @@ class LdapResult {
 }
 class LdapObject{
 	protected
-		$con,
-		$dn;
+	$con,
+	$dn;
 	function __construct($con, $dn){
 		$this->con= $con;
 		$this->dn= $dn;
@@ -225,8 +280,11 @@ class LdapObject{
 		return ldap_modify($this->con, $this->dn, $entry);
 	}
 	function rename($newrdn, $newparent, $deleteold){
-		// TODO: update $this->dn
-		return ldap_rename($this->con, $this->dn, $newrdn, $newparent, $deleteold);
+		if(ldap_rename($this->con, $this->dn, $newrdn, $newparent, $deleteold)){
+			$this->dn= $newrdn;
+			return true;
+		}
+		return false;
 	}
 	function getError(){
 		return ldap_error($this->con);
@@ -241,8 +299,8 @@ class LdapObject{
  */
 class LdapResultEntry extends LdapObject{
 	private
-		$entry,
-		$reuse= true;
+	$entry,
+	$reuse= true;
 	function __construct($con, $entry){
 		parent::__construct($con, ldap_get_dn($con, $entry));
 		$this->entry= $entry;
@@ -255,14 +313,14 @@ class LdapResultEntry extends LdapObject{
 		if($entry === false){
 			return false;
 		}
-		if($reuse){
+		if($this->reuse){
 			$this->entry= $entry;
 			$this->dn = ldap_get_dn($this->con, $entry);
 			return $this;
 		}
 		return new LdapResultEntry($this->con, $entry);
 	}
-	
+
 	function getValues($attribute){
 		return ldap_get_values($this->con, $this->entry, $attribute);
 	}
@@ -284,5 +342,25 @@ class LdapResultEntry extends LdapObject{
 	}
 	function getDn(){
 		return ($this->dn= ldap_get_dn($this->con, $this->entry));
+	}
+	/**
+	 * Echos or returns all the attrubutes and values
+	 * @param bool $return
+	 */
+	function dump($return= false){
+		if($return){
+			ob_start();
+		}
+		foreach($this->getAttributes() as $attr => $val){
+			if(is_int($attr) || $attr === 'count'){
+				continue;
+			}
+			echo $attr .'=';
+			print_r($val);
+			echo PHP_EOL;
+		}
+		if($return){
+			return ob_get_clean();
+		}
 	}
 }

@@ -169,4 +169,3 @@ class CSVReader {
 			$this->DEFAULTS = array_fill(0, count($this->HEADERS), $this->default_value);
 	}
 }
-?>

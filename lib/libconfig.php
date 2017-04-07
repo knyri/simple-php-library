@@ -12,18 +12,18 @@ class LibConfig{
 		$init=false;
 	public static function init(){
 		if(self::$init)return;
-		self::$conf['db']=parse_ini_file(LIB.'/database.ini');
-		self::$conf['util.counter']['database']='';//leave blank if the same as lib/db/database
-		self::$conf['util.counter']['expire']=60*24;//time in minutes between page views before incremented again for an individual visitor
-		self::$conf['util.counter']['multidomain']=false;//enable this to track multiple domains(including subdomains)
+		self::$conf['db']= parse_ini_file(LIB.'/database.ini', true);
+		self::$conf['util.counter']['database']= '';//leave blank if the same as lib/db/database
+		self::$conf['util.counter']['expire']= 60*24;//time in minutes between page views before incremented again for an individual visitor
+		self::$conf['util.counter']['multidomain']= false;//enable this to track multiple domains(including subdomains)
 		self::$init=true;
 	}
 	public static function &getConfig($conf){
-		if(isset(self::$conf[$conf]))return self::$conf[$conf];
-		return null;
+		return isset(self::$conf[$conf])? self::$conf[$conf] : null;
 	}
 }
 LibConfig::init();
 require_once LIB.'/packagemanager.class.php';
+PackageManager::addPath(LIB);
 
 // PackageManager::addPath($path); // add paths to be searched for library files.

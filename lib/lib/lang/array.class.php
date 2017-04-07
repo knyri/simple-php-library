@@ -420,3 +420,4 @@ class ArrayObj{
 		return shuffle($this->arr);
 	}
 }
+

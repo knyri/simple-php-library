@@ -124,9 +124,11 @@ class File extends Stream{
 	public function isUploadedFile(){return is_uploaded_file($this->uri);}
 	/** See file_get_contents(...) in the standard PHP library.
 	 * Returns the contents of the file as a string. You do not need to open the file to do this.
+	 * @param int $maxlen ignored
+	 * @param int $offset ingored
 	 * @return string The file contents
 	 */
-	public function getContents(){return file_get_contents($this->uri);}
+	public function getContents($maxlen=-1,$offset=-1){return file_get_contents($this->uri);}
 	/**
 	 * See file_put_contents(...) in the standard PHP library.
 	 * Puts the contents into the file. You do not need to open the file to do this.
