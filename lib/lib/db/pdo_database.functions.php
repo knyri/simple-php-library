@@ -485,7 +485,7 @@ function db_delete($db, $table, $conditions = null) {
 	if ($db===null){
 		$db= db_get_connection();
 	}
-	$stm= "DELETE FROM `$table`";
+	$stm= "DELETE FROM \"$table\"";
 	if ($conditions !== null){
 		if(is_array($conditions)){
 			$conditions=_db_build_where_obj($conditions);
@@ -1372,7 +1372,7 @@ class PDOTable{
 		if(!$this->beforeUpdate()){
 			return 'Cancelled by subclass.';
 		}
-		$query= 'UPDATE `'.$this->table.'`  SET ';
+		$query= 'UPDATE "'.$this->table.'"  SET ';
 		$update= $this->data->copyTo(array());
 		$data= array();
 		foreach($update as $k => $v){
@@ -1405,14 +1405,18 @@ class PDOTable{
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).')';
+		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
 		$stm= db_prepare($this->db, $query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
 		$error= db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
-			$this->data->set($this->pkey, $this->db->lastInsertId());
+			$id= $this->db->lastInsertId();
+			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
+				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
+			}
+			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
@@ -1431,14 +1435,18 @@ class PDOTable{
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query= 'INSERT IGNORE INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).')';
+		$query= 'INSERT IGNORE INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
 		$stm=db_prepare($this->db, $query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
 		$error= db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
-			$this->data->set($this->pkey, $this->db->lastInsertId());
+			$id= $this->db->lastInsertId();
+			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
+				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
+			}
+			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
@@ -1455,9 +1463,9 @@ class PDOTable{
 	public function insertUpdate(){
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO `'.$this->table.'` (`'.implode('`,`', $cols).'`) VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
+		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
 		foreach($data as $k => $v){
-			$query.= " `$k`=:$k,";
+			$query.= " \"$k\"=:$k,";
 		}
 		$query=trim($query, ',');
 		$stm= db_prepare($this->db, $query);
@@ -1466,7 +1474,11 @@ class PDOTable{
 		}
 		$error= db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
-			$this->data->set($this->pkey, $this->db->lastInsertId());
+			$id= $this->db->lastInsertId();
+			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
+				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
+			}
+			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
@@ -1480,7 +1492,7 @@ class PDOTable{
 	 */
 	protected function saveOperation($type){
 		if($this->saveopstm == null){
-			$this->saveopstm= db_prepare($this->db, 'INSERT INTO `updates` (`type`,`data`) VALUES (:type,:data)');
+			$this->saveopstm= db_prepare($this->db, 'INSERT INTO "updates" ("type","data") VALUES (:type,:data)');
 			if(!$this->saveopstm){
 				throw new ErrorException('Could not prepare the statement.');
 			}
@@ -2211,4 +2223,3 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 	}
 	return $pageLinks;
 } // -- getPages --
-
