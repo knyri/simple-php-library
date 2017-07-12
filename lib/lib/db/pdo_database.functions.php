@@ -1461,9 +1461,25 @@ class PDOTable{
 	 * @return string|boolean false on success or the error.
 	 */
 	public function insertUpdate(){
+		$dbType= $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
+		switch($dbType){
+			case 'mysql':
+				$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
+				break;
+			case 'pgsql':
+				// TODO: Not sure if the keys have to be in order for it to match
+				$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON CONFLICT ("'.( is_array($this->pkey) ? implode('","', $this->pkey) : $this->pkey ).'") DO UPDATE SET';
+				break;
+		}
+		if(!$query){
+			if($this->exists($this->getPkey())){
+				return $this->update();
+			}else{
+				return $this->insert();
+			}
+		}
 		foreach($data as $k => $v){
 			$query.= " \"$k\"=:$k,";
 		}
@@ -1475,7 +1491,7 @@ class PDOTable{
 		$error= db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
-			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
+			if($id == 0 && $dbType == "pgsql"){
 				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
 			}
 			$this->data->set($this->pkey, $id);
