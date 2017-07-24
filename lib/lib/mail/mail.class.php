@@ -131,54 +131,60 @@ class mail{
 	 * @return boolean true if the mail was sent or false.
 	 */
 	public function send(){
-		if(is_array($this->to))
-			$to=implode(',',$this->to);
-		else
-			$to=$this->to;
+		if(is_array($this->to)){
+			$to= implode(',', $this->to);
+		}else{
+			$to= $this->to;
+		}
 		if(count($this->attachments) && !$this->generated){
-			$mime_boundary=md5(time());
-			$this->headers['Content-Type']="multipart/mixed; boundary=\"{$mime_boundary}\"";
-			$mtmp=$this->message;
-			$this->message="--{$mime_boundary}\n";
-			if($this->ishtml)
-				$this->message.="Content-Type: text/html\n\n";
-			else
-				$this->message.="Content-Type: text/plain\n\n";
-			$this->message.=trim($mtmp)."\n";
+			$mime_boundary= md5(time());
+			$this->headers['Content-Type']= "multipart/mixed; boundary=\"{$mime_boundary}\"";
+			$mtmp= $this->message;
+			$this->message= "--{$mime_boundary}\r\n";
+			if($this->ishtml){
+				$this->message.= "Content-Type: text/html\r\n\r\n";
+			}else{
+				$this->message.= "Content-Type: text/plain\r\n\r\n";
+			}
+			$this->message.= trim($mtmp) . "\r\n";
 			unset($mtmp);
-			foreach($this->attachments as $file=>$mime){
+			foreach($this->attachments as $file => $mime){
 				if(substr($file,0,4)=='http'){
-					$this->message .= "--{$mime_boundary}\n";
-					$data = chunk_split(base64_encode(file_get_contents($file,false,self::$httpctx)));
-					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\n" .
-							"Content-Description: ".basename($file)."\n" .
-							"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\n" .
-							"Content-Transfer-Encoding: base64\n\n" . $data . "\n\n";
+					$this->message .= "--{$mime_boundary}\r\n";
+					$data = chunk_split(base64_encode(file_get_contents($file,false,self::$httpctx)), 76, "\r\n");
+					$this->message.= "Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
+							"Content-Description: ".basename($file)."\r\n" .
+							"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
+							"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n";
 				}else
 				if(is_file($file)){
-					$this->message .= "--{$mime_boundary}\n";
-					$data = chunk_split(base64_encode(file_get_contents($file)));
-					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\n" .
-								"Content-Description: ".basename($file)."\n" .
-								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\n" .
-								"Content-Transfer-Encoding: base64\n\n" . $data . "\n\n";
-					if($mime[1]===true)@unlink($file);
+					$this->message.= "--{$mime_boundary}\r\n";
+					$data= chunk_split(base64_encode(file_get_contents($file)), 76, "\r\n");
+					$this->message.= "Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
+								"Content-Description: ".basename($file)."\r\n" .
+								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
+								"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n";
+					if($mime[1]===true){
+						// delete on send flag
+						@unlink($file);
+					}
 				}
 			}
-			$this->message .= "--{$mime_boundary}--";
-			$this->generated=true;
+			$this->message.= "--{$mime_boundary}--";
+			$this->generated= true;
 		}elseif($this->ishtml){
-			$this->headers['Content-Type']='text/html';
+			$this->headers['Content-Type']= 'text/html';
 		}elseif(!isset($this->headers['Content-Type'])){
-			$this->headers['Content-Type']='text/plain';
+			$this->headers['Content-Type']= 'text/plain';
 		}
 		$headers='';
-		if(isset($this->from))$headers.='From: '.$this->from."\r\n";
-		if(count($this->bcc))$headers.='Bcc: '.implode(',',$this->bcc)."\r\n";
-		if(count($this->cc))$headers.='Cc: '.implode(',',$this->cc)."\r\n";
-		foreach($this->headers as $name=>$value){
+		if(isset($this->from)){$headers.= 'From: '.$this->from."\r\n";}
+		if(count($this->bcc)) {$headers.= 'Bcc: '.implode(',',$this->bcc)."\r\n";}
+		if(count($this->cc))  {$headers.= 'Cc: '.implode(',',$this->cc)."\r\n";}
+		foreach($this->headers as $name => $value){
 			$headers.="$name: $value\r\n";
 		}
+		// trim extra \r\n
 		$headers=substr($headers,0,-2);
 		return mail($to, $this->subject, $this->message,$headers);
 	}

@@ -29,10 +29,11 @@ class File extends Stream{
 	 * @return boolean
 	 */
 	public function copy($to){
-		if($this->ctx==null)
+		if($this->ctx == null){
 			return copy($this->uri,$to);
-		else
+		}else{
 			return copy($this->uri,$to,$this->ctx);
+		}
 	}
 	/**
 	 * Attempts to create the full path
@@ -42,11 +43,14 @@ class File extends Stream{
 	 * @return boolean false if the path does not exist and could not be created
 	 */
 	public static function createPath($path,$mask=0777,$context=null){
-		if(file_exists($path)) return true;
-		if($context)
+		if(file_exists($path)){
+			return true;
+		}
+		if($context){
 			return mkdir($path,$mask,true,$context);
-		else
+		}else{
 			return mkdir($path,$mask,true);
+		}
 	}
 	/**
 	 * Attempts to create the directory structure for this file if it does not exist.
@@ -56,8 +60,9 @@ class File extends Stream{
 	 */
 	public function ensureDir($mask=0777){
 		if(!file_exists(dirname($this->uri))){
-			if($this->ctx)
+			if($this->ctx){
 				return mkdir(dirname($this->uri),$mask,true,$this->ctx);
+			}
 			return mkdir(dirname($this->uri),$mask,true);
 		}
 		return true;
@@ -69,10 +74,12 @@ class File extends Stream{
 	 * @param resource $context Ignored if $this->isUploadedFile()==true
 	 */
 	public function move($to){
-		if($this->isUploadedFile())
+		if($this->isUploadedFile()){
 			return move_uploaded_file($this->uri,$to);
-		if($this->ctx==null)
+		}
+		if($this->ctx==null){
 			return rename($this->uri,$to);
+		}
 		return rename($this->uri,$to,$this->ctx);
 	}
 	/**
@@ -136,8 +143,9 @@ class File extends Stream{
 	 * @return number
 	 */
 	public function putContents($string,$flags=0,$ctx=null){
-		if($ctx)
+		if($ctx){
 			return file_put_contents($this->uri, $string,$flags,$ctx);
+		}
 		return file_put_contents($this->uri, $string,$flags);
 	}
 	/**
@@ -157,8 +165,12 @@ class File extends Stream{
 	 * @return boolean
 	 */
 	public function touch($time=0,$atime=0){
-		if($time==0)$time=time();
-		if($atime==0)$atime=$time;
+		if($time == 0){
+			$time= time();
+		}
+		if($atime == 0){
+			$atime= $time;
+		}
 		return touch($this->uri,$time,$atime);
 	}
 	/**
@@ -183,8 +195,9 @@ class File extends Stream{
 	 * @return number
 	 */
 	public function readToOutput(){
-		if($this->ctx)
+		if($this->ctx){
 			return readfile($this->uri,$this->use_include_path,$this->ctx);
+		}
 		return readfile($this->uri,$this->use_include_path);
 	}
 

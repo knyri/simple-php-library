@@ -73,6 +73,14 @@ class ArrayObj{
 	public function hasValue($v, $strict= false){
 		return array_search($v, $this->arr, $strict) !== false;
 	}
+	public function hasValues($arr, $strict= false){
+		foreach($arr as $v){
+			if(array_search($v, $this->arr, $strict) === false){
+				return false;
+			}
+		}
+		return true;
+	}
 	public function keys($search= null, $strict= false){
 		return array_keys($this->arr, $search, $strict);
 	}
