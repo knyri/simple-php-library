@@ -1,16 +1,12 @@
 <?php
-/**
- * @author Kenneth Pierce kcpiercejr@gmail.com
- * @package database
- */
-
+require_once 'pdo_database.functions.php';
+PackageManager::requireClassOnce('ml.html');// needed?
 
 /**
  * Class to build a table with pagination and sorting backed by a SQL table.
  * For the format of a cell, the current column's value is referenced by $value$. A hidden column's value can be referenced by $col name$.
  * WARNING: Spaces ARE allowed in the column names! There is no escape character. You CAN have $ in the column value.
  * @author Kenneth Pierce
- * @deprecated Uses mysql_* functions
  */
 class sql_table {
 	private $prefix='';
@@ -26,6 +22,14 @@ class sql_table {
 	private $column_format = array();
 	private $column_attributes = array();
 	private $col_callback = array();
+	private $defaultSort=array();
+	private $caption=null;
+	public function setCaption($caption){
+		$this->caption=$caption;
+	}
+	public function addSort($column,$dir){
+		$this->defaultSort[]=array($column,$dir);
+	}
 	public function setPrefix($prefix){
 		$this->prefix=$prefix;
 	}
@@ -177,22 +181,36 @@ class sql_table {
 			}
 		}
 		if ($sort==null){
-			$sort = $this->select_columns[0];
+			if(count($this->defaultSort)>0){
+				$sort='';
+				foreach($this->defaultSort as $dsort)
+					$sort.= $dsort[0].' '.$dsort[1].',';
+				$sort=substr($sort,0,-1);
 		}
-		$sql = 'SELECT SQL_CACHE ';
+		}else{
+			$sort.=" $sortDir";
+		}
+		$sql = 'SELECT ';
 		$sql .= implode(',', $this->select_columns);
+		$where=null;
 		//limit [offset,]row count
 		if ($conditions == '' || $conditions == null)
 			$sql .= " FROM $this->table";
-		else
-			$sql .= " FROM $this->table WHERE $conditions";
-		$sql .= " ORDER BY $sort $sortDir LIMIT $start, $numrows";
-		if(db_isDebug())echo $sql;
-		$res = mysql_query($sql, $db);
-		if (!$res) {
-			$err = db_log_error(mysql_error(), $sql);
+		else{
+			$where=_db_build_where($conditions);
+			$sql.= " FROM $this->table $where[0]";
+			$where=$where[1];
+		}
+		if($sort)
+			$sql.= " ORDER BY $sort";
+		$sql.= " LIMIT $start, $numrows";
+		if(db_debug())echo $sql;
+		$res=db_prepare($db,$sql);
+		if(!$res->execute($where)) {
+			$err = db_log_error($res,$where);
 			return 'Database error: '.$err;
 		}
+		$res->setFetchMode(PDO::FETCH_ASSOC);
 		//$row_count=mysql_num_rows($res);
 		/*if($row_count==0){
 			return 'Nothing found.';
@@ -223,6 +241,7 @@ class sql_table {
 		$pageLinks = getPages($row_count, $start, $numrows, "&amp;".$this->prefix."sort=$sort&amp;".$this->prefix."dir=".$dir.$extra,$this->prefix);
 		$buf .= "<div>$pageLinks</div>\n";
 		$buf .= '<table cellspacing="0">';
+		$buf.= "<caption>$this->caption</caption>";
 		/********************
 		 ****TITLES**********
 		 ********************/
@@ -266,7 +285,7 @@ class sql_table {
 		$aliases_columns = array();
 		$column_format = array();
 		*/
-		while ($row = mysql_fetch_array($res)) {
+		while ($row = $res->fetch()) {
 			if($numrows<1)break;
 			$rowBuf = "<tr>\n";
 			foreach($this->shown_columns as $column) {
@@ -359,6 +378,10 @@ class sql_table_simple {
 	public function setTable($table) {
 		$this->table = $table;
 	}
+	/**
+	 * @param string $col
+	 * @param string $alias
+	 */
 	function addAlias($col,$alias){
 		$this->aliases_columns[$alias]=$col;
 		if(!isset($this->hidden_columns[$col]))
@@ -367,8 +390,8 @@ class sql_table_simple {
 	/**
 	 * Adds a hidden column. It is in the select statement, but not displayed.
 	 * @param string $column The column name.
-	 * @param string $alias Column alias(for easier reference)
-	 * @param string $callback Function to be called on the value
+	 * @param string $alias (null) Column alias(for easier reference)
+	 * @param string $callback (null) Function to be called on the value
 	 */
 	public function addHiddenColumn($column,$alias=null,$callback=null) {
 		$this->select_columns[] = $column;
@@ -390,7 +413,7 @@ class sql_table_simple {
 	 * Adds a column that will only use other columns to build it's content. This column will NOT be in the select statement. As such, you cannot set an alias for or sort by this column.
 	 * @param string $column
 	 * @param string $format
-	 * @param array $tdattib
+	 * @param array $tdattib (null) name=>key array of HTML attributes to put on TDs in the column
 	 */
 	public function addDummyColumn($column,$format,array $tdattib=null){
 		$this->shown_columns[]=$column;
@@ -410,8 +433,8 @@ class sql_table_simple {
 	 * Specifies a column that needs to be referred by a different name. The problem that sparked this addition:
 	 * Column in the select statement: roster.pos
 	 * Column in the array: pos
-	 * @param unknown_type $col The original column name
-	 * @param unknown_type $resolved The name that should be used
+	 * @param string $col The original column name
+	 * @param string $resolved The name that should be used
 	 */
 	public function addQuirkCol($col,$resolved){
 		$this->quirk_col[$col]=$resolved;
@@ -419,10 +442,10 @@ class sql_table_simple {
 	/**
 	 * Adds a column to the select query.
 	 * @param string $column The table column
-	 * @param string $alias The name to be displayed.
-	 * @param string $format String containing the format for the column. Use $value$ to specify where the column value should be.
-	 * @param array $tdattrib array of key=>value mappings to be added to the TD element containing this value.
-	 * @param string $callback A string containing the name of a function that will be called on this value. It should take one argument and return a value.
+	 * @param string $alias (null) The name to be displayed.
+	 * @param string $format (null) String containing the format for the column. Use $value$ to specify where the column value should be.
+	 * @param array $tdattrib (null) array of key=>value mappings to be added to the TD element containing this value.
+	 * @param string $callback (null) A string containing the name of a function that will be called on this value. It should take one argument and return a value.
 	 */
 	public function addColumn($column, $alias=null,$format=null,array $tdattrib=null,$callback=null) {
 		$this->select_columns[] = $column;
@@ -467,8 +490,8 @@ class sql_table_simple {
 	/**
 	 * Queries and returns the table.
 	 * @param resource $db MySQL database connection.
-	 * @param string $conditions SQL query conditions.
-	 * @param string $extra Extra appended to the link.
+	 * @param string $conditions (null) SQL query conditions.
+	 * @param string $extra ('') Extra appended to the link.
 	 * @return string The table.
 	 */
 	public function printTable($db, $conditions = null, $extra = '') {
@@ -485,17 +508,21 @@ class sql_table_simple {
 		$sql = 'SELECT SQL_CACHE ';
 		$sql .= implode(',', $this->select_columns);
 		//limit [offset,]row count
-		if ($conditions == '' || $conditions == null)
+		if ($conditions == '' || $conditions == null){
 			$sql .= " FROM $this->table";
-		else
+		}else{
 			$sql .= " FROM $this->table WHERE $conditions";
+		}
 		$sql .= " ORDER BY $this->sort $this->dir";
-		if(db_isDebug())echo $sql;
-		$res = mysql_query($sql, $db);
+		if(db_debug()){
+			echo $sql;
+		}
+		$res = $db->query($sql);
 		if (!$res) {
-			$err = db_log_error(mysql_error(), $sql);
+			$err = db_log_error($sql);
 			return 'Database error: '.$err;
 		}
+		$res->setFetchType(PDO::FETCH_ASSOC);
 		$buf .= '<table cellspacing="0">';
 		/********************
 		 ****TITLES**********
@@ -519,10 +546,14 @@ class sql_table_simple {
 		$aliases_columns = array();
 		$column_format = array();
 		*/
-		while ($row = mysql_fetch_array($res)) {
+		while ($row= $res->fetch()) {
 			$rowBuf = "<tr>\n";
 			foreach($this->shown_columns as $scolumn) {
-				if(isset($this->quirk_col[$scolumn]))$column=$this->quirk_col[$scolumn]; else $column=$scolumn;
+				if(isset($this->quirk_col[$scolumn])){
+					$column= $this->quirk_col[$scolumn];
+				}else{
+					$column= $scolumn;
+				}
 				if(isset($this->column_attributes[$scolumn])){
 					$rowBuf .= "\t<td";
 					foreach($this->column_attributes[$scolumn] as $key=>$value){
@@ -536,14 +567,17 @@ class sql_table_simple {
 					$row[$column]=call_user_func($this->col_callback[$scolumn],$row[$column]);
 				}
 				if (isset($this->column_format[$scolumn])){
-					if(isset($row[$column]))
+					if(isset($row[$column])){
 						$cvalue=str_replace('$value$',$row[$column],$this->column_format[$scolumn]);
-					else
+					}else{
 						$cvalue=$this->column_format[$scolumn];
+					}
 					$idx=-1;
 					while(($idx=strpos($cvalue,'$',$idx+1))!==false){
 						$idx2=strpos($cvalue,'$',$idx+1);
-						if($idx2===false){break;}
+						if($idx2 === false){
+							break;
+						}
 						$sidx=substr($cvalue,$idx+1,$idx2-$idx-1);
 						if(isset($this->aliases_columns[$sidx])&&isset($row[$this->aliases_columns[$sidx]])){
 							$cbvalue=$row[$this->aliases_columns[$sidx]];
@@ -559,7 +593,9 @@ class sql_table_simple {
 							}
 							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
 							$idx+=strlen($cbvalue);
-						}else{$idx=$idx2-1;}
+						}else{
+							$idx= $idx2 - 1;
+						}
 					}
 					$rowBuf.=$cvalue;
 				}else
@@ -574,6 +610,15 @@ class sql_table_simple {
 	}
 }// -- end class sql_table
 
+/**
+ * Pagination links
+ * @param int $totalRows
+ * @param int $currentRow
+ * @param int $rowsPerPage
+ * @param string $extra ('')
+ * @param string $prefix ('')
+ * @return string
+ */
 function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='') {
 	$cPages = ceil($totalRows/$rowsPerPage);
 	if ($cPages == 1){return ' ';}
@@ -583,8 +628,8 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 		$start = 0;
 	$pageLinks = '';
 	if ($start > 0) {
-		$pageLinks .= '<a href="?'.$prefix.'start=0&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_first.png" /></a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.($currentRow-$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_previous.png" /></a>';
+		$pageLinks .= '<a href="?'.$prefix.'start=0&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_first.png"></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.($currentRow-$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_previous.png"></a>';
 	}
 	$page = $currentRow/$rowsPerPage;
 	$cPage = $page;
@@ -602,8 +647,37 @@ function getPages($totalRows, $currentRow, $rowsPerPage, $extra = '',$prefix='')
 	if ($topPage-1 < $cPages) {
 		if ($topPage < $cPages-1)
 			$pageLinks .= ' ... <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'">'.$cPages.'</a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.(($topPage-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_next.png" /></a>';
-		$pageLinks .= ' <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_last.png" /></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($topPage-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_next.png"></a>';
+		$pageLinks .= ' <a href="?'.$prefix.'start='.(($cPages-1)*$rowsPerPage).'&amp;'.$prefix.'numrows='.$rowsPerPage.$extra.'"><img src="/lib/i/resultset_last.png"></a>';
 	}
 	return $pageLinks;
 } // -- getPages --
+/**
+ * Prints a table displaying the result.
+ * @param PDOStatement $result
+ * @param array $attrib (array()) Key=>Value pair of attributes to put on the table.
+ * @return boolean False if an error occured on the first fetch
+ */
+function result_table($result, array $attrib=array()){
+	$row= $result->fetch(PDO::FETCH_ASSOC);
+	if(!$row)return false;
+	echo '<table '.combine_attrib($attrib).'>';
+	echo '<tr>';
+	foreach(array_keys($row) as $column){
+		echo '<th>'.$column.'</th>';
+	}
+	echo '</tr><tr>';
+	foreach($row as $col){
+		echo "<td>".nl2br(htmlspecialchars($col))."</td>";
+	}
+	echo '</tr>';
+	while ($row = $result->fetch(PDO::FETCH_NUM)) {
+		echo "<tr>";
+		foreach($row as $col){
+			echo "<td>".nl2br(htmlspecialchars($col))."</td>";
+		}
+		echo "</tr>";
+	}
+	echo '</table>';
+	return true;
+}
