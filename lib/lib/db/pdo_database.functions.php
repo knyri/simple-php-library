@@ -66,7 +66,14 @@ function db_debug($toggle=null){
  */
 function &db_get_connection($forcenew = false, $db = 'default') {
 	global $_DB, $_DB_OPEN_CON;
-	if ($forcenew){db_close_connection($db);}
+	if(is_string($forcenew)){
+		// because lazy
+		$db= $forcenew;
+		$forcenew= false;
+	}
+	if ($forcenew){
+		db_close_connection($db);
+	}
 
 	if (!isset($_DB_OPEN_CON)){
 		$_DB_OPEN_CON= array();

@@ -389,7 +389,13 @@ class PDOTable{
 		$where= new WhereBuilder('data');
 		$data= $this->data->copyTo(array());
 		foreach($data as $key => $value){
-			$where->andWhere($key, '=', $value);
+			if(is_array($value)){
+				$where->andWhere($key, 'in', $value);
+			}else if($value ===  null){
+				$where->andWhere($key, null);
+			}else{
+				$where->andWhere($key, '=', $value);
+			}
 		}
 		return $where;
 	}
