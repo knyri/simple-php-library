@@ -44,7 +44,7 @@ class PDOStatementWrapper extends PropertyList{
 	 */
 	public function run(array $args= null){
 		$this->dataset->closeCursor();
-		return !db_run_query($this->dataset, $args);
+		return db_run_query($this->dataset, $args);
 	}
 	/**
 	 * Loads the next row found by this query.

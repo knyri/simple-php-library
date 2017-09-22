@@ -278,7 +278,8 @@ function _db_build_where(array $where) {
 	$ret[0]=' WHERE '.implode('', $where_2);
 	return $ret;
 }
-/** Builds the WHERE clause.
+/**
+ * Builds the WHERE clause.
  * @param array $where Array of conditions to be met. Each element must be array(column, value[, 'AND'|'OR'|negate[, negate]]) (negate is optional).
  *		The last element must have the 3rd argument ommited or set to NULL.
  *		Special elements:
@@ -376,18 +377,45 @@ function _db_build_where_obj(array $where) {
  * @param string $having (null) See mysql documentation on the HAVING clause.
  * @param int $limit (0) Max number of rows to return
  * @param int $offset (0) Row to start at
- * @return PDOStatement|string The resulting PDOStatement or the error
+ * @return PDOStatement The resulting PDOStatement
+ * @throws PDOException If the statement couldn't be prepared
  */
-function db_query($db, $table, array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+function db_query($db, $table, array $columns= null, $where= null, array $sortBy= null, $groupBy= null, $having= null,$limit= 0,$offset= 0){
 	DBProfile::query('select');
-	if($db===null){
-		$db = db_get_connection();
+	if($db === null){
+		$db= db_get_connection();
 	}
+
 	if($where !== null){
 		if(is_array($where)){
 			$where= _db_build_where_obj($where);
 		}
 	}
+
+	$stm= db_prepare($db, db_make_query($table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset));
+
+	if($where){
+		db_run_query($stm, $where->getValues());
+	}else{
+		db_run_query($stm);
+	}
+
+	return $stm;
+}
+/**
+ * Creates a query from the parameters.
+ *
+ * @param string $table Name of the table
+ * @param array $columns (null) Array or comma delimited string of column names
+ * @param WhereBuilder $where (null) See _db_build_where(..).
+ * @param array $sort (null) array(array(column1, dir)[, array(column2, dir)[, ...]]) where dir=['ASC'|'DESC']
+ * @param string $groupBy (null) Column to group by.
+ * @param string $having (null) See mysql documentation on the HAVING clause.
+ * @param int $limit (0) Max number of rows to return
+ * @param int $offset (0) Row to start at
+ * @return string The query
+ */
+function db_make_query($table, array $columns= null, WhereBuilder $where= null, array $sortBy= null, $groupBy= null, $having= null,$limit= 0, $offset= 0){
 	$query = 'SELECT ';
 	if($columns !== null){
 		$query.= implode(',', $columns);
@@ -421,23 +449,7 @@ function db_query($db, $table, array $columns = null,$where = null,array $sortBy
 			$query.=" OFFSET $offset";
 		}
 	}
-
-	$stm= db_prepare($db, $query);
-	if(!$stm){
-		return 'Failed to prepare the statement.';
-	}
-
-	if($where){
-		$error=db_run_query($stm, $where->getValues());
-	}else{
-		$error=db_run_query($stm);
-	}
-
-	if($error){
-		return $error;
-	}
-
-	return $stm;
+	return $query;
 }
 
 /** Inserts data into the database. Returns the error message on failure or false on success.
@@ -471,7 +483,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
  * @param PDO $db Set to null to use the default settings.
  * @param string $table Name of the table
  * @param array|WhereBuilder (null) $conditions See _db_build_where(..).
- * @return mixed false on success or the error
+ * @return bool true on success
  */
 function db_delete($db, $table, $conditions = null) {
 	DBProfile::query('delete');
@@ -528,12 +540,12 @@ function db_num_rows(PDO $db,$table, $conditions=null){
 			return false;
 		}
 	}
-	if(db_run_query($stm, $conditions)){
+	if(!db_run_query($stm, $conditions)){
 		return false;
 	}
-		$ret = $stm->fetch(PDO::FETCH_NUM);
-		$stm->closeCursor();
-		return $ret[0];
+	$ret = $stm->fetch(PDO::FETCH_NUM);
+	$stm->closeCursor();
+	return $ret[0];
 }
 /**
  * Tests to see if any record matching the criteria exists.
@@ -566,7 +578,7 @@ function db_exists($db,$table, $conditions=null){
 			return false;
 		}
 	}
-	if(db_run_query($stm, $conditions)){
+	if(!db_run_query($stm, $conditions)){
 		return false;
 	}
 	$ret = $stm->fetch(PDO::FETCH_NUM);
@@ -578,17 +590,22 @@ function db_exists($db,$table, $conditions=null){
  * Exists for logging purposes.
  * @param PDOStatement $stm
  * @param array $params (null)
- * @return string|boolean The error if failed or false on success.
+ * @return boolean The success
  */
 function db_run_query($stm, array $params= null){
 	DBProfile::query('run');
 	if(db_debug()){
 		echo '[['.db_stm_to_string($stm, $params).']]'."\n";
 	}
-	if ($stm->execute($params)===false && $stm->errorCode()!='00000') {
-		return db_log_error($stm, $params);
+	// MySQL specific
+// 	if ($stm->execute($params) === false && $stm->errorCode() != '00000') {
+// 		return db_log_error($stm, $params);
+// 	}
+	if($stm->execute($params) === false){
+		db_log_error($stm, $params);
+		return false;
 	}
-	return false;
+	return true;
 }
 /**
  * Attempts to take a PDOStatement and create the final SQL statement.

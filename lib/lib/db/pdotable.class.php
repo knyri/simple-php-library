@@ -84,7 +84,7 @@ class PDOTable{
 	 * Reversing an update requires that change tracking be enabled.
 	 * It will NOT revert any auto increment values. Do not use this
 	 * as a replacement for transactions.
-	 * @return boolean|string false on success or the error message.
+	 * @return bool True on success
 	 */
 	public function rollback(){
 		switch($this->lastOperation){
@@ -147,27 +147,22 @@ class PDOTable{
 	}
 	/**
 	 * Gets the number of rows in the table
-	 * @throws ErrorException
-	 * @return int the number of rows in the table.
+	 * @return int|bool the number of rows in the table or false if the query failed
 	 */
 	public function getTotalRows(){
 		if($this->rowCountstm == null){
-			$this->rowCountstm= db_prepare($this->db,'SELECT COUNT(*) FROM '.$this->table);
-			if(!$this->rowCountstm){
-				throw new ErrorException('Could not prepare the statement.');
-			}
+			$this->rowCountstm= $this->db->prepare('SELECT COUNT(*) FROM '.$this->table);
 		}
-		$err= db_run_query($this->rowCountstm);
-		if($err){
-			throw new ErrorException('Could not execute the query.:'.$err);
+		if(!db_run_query($this->rowCountstm)){
+			$this->lastError= $this->rowCountstm->errorInfo();
+			return false;
 		}
 		$ret= $this->rowCountstm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
 	}
 	/**
 	 * Number of rows matched by the query
-	 * @throws ErrorException
-	 * @return int The number of rows matched by the query.
+	 * @return int The number of rows matched by the query or false if the query failed
 	 */
 	public function count(){
 		$stm= 'SELECT COUNT(*) FROM '.$this->table;
@@ -183,13 +178,10 @@ class PDOTable{
 			$stm.= $where->getWhere();
 			$args= $where->getValues();
 		}
-		$stm= db_prepare($this->db, $stm);
-		if(!$stm){
-			throw new ErrorException('Could not prepare the statement.');
-		}
-		$err= db_run_query($stm,$args);
-		if($err){
-			throw new ErrorException('Could not execute the query:'.$err);
+		$stm= $this->db->prepare($stm);
+		if(!db_run_query($stm, $args)){
+			$this->lastError= $stm->errorInfo();
+			return false;
 		}
 		$ret= $stm->fetch(PDO::FETCH_NUM);
 		return $ret[0];
@@ -241,7 +233,7 @@ class PDOTable{
 	 */
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
-			$ret=array();
+			$ret= array();
 			foreach($this->pkey as $k){
 				if(null === $this->data->get($k)){
 					return false;
@@ -271,27 +263,19 @@ class PDOTable{
 					$keys= array_combine($this->pkey, $id);
 					foreach($keys as $k => $v){
 						$where->andWhere($k, '=', $v);
-						//						$ret[]= array($k, $v, 'AND');
 					}
-					//					unset($ret[count($ret)-1][2]);
-					//					return $ret;
 				}
 			}else{
 				$where->andWhere($this->pkey, '=', $id);
-				//				return array(array($this->pkey,$id));
 			}
 		}else{//id==null
 			if(is_array($this->pkey)){
 				$ret= array();
 				foreach($this->pkey as $key){
 					$where->andWhere($key, '=', $this->data->get($key));
-					//					$ret[]= array($key, $this->data->get($key), 'AND');
 				}
-				//				unset($ret[count($ret)-1][2]);
-				//				return $ret;
 			}else{
 				$where->andWhere($this->pkey, '=', $this->data->get($this->pkey));
-				//				return array(array($this->pkey,$this->data->get($this->pkey)));
 			}
 		}
 		return $where;
@@ -305,13 +289,9 @@ class PDOTable{
 			$ret= array();
 			foreach($this->pkey as $key){
 				$where->andWhere($key,'=',$this->data->getPrevious($key));
-				//$ret[]= array($key,$this->data->getPrevious($key),'AND');
 			}
-			//unset($ret[count($ret)-1][2]);
-			//return $ret;
 		}else{
 			$where->andWhere($this->pkey,'=',$this->data->getPrevious($this->pkey));
-			//return array(array($this->pkey,$this->data->getPrevious($this->pkey)));
 		}
 		return $where;
 	}
@@ -330,20 +310,20 @@ class PDOTable{
 	 */
 	public function load($id= null){
 		if(!$this->beforeLoad()){
-			return 'Cancelled by subclass.';
+			$this->lastError= 'Cancelled by subclass.';
+			return false;
 		}
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
 		$where= $this->getPkey($id);
 		if($this->loadstm == null){
-			$this->loadstm= db_prepare($this->db, 'SELECT * FROM '.$this->table.' WHERE ' . $where->getWhere());
+			$this->loadstm= $this->db->prepare( 'SELECT * FROM '.$this->table.' WHERE ' . $where->getWhere());
 		}else{
 			$this->loadstm->closeCursor();
 		}
-		$error= db_run_query($this->loadstm, $where->getValues());
-		if($error){
-			$this->lastError= $error;
+		if(!db_run_query($this->loadstm, $where->getValues())){
+			$this->lastError= $this->loadstm->errorInfo();
 			$this->afterLoad(false);
 			return false;
 		}
@@ -365,17 +345,17 @@ class PDOTable{
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
+
 		if($columns || $sortBy || $groupBy || $limit || $offset){
-			$this->dataset= db_query($this->db, $this->table,$columns,null,$sortBy,$groupBy,null,$limit,$offset);
+			$stm= $this->db->prepare(db_make_query($this->table, $columns, null, $sortBy, $groupBy, null, $limit, $offset));
 		}else{
 			if($this->plainloadall == null){
-				$this->plainloadall= db_prepare($this->db,'SELECT * FROM '.$this->table);
+				$this->plainloadall= $this->db->prepare('SELECT * FROM '.$this->table);
 			}
-			$error=db_run_query($this->plainloadall);
-			if(!$error){
+			if(db_run_query($this->plainloadall)){
 				$this->dataset= $this->plainloadall;
 			}else{
-				$this->lastError= $error;
+				$this->lastError= $this->plainloadall->errorInfo();
 			}
 		}
 		$this->lastOperation= self::OP_LOAD;
@@ -407,7 +387,7 @@ class PDOTable{
 	 * @param string $having (null)
 	 * @param int $limit (0)
 	 * @param int $offset (0)
-	 * @return boolean True if successfule
+	 * @return boolean True if successful
 	 */
 	public function find(array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
 		if($this->dataset){
@@ -416,10 +396,17 @@ class PDOTable{
 		if($where == null){
 			$where= $this->getWhere();
 		}
+		$this->dataset= null;
 		if($this->exists($where)){
-			$this->dataset= db_query($this->db, $this->table,$columns,$where,$sortBy,$groupBy,$having,$limit,$offset);
-		}else{
-			$this->dataset= null;
+			if(is_array($where)){
+				$where= _db_build_where_obj($where);
+			}
+			$query= $this->db->prepare(db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset));
+			if(db_run_query($query, $where->getValues())){
+				$this->dataset= $query;
+			}else{
+				$this->lastError= $query->errorInfo();
+			}
 		}
 		$this->lastOperation= self::OP_LOAD;
 		return $this->dataset != null;
@@ -459,22 +446,26 @@ class PDOTable{
 	}
 	/**
 	 * Deletes the record represented by this object.
-	 * @return bool false on success or the error.
+	 * @return bool True on success
 	 */
 	public function delete(){
 		if(!$this->beforeDelete()){
 			return 'Cancelled by subclass.';
 		}
+		$query= "DELETE FROM ". $this->table . " WHERE ";
 		if($this->isPkeySet()){
-			$error= db_delete($this->db, $this->table, $this->getPkey());
+			$where= $this->getPkey();
 		}else{
-			$error= db_delete($this->db, $this->table, $this->getWhere());
+			$where= $this->getWhere();
 		}
+		$query.= $where->getWhere();
+		$stm= $this->db->prepare($query);
+		$error= !db_run_query($stm, $where->getValues());
 		$this->lastOperation= self::OP_DELETE;
 		if($error){
-			$this->lastError= $error;
+			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterDelete($error === false);
+		$this->afterDelete($error);
 		return $error;
 	}
 	/**
@@ -484,24 +475,26 @@ class PDOTable{
 	 */
 	public function save(){
 		if(!$this->beforeSave()){
-			return 'Cancelled by subclass';
+			$this->lastError= 'Cancelled by subclass';
+			return false;
 		}
-		$error=false;
+		$error= false;
 		if($this->isPkeySet()){
-			$error= $this->update();
+			$error= !$this->update();
 		}else{
-			$error= $this->insert();
+			$error= !$this->insert();
 		}
-		$this->afterSave(!$error);
+		$this->afterSave($error);
 		return $error;
 	}
 	/**
 	 * Forces an update.
-	 * @return string|boolean FALSE on success or the error.
+	 * @return bool True on success
 	 */
 	public function update(){
 		if(!$this->beforeUpdate()){
-			return 'Cancelled by subclass.';
+			$this->lastError= 'Cancelled by subclass.';
+			return false;
 		}
 		$query= 'UPDATE "'.$this->table.'"  SET ';
 		$update= $this->data->copyTo(array());
@@ -515,33 +508,34 @@ class PDOTable{
 		}else{
 			$where= $this->getPkey();
 		}
-		$query= substr($query,0,-1).' WHERE '.$where->getWhere();
-		$stm= db_prepare($this->db, $query);
+		$query= substr($query,0,-1) . ' WHERE ' . $where->getWhere();
+		$stm= $this->db->prepare($query);
 		$data= array_merge($data, $where->getValues());
-		$error= db_run_query($stm, $data);
 		$this->lastOperation= self::OP_UPDATE;
-		if($error){
-			$this->lastError= $error;
+		$hadError= !db_run_query($stm, $data);
+		if($hadError){
+			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterUpdate($error === false);
-		return $error;
+		$this->afterUpdate($hadError);
+		return $hadError;
 	}
 	/**
 	 * Forces an insert.
-	 * @return string|boolean false on success or the error.
+	 * @return bool True on success
 	 */
 	public function insert(){
 		if(!$this->beforeInsert()){
-			return 'Cancelled by subclass.';
+			$this->lastError= 'Cancelled by subclass.';
+			return false;
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
-		$stm= db_prepare($this->db, $query);
+		$query='INSERT INTO "' . $this->table . '" ("' . implode('","', $cols).'") VALUES (:' . implode(',:', $cols) . ')';
+		$stm= $this->db->prepare($query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= db_run_query($stm);
+		$error= !db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
@@ -551,27 +545,28 @@ class PDOTable{
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
-			$this->lastError= $error;
+			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterInsert($error === false);
+		$this->afterInsert($error);
 		return $error;
 	}
 	/**
 	 * Forces an insert. Ignores duplicate key errors.
-	 * @return string|boolean false on success or the error.
+	 * @return bool True on success
 	 */
 	public function insertIgnore(){
 		if(!$this->beforeInsert()){
-			return 'Cancelled by subclass.';
+			$this->lastError= 'Cancelled by subclass.';
+			return false;
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
 		$query= 'INSERT IGNORE INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
-		$stm=db_prepare($this->db, $query);
+		$stm=$this->db->prepare( $query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= db_run_query($stm);
+		$error= !db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
@@ -581,15 +576,15 @@ class PDOTable{
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
-			$this->lastError= $error;
+			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterInsert($error === false);
+		$this->afterInsert($error);
 		return $error;
 	}
 	/**
 	 * Forces an insert. Does an update on duplicate key errors.
 	 * Does not call the insert or update hooks!
-	 * @return string|boolean false on success or the error.
+	 * @return bool True on success
 	 */
 	public function insertUpdate(){
 		$dbType= $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -604,7 +599,6 @@ class PDOTable{
 				$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON CONFLICT ("'.( is_array($this->pkey) ? implode('","', $this->pkey) : $this->pkey ).'") DO UPDATE SET';
 				break;
 		}
-		logit($query);
 		if(!$query){
 			if($this->exists($this->getPkey())){
 				return $this->update();
@@ -615,12 +609,12 @@ class PDOTable{
 		foreach($data as $k => $v){
 			$query.= " \"$k\"=:$k,";
 		}
-		$query=trim($query, ',');
-		$stm= db_prepare($this->db, $query);
+		$query= trim($query, ',');
+		$stm= $this->db->prepare( $query);
 		foreach($data as $k=>$v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= db_run_query($stm);
+		$error= !db_run_query($stm);
 		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $dbType == "pgsql"){
@@ -630,20 +624,16 @@ class PDOTable{
 		}
 		$this->lastOperation= self::OP_INSERT;
 		if($error){
-			$this->lastError= $error;
+			$this->lastError= $stm->errorInfo();
 		}
 		return $error;
 	}
 	/**
 	 * @param string $type
-	 * @throws ErrorException
 	 */
 	protected function saveOperation($type){
 		if($this->saveopstm == null){
-			$this->saveopstm= db_prepare($this->db, 'INSERT INTO "updates" ("type","data") VALUES (:type,:data)');
-			if(!$this->saveopstm){
-				throw new ErrorException('Could not prepare the statement.');
-			}
+			$this->saveopstm= $this->db->prepare('INSERT INTO "updates" ("type","data") VALUES (:type,:data)');
 		}
 		db_run_query($this->saveopstm, array(':type'=>$type,':data'=>serialize($this)));
 	}
