@@ -9,24 +9,24 @@ require_once 'pdo_database.functions.php';
  */
 class PDOTable{
 	protected $table,
-		$columns,
-		$data,
-		$dataset=null,
-		$pkey=null,
-		$db=null,
-		$rowCountstm=null,
-		$saveopstm=null,
-		$loadstm=null,
-		$plainloadall=null,
-		$trackChanges=false,
-		$lastOperation=self::OP_NONE,
-		$lastError=null;
+	$columns,
+	$data,
+	$dataset=null,
+	$pkey=null,
+	$db=null,
+	$rowCountstm=null,
+	$saveopstm=null,
+	$loadstm=null,
+	$plainloadall=null,
+	$trackChanges=false,
+	$lastOperation=self::OP_NONE,
+	$lastError=null;
 	const
-		OP_NONE= 0,
-		OP_LOAD= 1,
-		OP_INSERT= 2,
-		OP_UPDATE= 3,
-		OP_DELETE= 4;
+	OP_NONE= 0,
+	OP_LOAD= 1,
+	OP_INSERT= 2,
+	OP_UPDATE= 3,
+	OP_DELETE= 4;
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
 	 * By default, it will not track changes.
@@ -178,7 +178,7 @@ class PDOTable{
 			$stm.= $where->getWhere();
 			$args= $where->getValues();
 		}
-		$stm= $this->db->prepare($stm);
+		$stm= $this->db->prepare( $stm);
 		if(!db_run_query($stm, $args)){
 			$this->lastError= $stm->errorInfo();
 			return false;
@@ -233,7 +233,7 @@ class PDOTable{
 	 */
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
-			$ret= array();
+			$ret=array();
 			foreach($this->pkey as $k){
 				if(null === $this->data->get($k)){
 					return false;
@@ -344,19 +344,20 @@ class PDOTable{
 	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
 		if($this->dataset){
 			$this->dataset->closeCursor();
+			$this->dataset= false;
 		}
-
 		if($columns || $sortBy || $groupBy || $limit || $offset){
 			$stm= $this->db->prepare(db_make_query($this->table, $columns, null, $sortBy, $groupBy, null, $limit, $offset));
 		}else{
 			if($this->plainloadall == null){
 				$this->plainloadall= $this->db->prepare('SELECT * FROM '.$this->table);
 			}
-			if(db_run_query($this->plainloadall)){
-				$this->dataset= $this->plainloadall;
-			}else{
-				$this->lastError= $this->plainloadall->errorInfo();
-			}
+			$stm= $this->plainloadall;
+		}
+		if(db_run_query($stm)){
+			$this->dataset= $stm;
+		}else{
+			$this->lastError= $this->plainloadall->errorInfo();
 		}
 		$this->lastOperation= self::OP_LOAD;
 		return $this->dataset != false;
@@ -460,13 +461,13 @@ class PDOTable{
 		}
 		$query.= $where->getWhere();
 		$stm= $this->db->prepare($query);
-		$error= !db_run_query($stm, $where->getValues());
+		$success= db_run_query($stm, $where->getValues());
 		$this->lastOperation= self::OP_DELETE;
-		if($error){
+		if($success){
 			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterDelete($error);
-		return $error;
+		$this->afterDelete($success);
+		return $success;
 	}
 	/**
 	 * Automatically chooses between insert() and update() based on the availability of the
@@ -478,14 +479,14 @@ class PDOTable{
 			$this->lastError= 'Cancelled by subclass';
 			return false;
 		}
-		$error= false;
+		$success=false;
 		if($this->isPkeySet()){
-			$error= !$this->update();
+			$success= $this->update();
 		}else{
-			$error= !$this->insert();
+			$success= $this->insert();
 		}
-		$this->afterSave($error);
-		return $error;
+		$this->afterSave($success);
+		return $success;
 	}
 	/**
 	 * Forces an update.
@@ -508,16 +509,16 @@ class PDOTable{
 		}else{
 			$where= $this->getPkey();
 		}
-		$query= substr($query,0,-1) . ' WHERE ' . $where->getWhere();
+		$query= substr($query,0,-1).' WHERE '.$where->getWhere();
 		$stm= $this->db->prepare($query);
 		$data= array_merge($data, $where->getValues());
 		$this->lastOperation= self::OP_UPDATE;
-		$hadError= !db_run_query($stm, $data);
-		if($hadError){
+		$success= db_run_query($stm, $data);
+		if(!$success){
 			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterUpdate($hadError);
-		return $hadError;
+		$this->afterUpdate($success);
+		return $success;
 	}
 	/**
 	 * Forces an insert.
@@ -530,13 +531,13 @@ class PDOTable{
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO "' . $this->table . '" ("' . implode('","', $cols).'") VALUES (:' . implode(',:', $cols) . ')';
+		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
 		$stm= $this->db->prepare($query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= !db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+		$success= db_run_query($stm);
+		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
 				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
@@ -544,11 +545,11 @@ class PDOTable{
 			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
-		if($error){
+		if(!$success){
 			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterInsert($error);
-		return $error;
+		$this->afterInsert($success);
+		return $success;
 	}
 	/**
 	 * Forces an insert. Ignores duplicate key errors.
@@ -566,8 +567,8 @@ class PDOTable{
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= !db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+		$success= db_run_query($stm);
+		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
 				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
@@ -575,11 +576,11 @@ class PDOTable{
 			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
-		if($error){
+		if(!$success){
 			$this->lastError= $stm->errorInfo();
 		}
-		$this->afterInsert($error);
-		return $error;
+		$this->afterInsert($success);
+		return $success;
 	}
 	/**
 	 * Forces an insert. Does an update on duplicate key errors.
@@ -609,13 +610,13 @@ class PDOTable{
 		foreach($data as $k => $v){
 			$query.= " \"$k\"=:$k,";
 		}
-		$query= trim($query, ',');
+		$query=trim($query, ',');
 		$stm= $this->db->prepare( $query);
 		foreach($data as $k=>$v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
 		}
-		$error= !db_run_query($stm);
-		if(!$error && !is_array($this->pkey) && !$this->isPkeySet()){
+		$success= db_run_query($stm);
+		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
 			$id= $this->db->lastInsertId();
 			if($id == 0 && $dbType == "pgsql"){
 				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
@@ -623,10 +624,10 @@ class PDOTable{
 			$this->data->set($this->pkey, $id);
 		}
 		$this->lastOperation= self::OP_INSERT;
-		if($error){
+		if(!$success){
 			$this->lastError= $stm->errorInfo();
 		}
-		return $error;
+		return $success;
 	}
 	/**
 	 * @param string $type
