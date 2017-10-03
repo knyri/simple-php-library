@@ -328,10 +328,16 @@ class PDOTable{
 			return false;
 		}
 		$row= $this->loadstm->fetch(PDO::FETCH_ASSOC);
-		$this->data->initFrom($row ? $row : array());
 		$this->lastOperation= self::OP_LOAD;
-		$this->afterLoad($row != null);
-		return $row != null;
+		if($row == null){
+			$this->data->clear();
+			$this->lastError= 'Record not found';
+			$this->afterLoad(false);
+			return false;
+		}
+		$this->data->initFrom($row);
+		$this->afterLoad(true);
+		return true;
 	}
 	/**
 	 * @param array $columns (null)
