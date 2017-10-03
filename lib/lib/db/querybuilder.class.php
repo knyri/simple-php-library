@@ -7,14 +7,14 @@ class QueryBuilder {
 		$baseTable,
 		$tables= array(),
 		$where,
-		$userFilter,
 		$orderBy= '',
 		$groupBy= array(),
 		$joinArgs= array(),
 		$query= null,
 		$runArgs,
 		$limit= false,
-		$offset= FALSE;
+		$offset= false,
+		$lastError= false;
 	/**
 	 * @param PDO $db
 	 * @param string $table
@@ -22,7 +22,6 @@ class QueryBuilder {
 	public function __construct($table){
 		$this->baseTable= $table;
 		$this->where= new WhereBuilder();
-		$this->userFilter= new WhereBuilder('user');
 	}
 	public function setLimit($limit){
 		$this->limit= $limit;
@@ -36,15 +35,6 @@ class QueryBuilder {
 	 */
 	public function addField($name){//, $type= PDO::PARAM_STR){
 		$this->fields[]= $name;//array($name, $type);
-		return $this;
-	}
-	/**
-	 * Adds the parameters to the param list
-	 * @param WhereBuilder $where
-	 * @return QueryBuilder
-	 */
-	public function addParams(WhereBuilder $where){
-		$this->joinArgs= array_merge($this->joinArgs, $where->getValues());
 		return $this;
 	}
 	/**
@@ -147,12 +137,10 @@ class QueryBuilder {
 	}
 	/**
 	 * Builds the query
+	 * @return QueryBuilder
 	 */
-	private function build(){
-		if($this->query){
-			return;
-		}
-		$filterValues= $this->where->getValues();
+	public function build(){
+		$this->runArgs= array_merge(array(), $this->joinArgs, $this->where->getValues());
 		$filter= $this->where->getWhere() ? 'WHERE ('. $this->where->getWhere() . ')' : '';
 		$from= $this->baseTable;
 		foreach ($this->tables as $table){
@@ -165,14 +153,12 @@ class QueryBuilder {
 			$from.= ' '. $table[0] .' JOIN '. $table[1] .' ON (';
 			if($table[2] instanceof WhereBuilder){
 				$from.= $table[2]->getWhere();
-				$this->joinArgs= array_merge($this->joinArgs, $table[2]->getValues());
+				$this->runArgs= array_merge($this->runArgs, $table[2]->getValues());
 			}else{
 				$from.= $table[2];
 			}
 			$from.= ')';
-			$filterValues= array_merge($filterValues, $this->joinArgs);
 		}
-		$this->runArgs= $filterValues;
 		$this->query=
 			'SELECT '.
 				implode(',', $this->fields) .
@@ -181,6 +167,27 @@ class QueryBuilder {
 			$this->orderBy .
 			($this->limit ? ' LIMIT '. $this->limit : '') .
 			($this->offset ? ' OFFSET '. $this->offset : '');
+		return $this;
+	}
+	public function getLastError(){
+		return $this->lastError;
+	}
+	public function resetWhere(){
+		$this->where->reset();
+	}
+	public function getQuery(){
+		return $this->query;
+	}
+	/**
+	 * Makes a PDOStatementWrapper from the query.
+	 * @param PDO $db
+	 * @param unknown $fetchMode
+	 * @return PDOStatementWrapper
+	 */
+	public function getStatement(PDO $db, $fetchMode= PDO::FETCH_ASSOC){
+		$stm= new PDOStatementWrapper(db_prepare($db, $this->query), $fetchMode);
+		$stm->bindAllValues($this->runArgs);
+		return $stm;
 	}
 	/**
 	 *
@@ -190,6 +197,11 @@ class QueryBuilder {
 	 */
 	public function run(PDO $db, $fetchMode= PDO::FETCH_ASSOC){
 		$stm= new PDOStatementWrapper(db_prepare($db, $this->query), $fetchMode);
+		if(!$stm->run($this->runArgs)){
+			$this->lastError= $stm->getError();
+		}else{
+			$this->lastError= false;
+		}
 		return $stm->run($this->runArgs) ? $stm : false;
 	}
 }
