@@ -20,7 +20,7 @@ class PDOTable{
 	$plainloadall=null,
 	$trackChanges=false,
 	$lastOperation=self::OP_NONE,
-	$lastError=null;
+		$lastError= false;
 	const
 	OP_NONE= 0,
 	OP_LOAD= 1,
@@ -128,6 +128,9 @@ class PDOTable{
 	public function copyTo(array $ary){
 		return $this->data->copyTo($ary);
 	}
+	public function asArray(){
+		return $this->data->asArray();
+	}
 	/**
 	 * Get the value for $k
 	 * @param string $k
@@ -144,6 +147,15 @@ class PDOTable{
 	 */
 	public function set($k, $v){
 		$this->data->set($k, $v);
+	}
+	/**
+	 * Sets all the values
+	 * @param array $map Map of values to set
+	 */
+	public function setAll(array $map){
+		foreach($map as $k => $v){
+			$this->data->set($k, $v);
+		}
 	}
 	/**
 	 * Gets the number of rows in the table
@@ -310,7 +322,6 @@ class PDOTable{
 	 */
 	public function load($id= null){
 		if(!$this->beforeLoad()){
-			$this->lastError= 'Cancelled by subclass.';
 			return false;
 		}
 		if($this->dataset){
@@ -331,7 +342,7 @@ class PDOTable{
 		$this->lastOperation= self::OP_LOAD;
 		if($row == null){
 			$this->data->clear();
-			$this->lastError= 'Record not found';
+			$this->resetError();
 			$this->afterLoad(false);
 			return false;
 		}
@@ -397,6 +408,9 @@ class PDOTable{
 	 * @return boolean True if successful
 	 */
 	public function find(array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+		if(!$this->beforeFind()){
+			return false;
+		}
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
@@ -416,6 +430,7 @@ class PDOTable{
 			}
 		}
 		$this->lastOperation= self::OP_LOAD;
+		$this->afterFind($this->dataset != null);
 		return $this->dataset != null;
 	}
 	/**
@@ -449,6 +464,7 @@ class PDOTable{
 		$row= $this->dataset->fetch(PDO::FETCH_ASSOC);
 		$this->data->initFrom($row ? $row : array());
 		$this->lastOperation= self::OP_LOAD;
+		$this->afterLoad($row != false);
 		return $row != false;
 	}
 	/**
@@ -457,7 +473,7 @@ class PDOTable{
 	 */
 	public function delete(){
 		if(!$this->beforeDelete()){
-			return 'Cancelled by subclass.';
+			return false;
 		}
 		$query= "DELETE FROM ". $this->table . " WHERE ";
 		if($this->isPkeySet()){
@@ -482,7 +498,6 @@ class PDOTable{
 	 */
 	public function save(){
 		if(!$this->beforeSave()){
-			$this->lastError= 'Cancelled by subclass';
 			return false;
 		}
 		$success=false;
@@ -500,7 +515,6 @@ class PDOTable{
 	 */
 	public function update(){
 		if(!$this->beforeUpdate()){
-			$this->lastError= 'Cancelled by subclass.';
 			return false;
 		}
 		$query= 'UPDATE "'.$this->table.'"  SET ';
@@ -532,7 +546,6 @@ class PDOTable{
 	 */
 	public function insert(){
 		if(!$this->beforeInsert()){
-			$this->lastError= 'Cancelled by subclass.';
 			return false;
 		}
 		$data= $this->data->copyTo(array());
@@ -563,7 +576,6 @@ class PDOTable{
 	 */
 	public function insertIgnore(){
 		if(!$this->beforeInsert()){
-			$this->lastError= 'Cancelled by subclass.';
 			return false;
 		}
 		$data= $this->data->copyTo(array());
@@ -591,6 +603,8 @@ class PDOTable{
 	/**
 	 * Forces an insert. Does an update on duplicate key errors.
 	 * Does not call the insert or update hooks!
+	 * Has a fallback that checks for existence based on the primary key and
+	 * calls insert or update which does call the hooks.
 	 * @return bool True on success
 	 */
 	public function insertUpdate(){
@@ -660,10 +674,16 @@ class PDOTable{
 		$this->data= clone $this->data;
 	}
 	/**
-	 * @return string The last error.
+	 * @return mixed The last error.
 	 */
 	public function getLastError(){
 		return $this->lastError;
+	}
+	public function resetError(){
+		$this->lastError= false;
+	}
+	public function hasError(){
+		return $this->lastError !== false;
 	}
 	##########
 	# Hooks

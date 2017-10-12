@@ -22,8 +22,9 @@ class PropertyList{
 	 * @return mixed
 	 */
 	public function get($key,$default=null){
-		if(array_key_exists($key,$this->data))
+		if(array_key_exists($key, $this->data)){
 			return $this->data[$key];
+		}
 		return $default;
 	}
 	/**
@@ -38,9 +39,7 @@ class PropertyList{
 	 * @return array The resulting array.
 	 */
 	public function copyTo(array $ary){
-		foreach($this->data as $k=>$v)
-			$ary[$k]=$v;
-		return $ary;
+		return array_replace($ary, $this->data);
 	}
 	/**
 	 * @param array $list $key=>$value list
@@ -61,14 +60,22 @@ class PropertyList{
 	public function count(){
 		return count($this->data);
 	}
+	/**
+	 * Shortcut for $this->copyTo(array())
+	 * @return array
+	 */
+	public function asArray(){
+		return $this->copyTo(array());
+	}
 }
 /**
  * PropertyList that can track the changes
  * @author Ken
  */
 class ChangeTrackingPropertyList extends PropertyList{
-	protected $changes=array();
-	protected $cleared=array();
+	protected
+		$changes= array(),
+		$cleared= array();
 	public function getChanges(){
 		$changes=array('old'=>array(),'new'=>array());
 		foreach($this->changes as $k=>$v){
@@ -94,9 +101,9 @@ class ChangeTrackingPropertyList extends PropertyList{
 		$this->cleared=array();
 	}
 	public function clear(){
-		$t=array_merge($this->data);
-		foreach($t as $k=>$v)
+		foreach($this->data as $k => $v){
 			$this->cleared[$k]=true;
+	}
 	}
 	/**
 	 * @param string $k
@@ -124,10 +131,12 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @return mixed
 	 */
 	public function get($key,$default=null){
-		if(array_key_exists($key,$this->changes))
+		if(array_key_exists($key, $this->changes)){
 			return $this->changes[$key];
-		if(array_key_exists($key,$this->data) && !isset($this->cleared[$key]))
+		}
+		if(array_key_exists($key, $this->data) && !isset($this->cleared[$key])){
 			return $this->data[$key];
+		}
 		return $default;
 	}
 	/**
@@ -137,8 +146,9 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @return mixed
 	 */
 	public function getPrevious($key,$default=null){
-		if(array_key_exists($key,$this->data))
+		if(array_key_exists($key,$this->data)){
 			return $this->data[$key];
+		}
 		return $default;
 	}
 	/**
@@ -146,7 +156,7 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 */
 	public function uset($k){
 		unset($this->changes[$k]);
-		unset($this->data[$k]);
+// 		unset($this->data[$k]);
 		$this->cleared[$k]=true;
 	}
 	/**
@@ -155,7 +165,7 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @return array The resulting array.
 	 */
 	public function copyTo(array $ary){
-		return array_merge($ary,$this->getFinal());
+		return array_replace($ary, $this->getFinal());
 	}
 	protected function getFinal(){
 		return array_diff_key(array_merge($this->data,$this->changes),$this->cleared);

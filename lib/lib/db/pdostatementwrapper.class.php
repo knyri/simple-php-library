@@ -20,6 +20,9 @@ class PDOStatementWrapper extends PropertyList{
 		$this->dataset= $stm;
 		$this->dataset->setFetchMode($fetch_mode);
 	}
+	public function getStatement(){
+		return $this->dataset;
+	}
 	/**
 	 * Binds the value to the variable
 	 * See PDOStatement::bindParam() {http://www.php.net/manual/en/pdostatement.bindparam.php}
@@ -77,6 +80,12 @@ class PDOStatementWrapper extends PropertyList{
 			if(!$this->dataset->bindValue($key, $value)){
 				throw new PDOBindException("Binding [$key] to [$value] failed");
 			}
+		}
+		return $this;
+	}
+	public function bindColumn($column, &$param, $type= null, $maxlen= null, $driverdata= null){
+		if(!$this->dataset->bindColumn($column, $param, $type, $maxlen, $driverdata)){
+			throw new PDOBindException("Binding [$key] to [$value] failed");
 		}
 		return $this;
 	}
