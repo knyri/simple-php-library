@@ -37,6 +37,9 @@ class QueryBuilder {
 		$this->fields[]= $name;//array($name, $type);
 		return $this;
 	}
+	public function orderBy($field, $asc){
+		$this->orderBy.= ',' . $field . ' ' . ($asc ? 'ASC' : 'DESC');
+	}
 	/**
 	 * Takes a list of strings.
 	 * @return QueryBuilder
@@ -159,12 +162,16 @@ class QueryBuilder {
 			}
 			$from.= ')';
 		}
+		$orderBy= '';
+		if(strlen($this->orderBy)){
+			$orderBy= ' ORDER BY ' . substr($this->orderBy, 1);
+		}
 		$this->query=
 			'SELECT '.
 				implode(',', $this->fields) .
 			" FROM $from $filter ".
 			( count($this->groupBy) ? ' GROUP BY '. implode(',', $this->groupBy) : '' ) .
-			$this->orderBy .
+			$orderBy .
 			($this->limit ? ' LIMIT '. $this->limit : '') .
 			($this->offset ? ' OFFSET '. $this->offset : '');
 		return $this;
