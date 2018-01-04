@@ -63,6 +63,12 @@ class WhereBuilder{
 		$this->curIdx++;
 		return $this;
 	}
+	public function &andNot(WhereBuilder $where){
+		return $this->appendWhere('AND NOT', $where, true);
+	}
+	public function &orNot(WhereBuilder $where){
+		return $this->appendWhere('OR NOT', $where, true);
+	}
 	/**
 	 * Accepts multiple arguments.
 	 * (col, NULL[, negate])

@@ -138,6 +138,15 @@ class QueryBuilder {
 		call_user_func_array(array($this->where, 'orWhere'), func_get_args());
 		return $this;
 	}
+	public function andNot(WhereBuilder $where){
+		$this->where->andNot($where);
+		return $this;
+	}
+	public function orNot(WhereBuilder $where){
+		$this->where->orNot($where);
+		return $this;
+	}
+
 	/**
 	 * Builds the query
 	 * @return QueryBuilder
@@ -181,6 +190,9 @@ class QueryBuilder {
 	}
 	public function resetWhere(){
 		$this->where->reset();
+	}
+	public function getParams(){
+		return $this->runArgs;
 	}
 	public function getQuery(){
 		return $this->query;

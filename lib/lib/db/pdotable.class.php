@@ -16,7 +16,6 @@ class PDOTable{
 	$db=null,
 	$rowCountstm=null,
 	$saveopstm=null,
-	$loadstm=null,
 	$plainloadall=null,
 	$trackChanges=false,
 	$lastOperation=self::OP_NONE,
@@ -245,7 +244,6 @@ class PDOTable{
 	 */
 	public function isPkeySet(){
 		if(is_array($this->pkey)){
-			$ret=array();
 			foreach($this->pkey as $k){
 				if(null === $this->data->get($k)){
 					return false;
@@ -254,6 +252,18 @@ class PDOTable{
 			return true;
 		}else{
 			return $this->data->get($this->pkey) !== null;
+		}
+	}
+	protected function isOldPkeySet(){
+		if(is_array($this->pkey)){
+			foreach($this->pkey as $k){
+				if(null === $this->data->getPrevious($k)){
+					return false;
+				}
+			}
+			return true;
+		}else{
+			return $this->data->getPrevious($this->pkey) !== null;
 		}
 	}
 	/**
@@ -271,7 +281,6 @@ class PDOTable{
 				}elseif(count($this->pkey) != count($id)){
 					throw new IllegalArgumentException('Key count('.count($this->pkey).') and ID count('.count($id).') are not equal');
 				}else{
-					//$ret= array();
 					$keys= array_combine($this->pkey, $id);
 					foreach($keys as $k => $v){
 						$where->andWhere($k, '=', $v);
@@ -281,8 +290,10 @@ class PDOTable{
 				$where->andWhere($this->pkey, '=', $id);
 			}
 		}else{//id==null
+			if(!$this->isPkeySet()){
+				throw new IllegalStateException('Primary key is not set.');
+			}
 			if(is_array($this->pkey)){
-				$ret= array();
 				foreach($this->pkey as $key){
 					$where->andWhere($key, '=', $this->data->get($key));
 				}
@@ -328,20 +339,16 @@ class PDOTable{
 			$this->dataset->closeCursor();
 		}
 		$where= $this->getPkey($id);
-		if($this->loadstm == null){
-			$this->loadstm= $this->db->prepare( 'SELECT * FROM '.$this->table.' WHERE ' . $where->getWhere());
-		}else{
-			$this->loadstm->closeCursor();
-		}
-		if(!db_run_query($this->loadstm, $where->getValues())){
-			$this->lastError= $this->loadstm->errorInfo();
+		$loadstm= $this->db->prepare( 'SELECT * FROM '.$this->table.' WHERE ' . $where->getWhere());
+		if(!db_run_query($loadstm, $where->getValues())){
+			$this->lastError= $loadstm->errorInfo();
 			$this->afterLoad(false);
 			return false;
 		}
-		$row= $this->loadstm->fetch(PDO::FETCH_ASSOC);
+		$row= $loadstm->fetch(PDO::FETCH_ASSOC);
 		$this->lastOperation= self::OP_LOAD;
 		if($row == null){
-			$this->data->clear();
+// 			$this->data->clear();
 			$this->resetError();
 			$this->afterLoad(false);
 			return false;
@@ -444,8 +451,14 @@ class PDOTable{
 		if($where == null){
 			$where= $this->getWhere();
 		}
-		$count= db_exists($this->db, $this->table, $where);
-		return $count == '1';
+		$query= 'SELECT DISTINCT 1 FROM '. $this->table .' WHERE '.$where->getWhere();
+		$stm= db_prepare($this->db, $query);
+		if(db_run_query($stm, $where->getValues())){
+			return is_array($stm->fetch(PDO::FETCH_NUM));
+		}else{
+			$this->lastError= $stm->errorInfo();
+		}
+		return false;
 	}
 	/**
 	 * @return PDOStatement The last PDOStatement or null
@@ -475,17 +488,19 @@ class PDOTable{
 		if(!$this->beforeDelete()){
 			return false;
 		}
-		$query= "DELETE FROM ". $this->table . " WHERE ";
+		$query= "DELETE FROM ". $this->table;
 		if($this->isPkeySet()){
 			$where= $this->getPkey();
 		}else{
 			$where= $this->getWhere();
 		}
-		$query.= $where->getWhere();
+		if($where->getWhere()){
+			$query.= ' WHERE ' . $where->getWhere();
+		}
 		$stm= $this->db->prepare($query);
 		$success= db_run_query($stm, $where->getValues());
 		$this->lastOperation= self::OP_DELETE;
-		if($success){
+		if(!$success){
 			$this->lastError= $stm->errorInfo();
 		}
 		$this->afterDelete($success);
@@ -501,7 +516,10 @@ class PDOTable{
 			return false;
 		}
 		$success=false;
-		if($this->isPkeySet()){
+		if($this->trackChanges && $this->isOldPkeySet()){
+			$success= $this->update();
+		}else
+		if($this->isPkeySet() && $this->exists()){
 			$success= $this->update();
 		}else{
 			$success= $this->insert();

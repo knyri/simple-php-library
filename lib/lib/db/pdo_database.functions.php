@@ -6,17 +6,13 @@
 // TODO: remove these. Kept for backwards compatability
 require_once 'pdotable.class.php';
 require_once 'pdostatementwrapper.class.php';
+require_once 'OCIPDO.class.php';
 PackageManager::requireClassOnce('error.IllegalArgumentException');
 PackageManager::requireClassOnce('error.IllegalStateException');
 
 global $_DB, $_DB_OPEN_CON;
 $_DB= null;
 $_DB_OPEN_CON= false;
-
-if(file_exists('PDOOCI/PDO.php')){
-	// available here: http://github.com/taq/pdooci
-	include_once 'PDOOCI/PDO.php';
-}
 
 /**
  *
@@ -62,6 +58,15 @@ function db_debug($toggle=null){
  * creates a connection to the database if none exists
  * or returns one already created.
  * @param boolean $forcenew Forces the creation of a new connection.
+ * @param string|array $db The name of a database defined in database.ini or a config array.
+ *     example config:
+ *         'name'=> 'Example OCI', // for caching
+ *         'engine'=> 'oci',
+ *         'host'=> 'localhost',
+ *         'dbname'=> 'svc1',
+ *         'user'=> 'user',
+ *         'password'=> 'password'
+ *    Host is optional for OCI. http://github.com/taq/pdooci is required for OCI support
  * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
 function &db_get_connection($forcenew = false, $db = 'default') {
@@ -82,14 +87,20 @@ function &db_get_connection($forcenew = false, $db = 'default') {
 		$_DB= array();
 	}
 
+	if(is_array($db)){
+		$conf= $db;
+		$db= $conf['name'];
+	}else{
+		$conf= LibConfig::getConfig('db')[$db];
+	}
+
 	if (!$_DB_OPEN_CON[$db] || $_DB[$db] == null) {
-		$conf = LibConfig::getConfig('db')[$db];
 		try{
 			if($conf['engine'] == 'oci'){
 				if($conf['host']){
-					$_DB[$db] = new PDOOCI\PDO('oci:dbname=//'. $conf['host'] .'/'. $conf['dbname'], $conf['user'], $conf['password']);
+				$_DB[$db] = new OCIPDO('oci:dbname=//'. $conf['host'] .'/'. $conf['dbname'], $conf['user'], $conf['password']);
 				}else{
-					$_DB[$db] = new PDOOCI\PDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
+				$_DB[$db] = new OCIPDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
 				}
 			}else{
 				$_DB[$db] = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
