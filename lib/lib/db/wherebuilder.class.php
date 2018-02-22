@@ -19,6 +19,10 @@ class WhereBuilder{
 		$this->values= array();
 		$this->curIdx= 0;
 	}
+	public function &addParam($name, $value){
+		$this->values[$name]= $value;
+		return $this;
+	}
 	/**
 	 * Appends a finished WhereBuilder to this
 	 * @param string $andor 'and' or 'or;
