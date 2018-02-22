@@ -778,4 +778,7 @@ class PDOTable{
 	 * Called after recycle()
 	 */
 	protected function childRecycle(){}
+	protected function _setError($msg){
+		$this->lastError= array('56000','',$msg);
+	}
 }
