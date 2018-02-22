@@ -505,9 +505,18 @@ class OCIPDOStatement extends PDOStatement{
 		}
 		if($params){
 			foreach($params as $param => $val){
-				if(!oci_bind_by_name($resultSet, $param, $val[0], -1, $val[1])){
+				if(is_array($val)){
+					$value= $val[0];
+					$type= $val[1];
+					if(!oci_bind_by_name($resultSet, $param, $value, -1, $type)){
 					$this->stopListeningForErrors(false);
 					return false;
+					}
+				}else{
+					if(!oci_bind_by_name($resultSet, $param, $val)){
+						$this->stopListeningForErrors(false);
+						return false;
+					}
 				}
 			}
 		}
