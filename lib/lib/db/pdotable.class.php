@@ -429,11 +429,13 @@ class PDOTable{
 			if(is_array($where)){
 				$where= _db_build_where_obj($where);
 			}
-			$query= $this->db->prepare(db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset));
-			if(db_run_query($query, $where->getValues())){
-				$this->dataset= $query;
+			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset);
+			$stm= $this->db->prepare($query);
+			if(db_run_query($stm, $where->getValues())){
+				$this->dataset= $stm;
 			}else{
-				$this->lastError= $query->errorInfo();
+				$this->lastError= $stm->errorInfo();
+				$this->lastError[]= $query;
 			}
 		}
 		$this->lastOperation= self::OP_LOAD;
@@ -457,6 +459,7 @@ class PDOTable{
 			return is_array($stm->fetch(PDO::FETCH_NUM));
 		}else{
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		return false;
 	}
@@ -502,6 +505,7 @@ class PDOTable{
 		$this->lastOperation= self::OP_DELETE;
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		$this->afterDelete($success);
 		return $success;
@@ -554,6 +558,7 @@ class PDOTable{
 		$success= db_run_query($stm, $data);
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		$this->afterUpdate($success);
 		return $success;
@@ -584,6 +589,7 @@ class PDOTable{
 		$this->lastOperation= self::OP_INSERT;
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		$this->afterInsert($success);
 		return $success;
@@ -614,6 +620,7 @@ class PDOTable{
 		$this->lastOperation= self::OP_INSERT;
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		$this->afterInsert($success);
 		return $success;
@@ -664,6 +671,7 @@ class PDOTable{
 		$this->lastOperation= self::OP_INSERT;
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
+			$this->lastError[]= $query;
 		}
 		return $success;
 	}
