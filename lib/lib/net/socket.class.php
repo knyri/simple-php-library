@@ -43,9 +43,16 @@ class Socket{
 	 * @return boolean
 	 */
 	public function connect($address,$port=0){
-		if($this->connected)return true;
-		if(!$this->socket && !$this->createSocket())return false;
-		return $this->canread=$this->canwrite=$this->connected=socket_connect($address,$port);
+		if($this->connected){
+			return true;
+		}
+		if(!$this->socket && !$this->create()){
+			return false;
+		}
+		$this->canread=
+		$this->canwrite=
+		$this->connected= socket_connect($this->socket, $address, $port);
+		return $this->connected;
 	}
 	/**
 	 * @param string $domain (AF_INET)
@@ -54,14 +61,19 @@ class Socket{
 	 * @return boolean
 	 */
 	public function create($domain=AF_INET,$type=SOCK_STREAM,$protocol=SOL_TCP){
-		if($this->socket!==false)
+		if($this->socket !== false){
 			socket_close($this->socket);
+		}
 		$this->socket=socket_create($domain,$type,$protocol);
 		return $this->socket!==false;
 	}
 	public function close(){
-		if(!$this->socket)return;
-		$this->canread=$this->canwrite=$this->connected=false;
+		if(!$this->socket){
+			return;
+		}
+		$this->canread=
+		$this->canwrite=
+		$this->connected= false;
 		socket_close($this->socket);
 	}
 	public function set($level, $name,$value){
@@ -71,17 +83,27 @@ class Socket{
 		return socket_get_option($this->socket,$level,$name);
 	}
 	public function errorStr(){
-		return socket_strerror(socket_last_error($this->socket));
+		return socket_strerror($this->lastError());
 	}
 	public function lastError(){
+		if($this->socket){
 		return socket_last_error($this->socket);
+		}else{
+			return socket_last_error();
+		}
 	}
 	public function clearError(){
+		if($this->socket){
 		socket_clear_error($this->socket);
+		}else{
+			socket_clear_error();
+		}
 		return $this;
 	}
 	public function shutdown(){
-		if(!$this->connected)return true;
+		if(!$this->connected){
+			return true;
+		}
 		$this->connected=!socket_shutdown($this->socket);
 		return !$this->connected;
 	}
@@ -112,10 +134,11 @@ class Socket{
 		return socket_bind($this->socket,$address,$port);
 	}
 	public function setBlocking($bool){
-		if($bool)
+		if($bool){
 			return socket_set_block($this->socket);
-		else
+		}else{
 			return socket_set_nonblock($this->socket);
+	}
 	}
 	/**
 	 * @param int $len (false)
@@ -132,8 +155,12 @@ class Socket{
 	 * @return int
 	 */
 	public function send($buf,$len=false,$flags=0){
-		if($flags&MSG_EOF==MSG_EOF)$this->canwrite=false;
-		if($len===false)$len=strlen($buf);
+		if(($flags & MSG_EOF) == MSG_EOF){
+			$this->canwrite= false;
+		}
+		if($len === false){
+			$len= strlen($buf);
+		}
 		return socket_send($buf,$len,$flags);
 	}
 	/**
@@ -143,10 +170,11 @@ class Socket{
 	 * 	It is perfectly valid for socket_write to return zero which means no bytes have been written. Be sure to use the === operator to check for false in case of an error.
 	 */
 	public function write($buf,$len=false){
-		if($len)
+		if($len){
 			return socket_write($this->socket,$buf,$len);
-		else
+		}else{
 			return socket_write($this->socket,$buf);
+	}
 	}
 	public function sendTo($buf, $len,$flags,$addr,$port=0){
 		return socket_sendto($this->socket,$buf,$len,$flags,$addr,$port);
@@ -164,7 +192,9 @@ class ServerSocket extends Socket{
 	 * @return boolean
 	 */
 	public function createServerSocket($port,$queuelen=SOMAXCONN){
-		if($this->socket)socket_close($this->socket);
+		if($this->socket){
+			socket_close($this->socket);
+		}
 		return ($this->socket=socket_create_listen($port,$queuelen))!==false;
 	}
 	/**
@@ -172,7 +202,9 @@ class ServerSocket extends Socket{
 	 */
 	public function accept(){
 		$sock=socket_accept($this->socket);
-		if($sock===false)return false;
+		if($sock === false){
+			return false;
+		}
 		return new Socket($sock);
 	}
 	/**

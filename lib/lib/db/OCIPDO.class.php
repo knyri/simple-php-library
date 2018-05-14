@@ -119,6 +119,10 @@ class OCIPDO extends PDO{
 		}
 	}
 
+	private static function makeErrorAry($code, $ociError){
+		return array($code,$ociError['code'],$ociError['message']);
+	}
+
 	/**
 	 * Takes the array from oci_error() and makes a PDO
 	 * style exception array.
@@ -133,52 +137,52 @@ class OCIPDO extends PDO{
 		}
 		switch($ociError['code']){
 			case 'ORA-00000':
-				return array('00000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('00000', $ociError);
 
 			case 'ORA-01095':
 			case 'ORA-01403':
-				return array('02000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('02000', $ociError);
 
 			case 'SQL-02126':
-				return array('07008',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('07008', $ociError);
 
 			case 'SQL-02121':
-				return array('08003',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('08003', $ociError);
 
 			case 'ORA-01427':
 			case 'SQL-02112':
-				return array('21000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('21000', $ociError);
 
 			case 'ORA-01401':
 			case 'ORA-01406':
-				return array('22001',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22001', $ociError);
 
 			case 'ORA-01405':
 			case 'SQL-02124':
-				return array('22002',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22002', $ociError);
 
 			case 'ORA-01426':
 			case 'ORA-01438':
 			case 'ORA-01455':
 			case 'ORA-01457':
-				return array('22003',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22003', $ociError);
 
 			case 'ORA-01476':
-				return array('22012',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22012', $ociError);
 
 			case 'ORA-00911':
 			case 'ORA-01425':
-				return array('22019',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22019', $ociError);
 
 			case 'ORA-01025':
 			case 'ORA-01488':
-				return array('22023',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22023', $ociError);
 
 			case 'ORA-01424':
-				return array('22025',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22025', $ociError);
 
 			case 'ORA-00001':
-				return array('23000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('23000', $ociError);
 
 			case 'ORA-01410':
 			case 'ORA-08006':
@@ -186,106 +190,106 @@ class OCIPDO extends PDO{
 			case 'SQL-02117':
 			case 'SQL-02118':
 			case 'SQL-02122':
-				return array('24000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('24000', $ociError);
 
 			case 'ORA-00022':
 			case 'ORA-00251':
 			case 'ORA-01031':
-				return array('42000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('42000', $ociError);
 
 			case 'ORA-01402':
-				return array('44000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('44000', $ociError);
 
 			case 'SQL-02128':
-				return array('63000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('63000', $ociError);
 
 			case 'SQL-02100':
-				return array('82100',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82100', $ociError);
 
 			case 'SQL-02101':
-				return array('82101',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82101', $ociError);
 
 			case 'SQL-02102':
-				return array('82102',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82102', $ociError);
 
 			case 'SQL-02103':
-				return array('82103',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82103', $ociError);
 
 			case 'SQL-02104':
-				return array('82104',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82104', $ociError);
 
 			case 'SQL-02105':
-				return array('82105',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82105', $ociError);
 
 			case 'SQL-02106':
-				return array('82106',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82106', $ociError);
 
 			case 'SQL-02107':
-				return array('82107',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82107', $ociError);
 
 			case 'SQL-02108':
-				return array('82108',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82108', $ociError);
 
 			case 'SQL-02109':
-				return array('82109',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82109', $ociError);
 
 			case 'SQL-02110':
-				return array('82110',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82110', $ociError);
 
 			case 'SQL-02111':
-				return array('82111',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82111', $ociError);
 
 			case 'SQL-02113':
-				return array('82112',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82112', $ociError);
 
 			case 'SQL-02115':
-				return array('82113',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82113', $ociError);
 
 			case 'SQL-02116':
-				return array('82114',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82114', $ociError);
 
 			case 'SQL-02119':
-				return array('82115',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82115', $ociError);
 
 			case 'SQL-02120':
-				return array('82116',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82116', $ociError);
 
 			case 'SQL-02122':
-				return array('82117',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82117', $ociError);
 
 			case 'SQL-02123':
-				return array('82118',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82118', $ociError);
 
 			case 'SQL-02125':
-				return array('82119',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82119', $ociError);
 
 			case 'SQL-02129':
-				return array('82121',$ociError['code'],$ociError['message']);
-				//return array('02000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('82121', $ociError);
+				//return self::makeErrorAry('02000', $ociError);
 
 		}
 		if(strrpos($ociError['code'], 'ORA-',0) === 0){
-			$code= intval(explode('-',$ociError['code'])[0], 10);
+			$code= intval(explode('-', $ociError['code'])[1], 10);
 			if($code > 2999 && $code < 4000){
-				return array('0A000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('0A000', $ociError);
 			}
 			if($code >= 1800  && $code <= 1899){
-				return array('22008',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22008', $ociError);
 			}
 			if($code >= 4000 && $code <= 4019){
-				return array('22023',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22023', $ociError);
 			}
 			if($code >= 1479 && $code <= 1480){
-				return array('22024',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('22024', $ociError);
 			}
 			if($code >= 2290 && $code <= 2299){
-				return array('23000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('23000', $ociError);
 			}
 			if($code >= 1001 && $code <= 1003){
-				return array('24000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('24000', $ociError);
 			}
 			if($code >= 2091 && $code <= 02092){
-				return array('40000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('40000', $ociError);
 			}
 			if(
 				$code >= 1490 && $code <= 1493 ||
@@ -298,7 +302,7 @@ class OCIPDO extends PDO{
 				$code >= 4040 && $code <= 4059 ||
 				$code >= 4070 && $code <= 4099
 			){
-				return array('42000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('42000', $ociError);
 			}
 			if(
 				$code >=  370 && $code <=  429 ||
@@ -307,7 +311,7 @@ class OCIPDO extends PDO{
 				$code >= 7200 && $code <= 7999 ||
 				$code >= 9700 && $code <= 9999
 			){
-				return array('60000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('60000', $ociError);
 			}
 			if(
 				$code >=   18 && $code <=   35 ||
@@ -315,13 +319,13 @@ class OCIPDO extends PDO{
 				$code >= 2376 && $code <= 2399 ||
 				$code >= 4020 && $code <= 4039
 			){
-				return array('61000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('61000', $ociError);
 			}
 			if(
 				$code >=  100 && $code <=  120 ||
 				$code >=  440 && $code <=  569
 			){
-				return array('62000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('62000', $ociError);
 			}
 			if(
 				$code >=  150 && $code <=  159 ||
@@ -329,16 +333,16 @@ class OCIPDO extends PDO{
 				$code >= 3100 && $code <= 3199 ||
 				$code >= 6200 && $code <= 6249
 			){
-				return array('63000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('63000', $ociError);
 			}
 			if(
 				$code >=  200 && $code <=  369 ||
 				$code >= 1100 && $code <= 1250
 			){
-				return array('64000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('64000', $ociError);
 			}
 			if($code >= 6500 && $code <= 6599){
-				return array('65000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('65000', $ociError);
 			}
 			if(
 				$code >= 6000 && $code <= 6149 ||
@@ -347,16 +351,16 @@ class OCIPDO extends PDO{
 				$code >= 12100 && $code <= 12299 ||
 				$code >= 12500 && $code <= 12599
 			){
-				return array('66000',$ociError['code'],$ociError['message']);
+						return self::makeErrorAry('66000', $ociError);
 			}
 			if($code >= 00430 && $code <= 00439){
-				return array('67000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('67000', $ociError);
 			}
 			if(
 				$code >=   570 && $code <=   599 ||
 				$code >=  7000 && $code <=  7199
 			){
-				return array('69000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('69000', $ociError);
 			}
 			if(
 				$code >=  1000 && $code <=  1099 ||
@@ -371,13 +375,13 @@ class OCIPDO extends PDO{
 				$code >= 12300 && $code <= 12499 ||
 				$code >= 12700 && $code <= 21999
 			){
-					return array('72000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('72000', $ociError);
 			}
 			if($code >= 10000 && $code <= 10999){
-				return array('90000',$ociError['code'],$ociError['message']);
+				return self::makeErrorAry('90000', $ociError);
 			}
 		}
-		return array('99999',$ociError['code'],$ociError['message']);
+		return self::makeErrorAry('99999', $ociError);
 	}
 }
 
