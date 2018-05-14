@@ -390,7 +390,7 @@ class PDOTable{
 	 * Returns a WhereBuilder based on the current data values
 	 * @return WhereBuilder
 	 */
-	private function getWhere(){
+	protected function getWhere(){
 		$where= new WhereBuilder('data');
 		$data= $this->data->copyTo(array());
 		foreach($data as $key => $value){
@@ -510,6 +510,17 @@ class PDOTable{
 		$this->afterDelete($success);
 		return $success;
 	}
+
+	/**
+	 * Determines if the save function should run an update or insert based on
+	 * the availability of the primary keys.
+	 * @return boolean True if the save function should perform an update
+	 */
+	protected function saveShouldUpdate(){
+		return
+			$this->trackChanges && $this->isOldPkeySet() ||
+			$this->isPkeySet() && $this->exists();
+	}
 	/**
 	 * Automatically chooses between insert() and update() based on the availability of the
 	 * primary keys.
@@ -520,10 +531,7 @@ class PDOTable{
 			return false;
 		}
 		$success=false;
-		if($this->trackChanges && $this->isOldPkeySet()){
-			$success= $this->update();
-		}else
-		if($this->isPkeySet() && $this->exists()){
+		if($this->saveShouldUpdate()){
 			$success= $this->update();
 		}else{
 			$success= $this->insert();
