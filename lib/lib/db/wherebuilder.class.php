@@ -14,6 +14,9 @@ class WhereBuilder{
 	public function __construct($prefix='wh'){
 		$this->prefix= ":$prefix" . (++self::$instanceCnt);
 	}
+	public function isEmpty(){
+		return $this->curIdx == 0;
+	}
 	public function reset(){
 		$this->where= '';
 		$this->values= array();
