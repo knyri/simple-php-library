@@ -391,9 +391,27 @@ class PDOTable{
 	 * @return WhereBuilder
 	 */
 	protected function getWhere(){
-		$where= new WhereBuilder('data');
+		$where= new WhereBuilder('pdotabledata');
 		$data= $this->data->copyTo(array());
+		if(count($data) == 0){
+			return null;
+		}
 		foreach($data as $key => $value){
+			if(is_array($value)){
+				$where->andWhere($key, 'in', $value);
+			}else if($value ===  null){
+				$where->andWhere($key, null);
+			}else{
+				$where->andWhere($key, '=', $value);
+			}
+		}
+		return $where;
+	}
+	protected function getWherePkey(){
+		$where= new WhereBuilder('pkey');
+		$pkeys= is_array($this->pkey) ? $this->pkey : array($this->pkey);
+		foreach($pkeys as $key){
+			$value= $this->data->get($key);
 			if(is_array($value)){
 				$where->andWhere($key, 'in', $value);
 			}else if($value ===  null){
@@ -425,19 +443,32 @@ class PDOTable{
 			$where= $this->getWhere();
 		}
 		$this->dataset= null;
-		if($this->exists($where)){
 			if(is_array($where)){
 				$where= _db_build_where_obj($where);
 			}
+		if($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == 'oci' && ($offset || $limit)){
+			// TODO: sniff for 12c and use the better form
+			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
+			if($limit){
+				if($offset){
+					$limit= $limit + $offset;
+					$query= "SELECT * FROM ($query) WHERE ROWNUM <= $limit AND ROWNUM >= $offset";
+				}else{
+					$query= "SELECT * FROM ($query) WHERE ROWNUM <= $limit";
+				}
+			}else{
+				$query= "SELECT * FROM ($query) WHERE ROWNUM >= $offset";
+			}
+		}else{
 			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset);
+		}
 			$stm= $this->db->prepare($query);
-			if(db_run_query($stm, $where->getValues())){
+		if(db_run_query($stm, $where ? $where->getValues() : null)){
 				$this->dataset= $stm;
 			}else{
 				$this->lastError= $stm->errorInfo();
 				$this->lastError[]= $query;
 			}
-		}
 		$this->lastOperation= self::OP_LOAD;
 		$this->afterFind($this->dataset != null);
 		return $this->dataset != null;
@@ -518,8 +549,9 @@ class PDOTable{
 	 */
 	protected function saveShouldUpdate(){
 		return
-			$this->trackChanges && $this->isOldPkeySet() ||
-			$this->isPkeySet() && $this->exists();
+			$this->trackChanges ?
+				$this->isOldPkeySet() :
+				$this->isPkeySet() && $this->exists($this->getWherePkey());
 	}
 	/**
 	 * Automatically chooses between insert() and update() based on the availability of the
@@ -547,7 +579,7 @@ class PDOTable{
 		if(!$this->beforeUpdate()){
 			return false;
 		}
-		$query= 'UPDATE "'.$this->table.'"  SET ';
+		$query= 'UPDATE '.$this->table.'  SET ';
 		$update= $this->data->copyTo(array());
 		$data= array();
 		foreach($update as $k => $v){
@@ -581,7 +613,7 @@ class PDOTable{
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
+		$query='INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:'.implode(',:', $cols).')';
 		$stm= $this->db->prepare($query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
@@ -612,7 +644,7 @@ class PDOTable{
 		}
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
-		$query= 'INSERT IGNORE INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).')';
+		$query= 'INSERT IGNORE INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:'.implode(',:', $cols).')';
 		$stm=$this->db->prepare( $query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":$k", $v, $this->columns[$k]);
@@ -646,11 +678,11 @@ class PDOTable{
 		$cols= array_keys($data);
 		switch($dbType){
 			case 'mysql':
-				$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
+				$query='INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:'.implode(',:', $cols).') ON DUPLICATE KEY UPDATE';
 				break;
 			case 'pgsql':
 				// TODO: Not sure if the keys have to be in order for it to match
-				$query='INSERT INTO "'.$this->table.'" ("'.implode('","', $cols).'") VALUES (:'.implode(',:', $cols).') ON CONFLICT ("'.( is_array($this->pkey) ? implode('","', $this->pkey) : $this->pkey ).'") DO UPDATE SET';
+				$query='INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:'.implode(',:', $cols).') ON CONFLICT ("'.( is_array($this->pkey) ? implode('","', $this->pkey) : $this->pkey ).'") DO UPDATE SET';
 				break;
 		}
 		if(!$query){
