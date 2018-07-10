@@ -218,6 +218,8 @@ class QueryBuilder {
 		$stm= new PDOStatementWrapper(db_prepare($db, $this->query), $fetchMode);
 		if(!$stm->run($this->runArgs)){
 			$this->lastError= $stm->getError();
+			$this->lastError[]= $this->query;
+			$this->lastError[]= $this->where->getValues();
 		}else{
 			$this->lastError= false;
 		}
