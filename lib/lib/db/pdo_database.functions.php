@@ -66,18 +66,15 @@ function db_debug($toggle=null){
  *         'dbname'=> 'svc1',
  *         'user'=> 'user',
  *         'password'=> 'password'
- *    Host is optional for OCI. http://github.com/taq/pdooci is required for OCI support
+ *    Host is optional for OCI.
  * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
 function &db_get_connection($forcenew = false, $db = 'default') {
 	global $_DB, $_DB_OPEN_CON;
-	if(is_string($forcenew)){
+	if(is_string($forcenew) || is_array($forcenew)){
 		// because lazy
 		$db= $forcenew;
 		$forcenew= false;
-	}
-	if ($forcenew){
-		db_close_connection($db);
 	}
 
 	if (!isset($_DB_OPEN_CON)){
@@ -94,7 +91,7 @@ function &db_get_connection($forcenew = false, $db = 'default') {
 		$conf= LibConfig::getConfig('db')[$db];
 	}
 
-	if (!$_DB_OPEN_CON[$db] || $_DB[$db] == null) {
+	if ($forcenew || !$_DB_OPEN_CON[$db] || $_DB[$db] == null) {
 		try{
 			if($conf['engine'] == 'oci'){
 				if($conf['host']){
@@ -439,7 +436,7 @@ function db_make_query($table, array $columns= null, WhereBuilder $where= null, 
 	}
 
 	if($where){
-		$query .= ' WHERE '.$where->getWhere();
+		$query .= $where->toString();
 	}
 	if($groupBy != null){
 		$query .= ' GROUP BY '.$groupBy;
@@ -506,7 +503,7 @@ function db_delete($db, $table, $conditions = null) {
 		if(is_array($conditions)){
 			$conditions=_db_build_where_obj($conditions);
 		}
-		$stm.=' WHERE '.$conditions->getWhere();
+		$stm.= $conditions->toString();
 		$conditions= $conditions->getValues();
 	}
 	try{
@@ -539,7 +536,7 @@ function db_num_rows(PDO $db,$table, $conditions=null){
 		if(is_array($conditions)){
 			$conditions= _db_build_where_obj($conditions);
 		}
-		$stm = "SELECT COUNT(*) FROM $table WHERE ".$conditions->getWhere();
+		$stm = "SELECT COUNT(*) FROM $table".$conditions->toString();
 		$conditions= $conditions->getValues();
 	}
 	try{
@@ -577,7 +574,7 @@ function db_exists($db,$table, $conditions=null){
 		if(is_array($conditions)){
 			$conditions=_db_build_where_obj($conditions);
 		}
-		$stm= "SELECT EXISTS(SELECT 1 FROM $table WHERE {$conditions->getWhere()})";
+		$stm= "SELECT EXISTS(SELECT 1 FROM $table {$conditions->toString()})";
 		$conditions= $conditions->getValues();
 	}
 	try{
