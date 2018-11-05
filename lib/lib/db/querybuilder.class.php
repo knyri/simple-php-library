@@ -25,9 +25,11 @@ class QueryBuilder {
 	}
 	public function setLimit($limit){
 		$this->limit= $limit;
+		return $this;
 	}
 	public function setOffset($offset){
 		$this->offset= $offset;
+		return $this;
 	}
 	/**
 	 * @param string $name
@@ -39,6 +41,7 @@ class QueryBuilder {
 	}
 	public function orderBy($field, $asc){
 		$this->orderBy.= ',' . $field . ' ' . ($asc ? 'ASC' : 'DESC');
+		return $this;
 	}
 	/**
 	 * Takes a list of strings.
@@ -190,6 +193,7 @@ class QueryBuilder {
 	}
 	public function resetWhere(){
 		$this->where->reset();
+		return $this;
 	}
 	public function getParams(){
 		return $this->runArgs;
