@@ -11,7 +11,7 @@ class OCIPDO extends PDO{
 		$db,
 		$lastError= array('00000','ORA-00000','No error'),
 		$errHandler,
-		$outOfTransaction= false,
+		$outOfTransaction= true,
 		$autocommit= true,
 		$columnCase= PDO::CASE_NATURAL,
 		$rowPrefetch,
@@ -39,8 +39,8 @@ class OCIPDO extends PDO{
 		$stm= oci_parse($this->db, $statement);
 		if(!$stm){
 			$this->stopListeningForErrors(false);
-		return false;
-	}
+			return false;
+		}
 
 		$affected= false;
 		if(oci_execute($stm, $this->shouldCommit() ? OCI_NO_AUTO_COMMIT : OCI_COMMIT_ON_SUCCESS)){
@@ -144,14 +144,17 @@ class OCIPDO extends PDO{
 			case PDO::ATTR_EMULATE_PREPARES:
 				return false;
 			default:
-		return null;
-	}
+				return null;
+		}
 	}
 	public function setAttribute($attribute, $value){
 		/* TODO: Support these
 		 * case PDO::ATTR_CASE:
 		 */
 		switch($attribute){
+			case PDO::ATTR_DEFAULT_FETCH_MODE:
+				$this->fetchMode= $value;
+				return true;
 			case PDO::ATTR_ERRMODE:
 				if($value > -1 && $value < 4){
 					$this->errorMode= $value;
@@ -165,7 +168,8 @@ class OCIPDO extends PDO{
 		return false;
 	}
 	public function lastInsertId($name= null){
-		throw new PDOException("Not supported", 'IM001');
+		self::makeErrorAry('IM001', '');
+		return false;
 	}
 
 	/**
@@ -192,25 +196,43 @@ class OCIPDO extends PDO{
 	public function errHandler($number, $string, $file, $line, $context){
 		// because oci_* emits freaking warnings and oci_error() insists everything is fine
 		$error= explode(':', $string, 3);
+		$this->caughtError= true;
 		$this->lastError= OCIPDO::makeErrorInfo(array('code'=>trim($error[1]),'message'=>trim($error[2])));
 		if(function_exists('logit')){
 			logit("$string\n$file\n$line\n".print_r($context, true));
 		}
+		switch($this->getAttribute(PDO::ATTR_ERRMODE)){
+			case PDO::ERRMODE_EXCEPTION:
+				$exception= new PDOException('OCI error');
+				$exception->errorInfo= $this->lastError;
+				$this->stopListeningForErrors(false);
+				throw $exception;
+			case PDO::ERRMODE_WARNING:
+				$this->originalErrHandler($number, $string, $file, $lastError, $context);
+		}
 
 	}
 	private function listenForErrors(){
-		set_error_handler($this->errHandler);
+		$this->caughtError= false;
+		$this->originalErrHandler= set_error_handler($this->errHandler);
 	}
 	private function stopListeningForErrors($operationSuccess){
 		restore_error_handler();
 		if($this->caughtError){
-			$this->db->_setLastError($this->lastError);
+			$this->_setLastError($this->lastError);
 			$this->caughtError= false;
 		}else if(!$operationSuccess){
-			if($this->db){
-				$this->lastError= OCIPDO::makeErrorInfo(oci_error($this->db));
+			if($this->resultSet){
+				$this->lastError= OCIPDO::makeErrorInfo(oci_error($this->resultSet));
+				$this->lastError['query']= $this->stm;
+				$this->lastError['params']= $this->binds;
+				if($message){
+					$this->lastError['extraDetail']= $message;
+				}
+				$this->_setLastError($this->lastError);
+
 			}else{
-				$this->lastError= OCIPDO::makeErrorInfo(oci_error());
+				$this->lastError= $this->_errorInfo();
 			}
 		}
 	}
@@ -238,7 +260,7 @@ class OCIPDO extends PDO{
 	 */
 	public static function makeErrorInfo($ociError){
 		if(!$ociError){
-			return array('00000','ORA-00000','No error');
+			return array('00000', 'ORA-00000', 'No error');
 		}
 		switch($ociError['code']){
 			case 'ORA-00000':
@@ -373,7 +395,7 @@ class OCIPDO extends PDO{
 				//return self::makeErrorAry('02000', $ociError);
 
 		}
-		if(strrpos($ociError['code'], 'ORA-',0) === 0){
+		if(strrpos($ociError['code'], 'ORA-', 0) === 0){
 			$code= intval(explode('-', $ociError['code'])[1], 10);
 			if($code > 2999 && $code < 4000){
 				return self::makeErrorAry('0A000', $ociError);
@@ -464,7 +486,7 @@ class OCIPDO extends PDO{
 			if(
 				$code >=   570 && $code <=   599 ||
 				$code >=  7000 && $code <=  7199
-			){
+				){
 				return self::makeErrorAry('69000', $ociError);
 			}
 			if(
@@ -524,7 +546,7 @@ class OCIPDOStatement extends PDOStatement{
 		$this->originalErrHandler= set_error_handler($this->errHandler);
 
 	}
-	private function stopListeningForErrors($operationSuccess){
+	private function stopListeningForErrors($operationSuccess, $message= null){
 		restore_error_handler();
 		if($this->caughtError){
 			$this->db->_setLastError($this->lastError);
@@ -532,7 +554,13 @@ class OCIPDOStatement extends PDOStatement{
 		}else if(!$operationSuccess){
 			if($this->resultSet){
 				$this->lastError= OCIPDO::makeErrorInfo(oci_error($this->resultSet));
+				$this->lastError['query']= $this->stm;
+				$this->lastError['params']= $this->binds;
+				if($message){
+					$this->lastError['extraDetail']= $message;
+				}
 				$this->db->_setLastError($this->lastError);
+
 			}else{
 				$this->lastError= $this->db->_errorInfo();
 			}
@@ -543,13 +571,7 @@ class OCIPDOStatement extends PDOStatement{
 		$error= explode(':', $string, 3);
 		$this->caughtError= true;
 		$this->lastError= OCIPDO::makeErrorInfo(array('code'=>trim($error[1]),'message'=>trim($error[2])));
-		$error= oci_error($this->resultSet);
-		if(!$error){
-			$error= $this->db->_errorInfo();
-		}
-		if(function_exists('logit')){
-			logit(oci_error($this->resultSet));
-		}
+
 		switch($this->db->getAttribute(PDO::ATTR_ERRMODE)){
 			case PDO::ERRMODE_EXCEPTION:
 				$exception= new PDOException('OCI error');
@@ -559,7 +581,6 @@ class OCIPDOStatement extends PDOStatement{
 			case PDO::ERRMODE_WARNING:
 				$this->originalErrHandler($number, $string, $file, $lastError, $context);
 		}
-// 		logit("$string\n$file\n$line\n".print_r($context, true));
 
 	}
 	public function setFetchMode($mode, $params= null){
@@ -617,14 +638,23 @@ class OCIPDOStatement extends PDOStatement{
 	public function execute($params= null){
 		$lobs= array();
 		if($this->resultSet){
-			trigger_error("Potential memory leak: execute called while current result set still open", E_WARNING);
+			trigger_error("Potential memory leak: execute called while current result set still open", E_USER_WARNING);
 		}
 
 		$this->listenForErrors();
 		$this->resultSet= $resultSet= $this->db->_parse($this->stm);
+		if($params){
+			foreach($params as $param=>$val){
+				if(!is_array($val)){
+					$params[$param]= array($val, false);
+				}
+			}
+			$params= array_merge($this->binds, $params);
+		}else{
+			$params= $this->binds;
+		}
 
-		foreach($this->binds as $param => $val){
-			$value= $val[0];
+		foreach($params as $param => $val){
 			$type= $val[1];
 			if($type == OCI_D_LOB || $type == OCI_DTYPE_LOB){
 				$type= OCI_DTYPE_LOB;
@@ -633,49 +663,19 @@ class OCIPDOStatement extends PDOStatement{
 				if(!$lob){
 // 					logit('LOB creation failed!');
 // 					logit($this->db->_errorInfo());
-					$this->stopListeningForErrors(false);
+					$this->stopListeningForErrors(false, 'Error making LOB descriptor');
 					return false;
 				}
 				$lobs[]= array($lob, $value);
 				$value= $lob;
 			}
-			if(!oci_bind_by_name($resultSet, $param, $value, -1, $type)){
+			if(!
+					($type === false ? oci_bind_by_name($resultSet, $param, $val[0]) : oci_bind_by_name($resultSet, $param, $val[0], -1, $type))
+			){
 // 				logit('bind by name failed!');
 // 				logit($this->db->_errorInfo());
-				$this->stopListeningForErrors(false);
+				$this->stopListeningForErrors(false, "Bind by name failed for $param");
 				return false;
-			}
-		}
-		if($params){
-			foreach($params as $param => $val){
-				if(is_array($val)){
-					$value= $val[0];
-					$type= $val[1];
-					if($type == OCI_D_LOB || $type == OCI_DTYPE_LOB){
-						$type= OCI_DTYPE_LOB;
-// 						logit('NEW LOB!');
-						$lob= $this->db->getNewLobDescriptor();
-						if(!$lob){
-// 							logit('LOB creation failed!');
-							$this->stopListeningForErrors(false);
-							return false;
-						}
-						$lobs[]= array($lob, $value);
-						$value= $lob;
-					}
-					if(!oci_bind_by_name($resultSet, $param, $value, -1, $type)){
-// 						logit('bind by name failed!');
-// 						logit($this->db->_errorInfo());
-					$this->stopListeningForErrors(false);
-					return false;
-					}
-				}else{
-					if(!oci_bind_by_name($resultSet, $param, $val)){
-// 						logit('bind by name failed!');
-						$this->stopListeningForErrors(false);
-						return false;
-					}
-				}
 			}
 		}
 		if(count($lobs)){
@@ -683,10 +683,10 @@ class OCIPDOStatement extends PDOStatement{
 			foreach($lobs as $lob){
 				if(!$lob[0]->save($lob[1])){
 // 					logit('LOB write error');
-						$this->stopListeningForErrors(false);
-						return false;
-					}
+					$this->stopListeningForErrors(false);
+					return false;
 				}
+			}
 			$resultSet= oci_execute($resultSet, OCI_NO_AUTO_COMMIT) ? $resultSet : null;
 			if($resultSet){
 				oci_commit($this->db);
@@ -698,7 +698,7 @@ class OCIPDOStatement extends PDOStatement{
 			}
 			$this->resultSet= $this->caughtError ? null : $resultSet;
 		}else{
-			$this->resultSet= oci_execute($resultSet, $this->db->shouldCommit() ? OCI_NO_AUTO_COMMIT : OCI_COMMIT_ON_SUCCESS) ? $resultSet : null;
+			$this->resultSet= oci_execute($resultSet, $this->db->shouldCommit() ? OCI_COMMIT_ON_SUCCESS : OCI_NO_AUTO_COMMIT) ? $resultSet : null;
 		}
 		$this->stopListeningForErrors($this->resultSet);
 		return $this->resultSet != null;
