@@ -12,7 +12,7 @@ class WhereBuilder{
 		$prefix,
 		$curIdx= 0;
 	public function __construct($prefix='wh'){
-		$this->prefix= ":$prefix" . (++self::$instanceCnt);
+		$this->prefix= ":$prefix" . (++self::$instanceCnt) . '_';
 	}
 	public function isEmpty(){
 		return $this->curIdx == 0;
@@ -34,6 +34,9 @@ class WhereBuilder{
 	 * @return WhereBuilder $this for chaining
 	 */
 	public function &appendWhere($andor, WhereBuilder $where, $parens= false){
+		if(!$where->where){
+			return $this;
+		}
 		$this->values= array_merge($this->values, $where->getValues());
 		if($this->curIdx == 0){
 			$andor= '';
@@ -187,12 +190,23 @@ class WhereBuilder{
 		}
 	}
 	/**
-	 * The current WHERE statement.
+	 * The current WHERE clause.
 	 * (note: does not start with 'WHERE')
 	 * @return string
 	 */
 	public function getWhere(){
 		return $this->where;
+	}
+	/**
+	 * The where clause with the WHERE keyword and with leading and trailing spaces or a blank string if there is nothing
+	 * @return string
+	 */
+	public function toString(){
+		if(!$this->isEmpty()){
+			return ' WHERE ' .$this->where . ' ';
+		}else{
+			return '';
+		}
 	}
 	/**
 	 * @return array Values to be substituted
