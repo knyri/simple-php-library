@@ -27,27 +27,71 @@ class Ldap {
 	function startTls(){
 		return ldap_start_tls($this->con);
 	}
-	function add($dn, $entry){
+	/**
+	 * Adds attributes to the DN
+	 * @param string $dn
+	 * @param array $entry
+	 * @return boolean
+	 */
+	function add($dn, array $entry){
 		return ldap_add($this->con, $dn, $entry);
 	}
+	/**
+	 * Tests to see if the entry's attribute has that value
+	 * @param string $dn
+	 * @param string $attribute
+	 * @param string $value
+	 * @return mixed Returns TRUE if value matches otherwise returns FALSE. Returns -1 on error.
+	 */
 	function compare($dn, $attribute, $value){
 		return ldap_compare($this->con, $dn, $attribute, $value);
 	}
+	/**
+	 * Deletes an entry
+	 * @param string $dn
+	 * @return boolean
+	 */
 	function delete($dn){
 		return ldap_delete($this->con, $dn);
 	}
+	/**
+	 * The last error
+	 * @return string
+	 */
 	function getError(){
 		return ldap_error($this->con);
 	}
+	/**
+	 * The last error number
+	 * @return number
+	 */
 	function getErrorNum(){
 		return ldap_errno($this->con);
 	}
+	/**
+	 * Sets the option
+	 * @param number $option
+	 * @param mixed $value
+	 * @return boolean
+	 */
 	function setOption($option, $value){
 		return ldap_set_option($this->con, $option, $value);
 	}
+	/**
+	 * @param number $option
+	 * @param mixed $value
+	 * @return boolean
+	 */
 	function getOption($option, &$value){
 		return ldap_get_option($this->con, $option, $value);
 	}
+	/**
+	 * @param string $dn Entity to rename
+	 * @param string $newrdn The new RDN
+	 * @param string $newparent The new parent entry
+	 * @param boolean $deleteold If TRUE the old RDN value(s) is removed, else the old RDN value(s) is retained as non-distinguished values of the entry.
+	 * @return boolean
+	 */
 	function rename($dn, $newrdn, $newparent, $deleteold){
 		return ldap_rename($this->con, $dn, $newrdn, $newparent, $deleteold);
 	}
@@ -181,7 +225,6 @@ class Ldap {
 }
 /**
  * Result from list, search, and read
- *
  */
 class LdapResult {
 	private
@@ -305,9 +348,17 @@ class LdapResultEntry extends LdapObject{
 		parent::__construct($con, ldap_get_dn($con, $entry));
 		$this->entry= $entry;
 	}
+	/**
+	 * If true (default) then #next() will not create a new LdapResultEntry.
+	 * @param boolean $reuse
+	 */
 	function setReuse($reuse){
 		$this->reuse= $reuse === true;
 	}
+	/**
+	 * The next entry or false if this is the last entry.
+	 * @return boolean|LdapResultEntry
+	 */
 	function next(){
 		$entry= ldap_next_entry($this->con, $this->entry);
 		if($entry === false){
