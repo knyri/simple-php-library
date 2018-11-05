@@ -76,6 +76,25 @@ class ChangeTrackingPropertyList extends PropertyList{
 	protected
 		$changes= array(),
 		$cleared= array();
+	public function discardChange($key){
+		if(array_key_exists($key, $this->changes)){
+			unset($this->changes[$key]);
+		}else if (array_key_exists($key, $this->cleared)){
+			unset($this->cleared[$key]);
+		}
+	}
+	public function commitChange($key){
+		if(array_key_exists($key, $this->changes)){
+			$this->data[$key]= $this->changes[$key];
+			unset($this->changes[$key]);
+		}else if (array_key_exists($key, $this->cleared)){
+			unset($this->cleared[$key]);
+			unset($this->data[$key]);
+		}
+	}
+	public function hasChanged($key){
+		return array_key_exists($key, $this->changes) || array_key_exists($key, $this->cleared);
+	}
 	public function getChanges(){
 		$changes=array('old'=>array(),'new'=>array());
 		foreach($this->changes as $k=>$v){
