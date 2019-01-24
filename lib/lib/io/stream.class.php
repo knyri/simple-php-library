@@ -47,10 +47,13 @@ class Stream{
 			$this->handle=fopen($this->uri,$mode,$this->use_include_path,$this->ctx);
 		else
 			$this->handle=fopen($this->uri,$mode,$this->use_include_path);
-		if($this->handle){
+		if(is_resource($this->handle)){
 			$this->open=true;
 			$this->closed=false;
+		}else{
+			$this->open= false;
 		}
+		$this->locked= false;
 		return $this->open;
 	}
 	/**
