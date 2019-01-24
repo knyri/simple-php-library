@@ -3,9 +3,45 @@
  * LDAP connection wrapper
 */
 class Ldap {
-	private $con, $result;
+	private
+		$con,
+		$result,
+		$errHandler,
+		$caughtError,
+		$originalErrorHandler,
+		$lastError
+	;
 	function __construct($host, $port= 389){
 		$this->con= ldap_connect($host, $port);
+		$this->errHandler= array($this, 'errHandler');
+	}
+	public static function escapeValue($str){
+		return
+			str_replace('(','\\(',
+				str_replace(')','\\)',
+					str_replace('\\', '\\\\', $str)
+				)
+			)
+		;
+	}
+	private function listenForErrors(){
+		$this->caughtError= false;
+		$this->lastError= false;
+		$this->originalErrHandler= set_error_handler($this->errHandler);
+	}
+	private function stopListeningForErrors(){
+		restore_error_handler();
+		if($this->caughtError){
+			$this->caughtError= false;
+		}
+	}
+	public function errHandler($number, $string, $file, $line, $context){
+		$error= explode(':', $string, 3);
+		$this->caughtError= true;
+		$this->lastError= trim($error[1]);
+		if(function_exists('logit')){
+			logit("$string\n$file\n$line\n".print_r($context, true));
+		}
 	}
 	/** The result from ldap_connect
 	 * @return boolean
@@ -154,6 +190,7 @@ class Ldap {
 	 * @return boolean|LdapResult
 	 */
 	function search($base_dn, $filter, $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
+		$this->listenForErrors();
 		if($attributes){
 			if($attrsonly){
 				if($sizelimit){
@@ -175,10 +212,11 @@ class Ldap {
 		}else{
 			$res= ldap_search($this->con, $base_dn, $filter);
 		}
+		$this->stopListeningForErrors();
 		if(is_array($res)){
 			$this->result= array_map(function($e){return new LdapResult($this->con, $e);}, $res);
 		}else{
-			$this->result= $res === false ? false : new LdapResult($this->con, $res);
+			$this->result= $res === false ? false : new LdapResult($this->con, $res, $this->lastError && strpos($this->lastError, 'Partial search results returned') === 0);
 		}
 		return $this->result;
 	}
@@ -233,10 +271,21 @@ class LdapResult {
 	$errcode,
 	$matcheddn,
 	$errmsg,
-	$referrals;
-	function __construct($con, $result){
+		$referrals,
+		$sizeLimitHit
+	;
+	/**
+	 * @param resource $con The LDAP connection
+	 * @param resource $result The LDAP result
+	 * @param boolean $hasMoreResults If SizeLimit was hit
+	 */
+	function __construct($con, $result, $hasMoreResults= false){
 		$this->con= $con;
 		$this->result= $result;
+		$this->sizeLimitHit= $hasMoreResults;
+	}
+	function sizeLimitHit(){
+		return $this->sizeLimitHit;
 	}
 	function countEntries(){
 		return ldap_count_entries($this->con, $this->result);
@@ -391,6 +440,9 @@ class LdapResultEntry extends LdapObject{
 	function getAttributes(){
 		return ldap_get_attributes($this->con, $this->entry);
 	}
+	function getAttributeIterator(){
+		return new LdapAttributes($this->getAttributes());
+	}
 	function getDn(){
 		return ($this->dn= ldap_get_dn($this->con, $this->entry));
 	}
@@ -414,4 +466,121 @@ class LdapResultEntry extends LdapObject{
 			return ob_get_clean();
 		}
 	}
+}
+class LdapAttributes {
+	private $attrs, $idx= 0;
+	function __construct(array $attrs){
+		$this->attrs= $attrs;
+	}
+	function length(){
+		return $this->attrs['count'];
+	}
+	/**
+	 * Get's the value of the attribute
+	 * @param string|int $key
+	 */
+	function getValue($key){
+		if(is_int($key)){
+			return $this->attrs[$this->attrs[$key]];
+		}
+		return $this->attrs[$key];
+	}
+	/**
+	 * Get's the key name of the n-th attribute
+	 * @param int $idx
+	 * @return mixed
+	 */
+	function getKey($idx){
+		return $this->attrs[$key];
+	}
+	/**
+	 * Gets the attribute at the n-th index or false
+	 * @param int $idx
+	 * @return boolean|LdapAttribute
+	 */
+	function getAttribute($idx){
+		if($idx > $this->length() || $idx < 0){
+			return false;
+		}
+		return new LdapAttribute($this->attrs[$idx], $this->attrs[$this->attrs[$idx]]);
+	}
+	/**
+	 * @param string $key
+	 * @return LdapAttribute|boolean
+	 */
+	function getAttributeObject($key){
+		if(array_key_exists($key, $this->attrs)){
+			return new LdapAttribute($key, $this->attrs[$key]);
+		}
+		return false;
+	}
+	/**
+	 * Will a call to next() return something?
+	 * @return boolean
+	 */
+	function hasMore(){
+		return $this->idx < $this->length();
+	}
+	/**
+	 * Resets the internal index to 0 and returns the first attribute
+	 * @return boolean|LdapAttribute
+	 */
+	function first(){
+		$this->idx= 0;
+		return $this->next();
+	}
+	/**
+	 * Returns the next attribute in the set
+	 * @return boolean|LdapAttribute
+	 */
+	function next(){
+		return $this->getAttribute($this->idx++);
+	}
+}
+class LdapAttribute{
+	private $key, $val, $idx;
+	function __construct($key, $val){
+		$this->key= $key;
+		$this->val= $val;
+	}
+	/**
+	 * @return string
+	 */
+	public function key(){
+		return $this->key;
+	}
+	public function length(){
+		return $this->val['count'];
+	}
+	/**
+	 * Will a call to next() return something?
+	 * @return boolean
+	 */
+	function hasMore(){
+		return $this->idx < $this->length();
+	}
+	/**
+	 * @param int $idx
+	 * @return boolean|string
+	 */
+	public function get($idx){
+		if($idx < 0 || $idx > $this->length()){
+			return false;
+		}
+		return $this->val[$idx];
+	}
+	/**
+	 * @return boolean|string
+	 */
+	public function next(){
+		return $this->get($this->idx++);
+	}
+	/**
+	 * @return boolean|string
+	 */
+	public function first(){
+		$this->idx= 0;
+		return $this->next();
+	}
+
 }
