@@ -454,6 +454,9 @@ class PDOTable{
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
+		if(!$columns){
+			$columns= array_keys($this->columns);
+		}
 		$this->dataset= null;
 		if($where == null){
 			$where= $this->getWhere();
@@ -462,16 +465,27 @@ class PDOTable{
 		}
 		if($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == 'oci' && ($offset || $limit)){
 			// TODO: sniff for 12c and use the better form
-			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
+			// rownum and row_number() are 1-based so we add 1 to each to adjust
 			if($limit){
+				$limit++;
+			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
 				if($offset){
+					$offset++;
 					$limit= $limit + $offset;
-					$query= "SELECT * FROM ($query) WHERE ROWNUM <= $limit AND ROWNUM >= $offset";
+					$query= "SELECT * (SELECT \"tbl_ asde\".*, rownum AS \"podndflkjer_iasne\" FROM ($query) AS \"tbl_ asde\" WHERE ROWNUM < $limit) WHERE \"podndflkjer_iasne\" >= $offset";
 				}else{
-					$query= "SELECT * FROM ($query) WHERE ROWNUM <= $limit";
+					$query= "SELECT * FROM ($query) WHERE ROWNUM < $limit";
 				}
 			}else{
-				$query= "SELECT * FROM ($query) WHERE ROWNUM >= $offset";
+				if($sortBy && count($sortBy)){
+					$sort= db_build_order_by($sortBy);
+					$columns[]="row_number() over ($sort) AS \"podndflkjer_iasne\"";
+				}else{
+					$columns[]='rownum AS "podndflkjer_iasne"';
+				}
+				$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
+				$query= "SELECT * FROM ($query) WHERE \"podndflkjer_iasne\" >= $offset";
+				array_pop($columns);
 			}
 		}else{
 			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset);
@@ -678,10 +692,10 @@ class PDOTable{
 		}
 		$stm= $this->db->prepare($query);
 		foreach($data as $k => $v){
-			$stm->bindValue(":PDT_$k", $v, $this->columns[$k]);
+			$stm->bindValue(":PDT_$k", $v, isset($this->columns[$k]) ? $this->columns[$k] : PDO::PARAM_STR);
 		}
 		if($returningClause){
-			$stm->bindParam(':pkey_return', $id);
+			$stm->bindParam(':pkey_return', $id, $this->columns[$this->pkey]);
 		}
 		$success= db_run_query($stm);
 		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
@@ -734,7 +748,7 @@ class PDOTable{
 		}
 		$stm=$this->db->prepare( $query);
 		foreach($data as $k => $v){
-			$stm->bindValue(":PDT_$k", $v, $this->columns[$k]);
+			$stm->bindValue(":PDT_$k", $v, isset($this->columns[$k]) ? $this->columns[$k] : PDO::PARAM_STR);
 		}
 		$success= db_run_query($stm);
 		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
@@ -775,7 +789,7 @@ class PDOTable{
 				break;
 			case 'pgsql':
 				// TODO: Not sure if the keys have to be in order for it to match
-				$query='INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:PDT_'.implode(',:PDT_', $cols).') ON CONFLICT ("'.( is_array($this->pkey) ? implode('","', $this->pkey) : $this->pkey ).'") DO UPDATE SET';
+				$query='INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:PDT_'.implode(',:PDT_', $cols).') ON CONFLICT ('.( is_array($this->pkey) ? implode(',', $this->pkey) : $this->pkey ).') DO UPDATE SET';
 				break;
 		}
 		if(!$query){
@@ -786,12 +800,12 @@ class PDOTable{
 			}
 		}
 		foreach($data as $k => $v){
-			$query.= " \"$k\"=:PDT_$k,";
+			$query.= " $k=:PDT_$k,";
 		}
 		$query=trim($query, ',');
 		$stm= $this->db->prepare( $query);
 		foreach($data as $k=>$v){
-			$stm->bindValue(":PDT_$k", $v, $this->columns[$k]);
+			$stm->bindValue(":PDT_$k", $v, isset($this->columns[$k]) ? $this->columns[$k] : PDO::PARAM_STR);
 		}
 		$success= db_run_query($stm);
 		if($success && !is_array($this->pkey) && !$this->isPkeySet()){

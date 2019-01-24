@@ -411,6 +411,17 @@ function db_query($db, $table, array $columns= null, $where= null, array $sortBy
 	return $stm;
 }
 /**
+ * @param array $orderBy array(array(column1, dir)[, array(column2, dir)[, ...]]) where dir=['ASC'|'DESC']
+ */
+function db_build_order_by(array $orderBy){
+	$query= ' ORDER BY';
+	foreach($orderBy as $sort) {
+		$query.= " $sort[0] $sort[1],";
+	}
+	$query= substr($query, 0, -1);
+	return $query;
+}
+/**
  * Creates a query from the parameters.
  *
  * @param string $table Name of the table
@@ -445,11 +456,7 @@ function db_make_query($table, array $columns= null, WhereBuilder $where= null, 
 		}
 	}
 	if($sortBy != null){
-		$query .= ' ORDER BY';
-		foreach($sortBy as $sort) {
-			$query .= " $sort[0] $sort[1],";
-		}
-		$query = substr($query, 0, -1);
+		$query .= db_build_order_by($sortBy);
 	}
 	if($limit > 0){
 		$query.=" LIMIT $limit";
