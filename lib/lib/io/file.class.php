@@ -52,6 +52,9 @@ class File extends Stream{
 			return mkdir($path,$mask,true);
 		}
 	}
+	public function chmod($newMask){
+		return chmod($this->uri, $newMask);
+	}
 	/**
 	 * Attempts to create the directory structure for this file if it does not exist.
 	 * Context can be set with setContext()
