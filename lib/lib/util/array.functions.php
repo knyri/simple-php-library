@@ -17,4 +17,3 @@ function array_extract_values(array $from, array $keys) {
 		$ret[$key] = $from[$key];
 	return $ret;
 }
-?>

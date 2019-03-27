@@ -17,7 +17,6 @@ function cache_template(array $data,$template,$destination,$php=false){
 		$content=ob_get_clean();
 	}else{
 		$content=file_get_contents($template);
-		$end=strlen($content);
 		$from=array();
 		$to=array();
 		foreach($data as $key=>$value){

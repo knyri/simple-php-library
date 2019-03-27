@@ -100,7 +100,7 @@ function &db_get_connection($forcenew = false, $db = 'default') {
 				$_DB[$db] = new OCIPDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
 				}
 			}else{
-				$_DB[$db] = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password']);
+				$_DB[$db] = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password'], array());
 			}
 			$_DB_OPEN_CON[$db]= true;
 			//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
@@ -122,7 +122,7 @@ function db_make_connection($engine, $host, $dbname, $user, $password){
 			return new PDOOCI\PDO('oci:dbname='. $dbname, $user, $password);
 		}
 	}else{
-		return new PDO($engine .':host='. $host .';dbname=' .$dbname, $user, $password);
+		return new PDO($engine .':host='. $host .';dbname=' .$dbname, $user, $password, array());
 	}
 }
 /**
@@ -489,7 +489,7 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 	unset($values);
 	$res = mysql_query($query,$db);
 	if(!$res){
-		return db_log_error(mysql_error(),$query);
+		return mysql_error();
 	}else{
 		return false;
 	}

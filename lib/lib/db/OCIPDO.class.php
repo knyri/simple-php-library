@@ -208,7 +208,7 @@ class OCIPDO extends PDO{
 				$this->stopListeningForErrors(false);
 				throw $exception;
 			case PDO::ERRMODE_WARNING:
-				$this->originalErrHandler($number, $string, $file, $lastError, $context);
+				$this->originalErrHandler($number, $string, $file, $this->lastError, $context);
 		}
 
 	}
@@ -226,9 +226,6 @@ class OCIPDO extends PDO{
 				$this->lastError= OCIPDO::makeErrorInfo(oci_error($this->resultSet));
 				$this->lastError['query']= $this->stm;
 				$this->lastError['params']= $this->binds;
-				if($message){
-					$this->lastError['extraDetail']= $message;
-				}
 				$this->_setLastError($this->lastError);
 
 			}else{
@@ -579,7 +576,7 @@ class OCIPDOStatement extends PDOStatement{
 				$this->stopListeningForErrors(false);
 				throw $exception;
 			case PDO::ERRMODE_WARNING:
-				$this->originalErrHandler($number, $string, $file, $lastError, $context);
+				$this->originalErrHandler($number, $string, $file, $this->lastError, $context);
 		}
 
 	}
@@ -666,11 +663,11 @@ class OCIPDOStatement extends PDOStatement{
 					$this->stopListeningForErrors(false, 'Error making LOB descriptor');
 					return false;
 				}
-				$lobs[]= array($lob, $value);
+				$lobs[]= array($lob, $val[0]);
 				$value= $lob;
 			}
 			if(!
-					($type === false ? oci_bind_by_name($resultSet, $param, $val[0]) : oci_bind_by_name($resultSet, $param, $val[0], -1, $type))
+				($type === false ? oci_bind_by_name($resultSet, $param, $val[0]) : oci_bind_by_name($resultSet, $param, $val[0], -1, $type))
 			){
 // 				logit('bind by name failed!');
 // 				logit($this->db->_errorInfo());

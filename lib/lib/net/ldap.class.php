@@ -189,10 +189,10 @@ class Ldap {
 	 * @param int $deref
 	 * @return boolean|LdapResult
 	 */
-	function search($base_dn, $filter, $attributes= null, $attrsonly= null, $sizelimit= null, $timelimit= null, $deref= null){
+	function search($base_dn, $filter, $attributes= false, $attrsonly= null, $sizelimit= false, $timelimit= false, $deref= false){
 		$this->listenForErrors();
 		if($attributes){
-			if($attrsonly){
+			if($attrsonly === null){
 				if($sizelimit){
 					if($timelimit){
 						if($deref){
@@ -271,7 +271,7 @@ class LdapResult {
 	$errcode,
 	$matcheddn,
 	$errmsg,
-		$referrals,
+		$referrals= array(),
 		$sizeLimitHit
 	;
 	/**
@@ -284,12 +284,23 @@ class LdapResult {
 		$this->result= $result;
 		$this->sizeLimitHit= $hasMoreResults;
 	}
+	/**
+	 * True if the max number of entries was reached
+	 * @return boolean
+	 */
 	function sizeLimitHit(){
 		return $this->sizeLimitHit;
 	}
+	/**
+	 * ldap_count_entries()
+	 * @return number
+	 */
 	function countEntries(){
 		return ldap_count_entries($this->con, $this->result);
 	}
+	/**
+	 * @return boolean|LdapResultEntry
+	 */
 	function firstEntry(){
 		$entry= ldap_first_entry($this->con, $this->result);
 		if($entry === false){
@@ -297,25 +308,50 @@ class LdapResult {
 		}
 		return new LdapResultEntry($this->con, $entry);
 	}
+	/**
+	 * ldap_get_entries()
+	 * @return array
+	 */
 	function getEntries(){
 		return ldap_get_entries($this->con, $this->result);
 	}
 	/**
 	 * Parse result meta-data
+	 * Fetches
+	 * Error code
+	 * Matched DN
+	 * Error message
+	 * Referrals
 	 * @return boolean
 	 */
 	function parse(){
 		return ldap_parse_result($this->con, $this->result, $this->errcode, $this->matcheddn, $this->errmsg, $this->referrals);
 	}
+	/**
+	 * Call parse() first
+	 * @return array
+	 */
 	function getParsedReferrals(){
 		return $this->referrals;
 	}
+	/**
+	 * Call parse() first
+	 * @return int
+	 */
 	function getParsedErrorCode(){
 		return $this->errcode;
 	}
+	/**
+	 * Call parse() first
+	 * @return string
+	 */
 	function getParsedErrorMessage(){
 		return $this->errmsg;
 	}
+	/**
+	 * Call parse() first
+	 * @return string
+	 */
 	function getParsedMatchedDn(){
 		return $this->matcheddn;
 	}
@@ -326,9 +362,17 @@ class LdapResult {
 	function close(){
 		return ldap_free_result($this->result);
 	}
+	/**
+	 * ldap_error()
+	 * @return string
+	 */
 	function getError(){
 		return ldap_error($this->con);
 	}
+	/**
+	 * ldap_errno()
+	 * @return number
+	 */
 	function getErrorNum(){
 		return ldap_errno($this->con);
 	}
@@ -421,6 +465,10 @@ class LdapResultEntry extends LdapObject{
 		return new LdapResultEntry($this->con, $entry);
 	}
 
+	/**
+	 * @param string $attribute
+	 * @return array
+	 */
 	function getValues($attribute){
 		return ldap_get_values($this->con, $this->entry, $attribute);
 	}
@@ -431,12 +479,21 @@ class LdapResultEntry extends LdapObject{
 	function getValuesBinary($attribute){
 		return ldap_get_values_len($this->con, $this->entry, $attribute);
 	}
+	/**
+	 * @return string
+	 */
 	function firstAttribute(){
 		return ldap_first_attribute($this->con, $this->entry);
 	}
+	/**
+	 * @return string
+	 */
 	function nextAttribute(){
 		return ldap_next_attribute($this->con, $this->entry);
 	}
+	/**
+	 * @return array
+	 */
 	function getAttributes(){
 		return ldap_get_attributes($this->con, $this->entry);
 	}
@@ -491,7 +548,7 @@ class LdapAttributes {
 	 * @return mixed
 	 */
 	function getKey($idx){
-		return $this->attrs[$key];
+		return $this->attrs[$idx];
 	}
 	/**
 	 * Gets the attribute at the n-th index or false
@@ -564,7 +621,7 @@ class LdapAttribute{
 	 * @return boolean|string
 	 */
 	public function get($idx){
-		if($idx < 0 || $idx > $this->length()){
+		if($idx < 0 || $idx >= $this->length()){
 			return false;
 		}
 		return $this->val[$idx];

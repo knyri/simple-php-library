@@ -120,7 +120,7 @@ class CSVReader {
 			if (!$this->cache_rows) return false;
 			if ($row < $this->ROW_COUNT && $row>0)
 				return array_combine($this->HEADERS, $this->DATA[$row-1]);
-			while ($ROW_COUNT < $row) {
+			while ($this->ROW_COUNT < $row) {
 				if (!get_row()) return false;
 			}
 			return array_combine($this->HEADERS, $this->DATA[$row-1]);

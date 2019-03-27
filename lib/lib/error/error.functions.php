@@ -113,7 +113,7 @@ function shutdown(){
 	$error = error_get_last();
 
 	if($error && ($error['type'] & E_FATAL)){
-		default_error_handler($error['type'], $error['message'], $error['file'], $error['line']);
+		default_error_handler($error['type'], $error['message'], $error['file'], $error['line'], null);
 	}
 
 }

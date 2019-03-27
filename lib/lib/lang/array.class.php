@@ -210,7 +210,7 @@ class ArrayObj{
 		return $o;
 	}
 	/**
-	 * 
+	 *
 	 * @param mixed $for
 	 * @param boolean $strict
 	 * @return mixed
@@ -365,7 +365,7 @@ class ArrayObj{
 	 * @param string $sort
 	 * @param boolean $reverse
 	 * @return array The original internal array
-	 * @see sort and rsort 
+	 * @see sort and rsort
 	 */
 	public function sort($sort= SORT_REGULAR, $reverse= false){
 		$o= $this->arr;

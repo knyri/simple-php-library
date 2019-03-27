@@ -79,4 +79,3 @@ function file_upload_has_error($name) {
 		return isset($_FILES[$name]) && $_FILES[$name]['error']!=0;//UPLOAD_ERR_OK;
 	}
 }
-?>

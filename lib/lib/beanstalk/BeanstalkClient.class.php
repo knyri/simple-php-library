@@ -109,7 +109,6 @@ class BeanstalkClient {
 		}else{
 			$data= substr($this->readBuffer, $this->readPos);
 			$read= strlen($data);
-			$part;
 			$this->clearBuffer();
 			while($read < $len){
 				$part= $this->con->read($len - $read);

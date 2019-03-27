@@ -96,9 +96,10 @@ class PDOTable{
 			case self::OP_UPDATE:
 				$change= clone $this->data;
 				$this->data->discardChanges();
-				$err= $this->update();
-				$this->data= $data;
-				return $err;
+				if(!($success= $this->update())){
+					$this->data= $change;
+				}
+				return $success;
 			case self::OP_LOAD:
 			case self::OP_NONE:
 				return false;
@@ -110,7 +111,7 @@ class PDOTable{
 	 * @param string $table
 	 * @param array $columns column=>columnType(PDO::PARAM_*)
 	 * @param string|array $pkey The primary key(s) for the table
-	 * @param resource $db
+	 * @param PDO $db
 	 * @param bool $trackChanges (false)
 	 */
 	public function __construct($table, array $columns, $pkey, $db, $trackChanges= false){
@@ -528,9 +529,7 @@ class PDOTable{
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
-		if($where == null){
-			$where= $this->getWherePkey();
-		}
+		$where= $this->getWherePkey();
 		$query= 'SELECT DISTINCT 1 FROM '. $this->table . $where->toString();
 		$stm= db_prepare($this->db, $query);
 		if(db_run_query($stm, $where->getValues())){

@@ -240,7 +240,7 @@ class CsvReader {
 			if (!$this->cache_rows) return false;
 			if ($row < $this->ROW_COUNT && $row>0)
 				return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];
-			while ($ROW_COUNT < $row) {
+			while ($this->ROW_COUNT < $row) {
 				if (!get_row()) return false;
 			}
 			return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];
@@ -486,7 +486,7 @@ class CsvReader2 {
 			if (!$this->cache_rows) return false;
 			if ($row < $this->ROW_COUNT && $row>0)
 				return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];
-			while ($ROW_COUNT < $row) {
+			while ($this->ROW_COUNT < $row) {
 				if (!get_row()) return false;
 			}
 			return $this->fetch_type===CsvReader::FETCH_ASSOC?array_combine($this->HEADERS, array_combine($this->HEADERS, $this->DATA[$row-1])):$this->DATA[$row-1];

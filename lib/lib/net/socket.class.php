@@ -161,7 +161,7 @@ class Socket{
 		if($len === false){
 			$len= strlen($buf);
 		}
-		return socket_send($buf,$len,$flags);
+		return socket_send($this->socket, $buf, $len, $flags);
 	}
 	/**
 	 * @param string $buf

@@ -249,7 +249,7 @@ class HTML_Header{
 	 */
 	public function output(){
 		$ending=' />';
-		echo "<head><title>$title</title>";
+		echo "<head><title>{$this->title}</title>";
 		foreach($this->meta as $metaE){
 			echo '<meta '.combine_attrib($metaE).$ending;
 		}
@@ -259,7 +259,7 @@ class HTML_Header{
 			if(!is_array($value)){
 				echo "<link $key=\"$value\"$ending";
 			}else{
-				echo '<link '.combine_attrib($link).$ending;
+				echo '<link '.combine_attrib($this->link).$ending;
 			}
 		}
 		unset($this->link);
