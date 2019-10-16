@@ -22,6 +22,8 @@ class CsvWriter {
 		$this->escape = $escape . $enclosure;
 		if(!is_string($eol)){
 			$this->eol= PHP_EOL;
+		}else{
+			$this->eol= $eol;
 		}
 	}
 	public function open(){
@@ -44,19 +46,31 @@ class CsvWriter {
 
 	public function writeLine($v= false){
 		if($v !== false){
-			$this->write($v);
+			if(is_array($v) || func_num_args() == 1){
+				$this->write($v);
+			}else{
+				$this->write(func_get_args());
+			}
 		}
 		$this->file->write($this->eol);
 		$this->ROW_COUNT++;
 		$this->onNewLine= true;
 	}
 	public function write($v){
-		if(is_array($v)){
-			foreach($v as $val){
-				$this->write($val);
+		if(func_num_args() > 1){
+			$args= func_get_args();
+			foreach($args as $val){
+				$this->writeValue($val);
 			}
-			return;
+		}else if(is_array($v)){
+			foreach($v as $val){
+				$this->writeValue($val);
+			}
+		}else{
+			$this->writeValue($v);
 		}
+	}
+	private function writeValue($v){
 		if($this->onNewLine){
 			$this->onNewLine= false;
 		}else{
