@@ -203,5 +203,38 @@ class File extends Stream{
 		}
 		return readfile($this->uri,$this->use_include_path);
 	}
+	private static function _removeDirectory($path){
+		$dir= opendir($path);
+		if($dir === false){
+			return false;
+		}
+		while(false !== ($file= readdir($dir))){
+			if($file == '.' || $file == '..'){
+				continue;
+			}
+			$file= $path . DIRECTORY_SEPARATOR . $file;
+			if(is_dir($file)){
+				if(!self::_removeDirectory($file)){
+					return false;
+				}
+			}elseif(!unlink($file)){
+				return false;
+			}
+		}
+		closedir($dir);
+		return rmdir($path);
+	}
+	/**
+	 * Recursively iterates and deletes the directory tree.
+	 * @param string $path
+	 * @return boolean If any file or sub-folder can't be deleted.
+	 */
+	public static function removeDirectory($path){
+		$path= realpath($path);
+		if($path === false){
+			return false;
+		}
+		return self::_removeDirectory($path);
+	}
 
 }
