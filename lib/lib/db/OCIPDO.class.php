@@ -103,11 +103,20 @@ class OCIPDO extends PDO{
 	}
 
 	public function query($statement){
-		if(count(func_get_args()) > 1){
-			throw new PDOException("Multiple arguments are not currently supported");
-		}
 		$ret= new OCIPDOStatement($this, $statement);
-		return $ret->execute() ? $ret : false;
+		if($ret->execute()){
+			$argc= func_num_args();
+			if($argc > 1){
+				if($argc > 2){
+					$args= func_get_args();
+					call_user_method_array('setFetchMode', $ret, array_slice($args, 1, $argc - 1, false));
+				}else{
+					$ret->setFetchMode(func_get_arg(1));
+				}
+		}
+			return $ret;
+		}
+		return false;
 	}
 	public function getAttribute($attribute){
 		switch($attribute){
@@ -168,7 +177,7 @@ class OCIPDO extends PDO{
 		return false;
 	}
 	public function lastInsertId($name= null){
-		self::makeErrorAry('IM001', '');
+		self::makeErrorAry('IM001', array('code'=>null, 'message'=>'Not supported'));
 		return false;
 	}
 
