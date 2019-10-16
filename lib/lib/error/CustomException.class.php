@@ -10,6 +10,7 @@
  */
 interface IException{
 	/* Protected methods inherited from Exception class */
+	public function getPrevious();	// previous exception
 	public function getMessage();		// Exception message
 	public function getCode();			// User-defined Exception code
 	public function getFile();			// Source filename
@@ -33,11 +34,11 @@ abstract class CustomException extends Exception implements IException{
 	protected $file;							// Source filename of exception
 	protected $line;							// Source line of exception
 	private $trace;								// Unknown
-	public function __construct($message = null, $code = 0){
+	public function __construct($message = null, $code = 0, Throwable $previous= NULL){
 		if (!$message) {
 			throw new $this('Unknown '. get_class($this));
 		}
-		parent::__construct($message, $code);
+		parent::__construct($message, $code, $previous);
 	}
 	public function __toString(){
 		return get_class($this) . " '{$this->message}' in {$this->file}({$this->line})\n"."{$this->getTraceAsString()}";
