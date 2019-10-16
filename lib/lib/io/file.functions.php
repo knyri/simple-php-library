@@ -25,45 +25,6 @@ function formatBytes($b,$p=null){
 			$c= $k- 1;
 	return number_format($b/ $div[$c],2) ." ". $units[$c];
 }
-/**
- * Lists the files in the supplied directory. One file per line.
- * Creates a direct link.
- * @param string $dir Target directory
- * @param string $urlpath url directory to access these files
- * @param boolean $usecounter
- */
-function listFiles($dir= '.',$urlpath= '/', $usecounter= false){
-	$pdir= opendir($dir);
-	$files= array();
-	while($file= readdir($pdir)){
-		if(!is_dir($dir.$file))
-			$files[]= $file;
-	}
-	sort($files);?>
-<table>
-	<thead>
-	<tr><th>icon</th><th>name</th><th>size</th></tr>
-	<tbody><?php
-	foreach($files as $file) {?>
-			<tr>
-				<td><?php
-				$pos = strrpos($file, '.');
-				if($pos===false)
-					echo " ";
-				else{
-					?><img src="<?php echo URLPATH?>i/ico/file/<?php echo strtolower(substr($file, $pos+1)); ?>.png" alt=""><?php
-				}
-				?></td>
-				<td>
-					<a href="<?php echo ($usecounter?URLPATH.'downloadcounter.php?url=':'').$urlpath.$file; ?>"><?php echo $file; ?></a>
-				</td>
-				<td><?php echo formatBytes(filesize($dir.$file)); ?></td>
-		</tr><?php
-	}
-	?>
-	</table>
-	<?php
-}
 function file_extention($file){
 	$dot=strrpos($file,'.');
 	if(is_bool($dot))
@@ -211,4 +172,88 @@ function getHttpContext($method='GET',array $headers=null,$content=null){
 	}
 	if($content)$ret['content']=$content;
 	return array('http'=>$ret);
+}
+
+
+/**
+ * Adds the folder's contents and any sub-folder's contents to the ZIP archive
+ * @param string $baseDir Path to the folder to ZIP
+ * @param unknown $output Path to the output archive
+ * @return boolean False on failure
+ */
+function zipDir($baseDir, $output){
+
+	$zip= new ZipArchive();
+	if(true !== $zip->open($output, ZipArchive::CREATE | ZipArchive::OVERWRITE)){
+		trigger_error('Failed to create a ZIP archive at ' . $output, E_WARNING);
+		return false;
+	}
+
+	// replace all slashes with single '/'
+	$baseDir= preg_replace('/[\/]{2,}/', '/', $baseDir . '/');
+
+	$dirs= array();
+
+	$dh= opendir($baseDir);
+	if($dh === false){
+		$zip->close();
+		unlink($output);
+		trigger_error('Failed to open the folder for reading: ' . $baseDir, E_WARNING);
+		return false;
+	}
+	// Loop through base folder
+	while($file= readdir($dh)){
+		if($file != '.' && $file != '..'){
+			if(is_file($file)){
+				if(!$zip->addFile($baseDir . $file, $file)){
+					$zip->close();
+					unlink($output);
+					trigger_error('Failed to add file to the archive: ' . $baseDir . $file, E_WARNING);
+					return false;
+				}
+			}else if(is_dir($file)){
+				// add file to list of directories to scan
+				$dirs[]= $file . '/';
+			}
+		}
+	}
+	closedir($dh);
+
+	while(count($dirs)){
+		// get the next folder to scan
+		$dir= array_shift($dirs);
+		// add it to the zip file
+		if(!$zip->addEmptyDir($dir)){
+			$zip->close();
+			unlink($output);
+			trigger_error('Failed to add folder to the archive: ' . $dir, E_WARNING);
+			return false;
+		}
+
+		$dh= opendir($baseDir . $dir);
+		if($dh === false){
+			$zip->close();
+			unlink($output);
+			trigger_error('Failed to open the folder for reading: ' . $baseDir . $dir, E_WARNING);
+			return false;
+		}
+		while($file= readdir($dh)){
+			if($file != '.' && $file != '..'){
+				if(is_file($file)){
+					if(!$zip->addFile($baseDir . $dir . $file, $dir . $file)){
+						$zip->close();
+						unlink($output);
+						trigger_error('Failed to add file to the archive: ' . $baseDir . $dir . $file, E_WARNING);
+						return false;
+					}
+				}elseif(is_dir($file)){
+					$dirs[]= $dir . $file . "/";
+				}
+			}
+		}
+		closedir($dh);
+	}
+
+	$zip->close();
+	return true;
 }
