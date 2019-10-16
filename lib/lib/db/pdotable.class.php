@@ -14,22 +14,22 @@ class PDOTable{
 		$customTypeColumns= array(),
 		$customTypes= array(),
 		$data,
-		$dataset=null,
-		$pkey=null,
-		$db=null,
-		$rowCountstm=null,
-		$saveopstm=null,
-		$plainloadall=null,
-		$trackChanges=false,
-		$lastOperation=self::OP_NONE,
+		$dataset= null,
+		$pkey= null,
+		$db= null,
+		$rowCountstm= null,
+		$saveopstm= null,
+		$plainloadall= null,
+		$trackChanges= false,
+		$lastOperation= self::OP_NONE,
 		$lastError= false,
 		$doneIterating= true;
 	const
-	OP_NONE= 0,
-	OP_LOAD= 1,
-	OP_INSERT= 2,
-	OP_UPDATE= 3,
-	OP_DELETE= 4;
+		OP_NONE= 0,
+		OP_LOAD= 1,
+		OP_INSERT= 2,
+		OP_UPDATE= 3,
+		OP_DELETE= 4;
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
 	 * By default, it will not track changes.
@@ -57,27 +57,33 @@ class PDOTable{
 	/**
 	 * Clears the value stored for $k
 	 * @param string $k
+	 * @return this
 	 */
 	public function uset($k){
 		$this->data->uset($k);
+		return $this;
 	}
 	/**
-	 * Merges the changes with the main array and clears the changes.
+	 * Merges the changes with the main array and clears the changes. Change tracking must be enabled.
 	 * Does NOT save the changes to the database.
+	 * @return this
 	 */
 	public function mergeChanges(){
 		if($this->trackChanges){
 			$this->data->mergeChanges();
 		}
+		return $this;
 	}
 	/**
 	 * Forgets any changes to the model if set to track changes.
 	 * Will NOT undo changes commited to the database by calling save().
+	 * @return this
 	 */
 	public function forgetChanges(){
 		if($this->trackChanges){
 			$this->data->discardChanges();
 		}
+		return $this;
 	}
 	/**
 	 * THIS IS NOT A CALL TO ROLLBACK.
@@ -105,6 +111,7 @@ class PDOTable{
 				return false;
 				break;
 		}
+		return false;
 	}
 	/**
 	 * Enter description here ...
@@ -126,7 +133,7 @@ class PDOTable{
 			if($this->customTypes[$type]){
 				$this->customTypeColumns[$name]= $type;
 				$this->columns[$name]= $this->customTypes[$type][0];
-	}
+			}
 		}
 	}
 	/**
@@ -167,19 +174,35 @@ class PDOTable{
 	 * Set the value for $k
 	 * @param string $k
 	 * @param mixed $v
+	 * @return this
 	 */
 	public function set($k, $v){
 		$this->data->set($k, $v);
 		return $this;
 	}
 	/**
-	 * Sets all the values
+	 * Sets all the values from the array.
 	 * @param array $map Map of values to set
+	 * @return this
 	 */
 	public function setAll(array $map){
 		foreach($map as $k => $v){
 			$this->data->set($k, $v);
 		}
+		return $this;
+	}
+	/**
+	 * Sets all the values for columns defined
+	 * @param array $map Map of values to set
+	 * @return this
+	 */
+	public function setAllDefined(array $map){
+		foreach($map as $k => $v){
+			if(array_key_exists($k, $this->columns)){
+				$this->data->set($k, $v);
+			}
+		}
+		return $this;
 	}
 	/**
 	 * Gets the number of rows in the table
@@ -188,7 +211,7 @@ class PDOTable{
 	public function getTotalRows(){
 		if($this->rowCountstm == null){
 			$this->rowCountstm= $this->db->prepare('SELECT COUNT(*) FROM '.$this->table);
-		}
+			}
 		if(!db_run_query($this->rowCountstm)){
 			$this->lastError= $this->rowCountstm->errorInfo();
 			return false;
@@ -293,9 +316,14 @@ class PDOTable{
 		if($id != null){
 			if(is_array($this->pkey)){
 				if(!is_array($id)){
-					throw new IllegalArgumentException('Primary key is an array. Supplied IDs must also be an array.');
+					throw new IllegalArgumentException('Primary key is an array. Supplied ID is not an array.');
 				}elseif(count($this->pkey) != count($id)){
-					throw new IllegalArgumentException('Key count('.count($this->pkey).') and ID count('.count($id).') are not equal');
+					foreach($this->pkey as $v){
+						if(!array_key_exists($v, $id)){
+							throw new IllegalArgumentException("Key column $v is missing from the supplied array.");
+						}
+						$where->andWhere($v, '=', $id[$v]);
+					}
 				}else{
 					$keys= array_combine($this->pkey, $id);
 					foreach($keys as $k => $v){
@@ -304,9 +332,13 @@ class PDOTable{
 				}
 			}else{
 				if(is_array($id)){
-					throw new IllegalArgumentException('Primary key is not an array. Supplied IDs must also not be an array.');
+					if(!array_key_exists($this->pkey, $id)){
+						throw new IllegalArgumentException('Primary key is not in the supplied array');
+					}
+					$where->andWhere($this->pkey, '=', $id[$this->pkey]);
+				}else{
+					$where->andWhere($this->pkey, '=', $id);
 				}
-				$where->andWhere($this->pkey, '=', $id);
 			}
 		}else{//id==null
 			if(!$this->isPkeySet()){
@@ -400,7 +432,7 @@ class PDOTable{
 		if(db_run_query($stm)){
 			$this->dataset= $stm;
 		}else{
-			$this->lastError= $this->plainloadall->errorInfo();
+			$this->lastError= $stm->errorInfo();
 		}
 		$this->lastOperation= self::OP_LOAD;
 		return $this->dataset != false;
@@ -448,7 +480,7 @@ class PDOTable{
 	 * @param int $offset (0)
 	 * @return boolean True if successful; even if there are 0 results
 	 */
-	public function find(array $columns = null,$where = null,array $sortBy = null, $groupBy = null, $having = null,$limit=0,$offset=0){
+	public function find(array $columns= null, $where= null, array $sortBy= null, $groupBy= null, $having= null, $limit= 0, $offset= 0){
 		if(!$this->beforeFind()){
 			return false;
 		}
@@ -469,7 +501,7 @@ class PDOTable{
 			// rownum and row_number() are 1-based so we add 1 to each to adjust
 			if($limit){
 				$limit++;
-			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
+				$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having);
 				if($offset){
 					$offset++;
 					$limit= $limit + $offset;
@@ -610,7 +642,7 @@ class PDOTable{
 		if(!$this->beforeSave()){
 			return false;
 		}
-		$success=false;
+		$success= false;
 		if($this->saveShouldUpdate()){
 			$success= $this->update();
 		}else{
@@ -643,14 +675,21 @@ class PDOTable{
 		$query= 'UPDATE '.$this->table.'  SET ';
 		$update= $this->data->copyTo(array());
 		$data= array();
-		foreach($update as $k => $v){
-			$placeholder= $this->getPlaceholder($k);
-			$query.= "$k=$placeholder,";
-			$data[':PDT_'.$k]= $v;
-		}
 		if($this->trackChanges()){
+			foreach($update as $k => $v){
+				if($this->data->hasChanged($k)){
+					$placeholder= $this->getPlaceholder($k);
+					$query.= "$k=$placeholder,";
+					$data[':PDT_'.$k]= $v;
+				}
+			}
 			$where= $this->getOldPkey();
 		}else{
+			foreach($update as $k => $v){
+				$placeholder= $this->getPlaceholder($k);
+				$query.= "$k=$placeholder,";
+				$data[':PDT_'.$k]= $v;
+			}
 			$where= $this->getPkey();
 		}
 		$query= substr($query,0,-1) . $where->toString();
@@ -699,10 +738,10 @@ class PDOTable{
 		$success= db_run_query($stm);
 		if($success && !is_array($this->pkey) && !$this->isPkeySet()){
 			if(!$returningClause){
-			$id= $this->db->lastInsertId();
-			if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
-				$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
-			}
+				$id= $this->db->lastInsertId();
+				if($id == 0 && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == "pgsql"){
+					$id= $this->db->lastInsertId($this->table . '_' . $this->pkey . '_seq');
+				}
 			}
 			$this->data->set($this->pkey, $id);
 		}
@@ -730,6 +769,7 @@ class PDOTable{
 		if(!$this->beforeInsert()){
 			return false;
 		}
+
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
 		$manualCheck= false;
@@ -745,7 +785,7 @@ class PDOTable{
 				$manualCheck= true;
 				$query= 'INSERT INTO '.$this->table.' ('.implode(',', $cols).') VALUES (:PDT_'.implode(',:PDT_', $cols).')';
 		}
-		$stm=$this->db->prepare( $query);
+		$stm= $this->db->prepare($query);
 		foreach($data as $k => $v){
 			$stm->bindValue(":PDT_$k", $v, isset($this->columns[$k]) ? $this->columns[$k] : PDO::PARAM_STR);
 		}
@@ -801,9 +841,9 @@ class PDOTable{
 		foreach($data as $k => $v){
 			$query.= " $k=:PDT_$k,";
 		}
-		$query=trim($query, ',');
-		$stm= $this->db->prepare( $query);
-		foreach($data as $k=>$v){
+		$query= trim($query, ',');
+		$stm= $this->db->prepare($query);
+		foreach($data as $k => $v){
 			$stm->bindValue(":PDT_$k", $v, isset($this->columns[$k]) ? $this->columns[$k] : PDO::PARAM_STR);
 		}
 		$success= db_run_query($stm);
