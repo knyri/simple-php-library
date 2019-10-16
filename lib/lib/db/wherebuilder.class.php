@@ -184,9 +184,21 @@ class WhereBuilder{
 
 				break;
 			default:
-				$this->values[$this->prefix . $this->curIdx]= $args[2];
-				$this->where.= "$args[0]$args[1]" . $this->prefix . $this->curIdx;
+				if($args[2] === null && ($args[1] == '=' || $args[1] == '!=')){
+					if($args[1] == '!=' && $args[3]){
+						// code assumes the equality is '=' so negate the negation if we have a double negative
+						$args[3]= false;
+					}
+					if($args[3]){
+						$this->where.= ' '. $args[0] .' IS NOT NULL';
+					}else{
+						$this->where.= ' '. $args[0] .' IS NULL';
+					}
+				}else{
+					$this->values[$this->prefix . $this->curIdx]= $args[2];
+					$this->where.= "$args[0]$args[1]" . $this->prefix . $this->curIdx;
 				//echo $this->prefix .$this->curIdx .'====='. $this->values[$this->prefix .$this->curIdx].PHP_EOL;
+				}
 		}
 	}
 	/**
