@@ -6,6 +6,7 @@
 
 
 PackageManager::requireClassOnce('io.cachepart');
+PackageManager::requireFunctionOnce('lang.string');
 
 /**
  * For caching entire files. Automatically determines whether to use gzip
@@ -18,17 +19,18 @@ class CacheFile extends CachePart{
 	private static $gz=null;
 	private $etag;
 	/**
-	 * @param string $file '.gz' is appended to the file if the zlib extension is found
+	 * @param string $file '.gz' is appended to the file if the zlib extension is found, the client supports it and $gzip is not specified or set to true
 	 * @param number $ttl Time to live in seconds
 	 * @param string $etag Optional. Is generated using md5() on the file's name if not set.
+	 * @param boolean $gzip Optional. Whether to allow gzip encoding or not
 	 */
-	public function __construct($file,$ttl,$etag=null){
+	public function __construct($file, $ttl, $etag= null, $gzip= 0){
 		if(self::$gz == null){
 			if(!isset($_SERVER['HTTP_ACCEPT_ENCODING']) || strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== false){
 				self::$gz= extension_loaded('zlib');
 			}
 		}
-		if(self::$gz){
+		if(self::$gz && ($gzip === 0 || $gzip === true)){
 			$file.='.gz';
 		}
 		parent::__construct($file,$ttl);
@@ -129,7 +131,7 @@ class CacheFile extends CachePart{
 		header('Content-Length: '.filesize($this->uri),true);
 		header('ETag: "'.$this->etag.'"');
 		header('Vary: Accept-Encoding');
-		if(self::$gz){
+		if(self::$gz && str_ends_with($this->uri, '.gz')){
 			header('Content-Encoding: gzip',true);
 		}
 		header('Expires: '.gmdate('D, d M Y H:i:s',$modTime+$this->ttl) .' GMT',true);

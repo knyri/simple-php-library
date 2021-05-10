@@ -92,6 +92,9 @@ class ChangeTrackingPropertyList extends PropertyList{
 			unset($this->data[$key]);
 		}
 	}
+	public function hasChanges(){
+		return count($this->changes) > 0 || count($this->cleared) > 0;
+	}
 	public function hasChanged($key){
 		return array_key_exists($key, $this->changes) || array_key_exists($key, $this->cleared);
 	}
@@ -129,7 +132,14 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @param mixed $v
 	 */
 	public function set($k,$v){
-		if(array_key_exists($k,$this->data) && $this->data[$k]==$v){
+		if(
+			// exists
+			array_key_exists($k, $this->data) &&
+			// "equal"
+			$this->data[$k] == $v &&
+			// isnull == isnull
+			(null === $this->data[$k]) == (null === $v)
+		){
 			unset($this->changes[$k]);
 			return;
 		}
@@ -193,6 +203,8 @@ class ChangeTrackingPropertyList extends PropertyList{
 	 * @param array $list $key=>$value list
 	 */
 	public function setAll(array $list){
-		$this->changes=array_merge($this->changes,$list);
+		foreach($list as $k=>$v){
+			$this->set($k, $v);
+		}
 	}
 }

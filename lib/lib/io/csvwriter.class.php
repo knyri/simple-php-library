@@ -27,6 +27,9 @@ class CsvWriter {
 		}
 	}
 	public function open(){
+		if(!$this->file->exists()){
+			$this->file->ensureDir();
+		}
 		$this->ROW_CCOUNT= 0;
 		return $this->file->open('w+');
 	}

@@ -67,7 +67,7 @@ function db_debug($toggle=null){
  *         'user'=> 'user',
  *         'password'=> 'password'
  *    Host is optional for OCI.
- * @return Ambigous <NULL, resource> Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
+ * @return NULL|PDO Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
 function &db_get_connection($forcenew = false, $db = 'default') {
 	global $_DB, $_DB_OPEN_CON;
@@ -607,7 +607,7 @@ function db_exists($db,$table, $conditions=null){
  * @param array $params (null)
  * @return boolean The success
  */
-function db_run_query($stm, array $params= null){
+function db_run_query($stm, array $params= null, array $types= null){
 	DBProfile::query('run');
 	if(db_debug()){
 		echo '[['.db_stm_to_string($stm, $params).']]'."\n";
@@ -616,7 +616,22 @@ function db_run_query($stm, array $params= null){
 // 	if ($stm->execute($params) === false && $stm->errorCode() != '00000') {
 // 		return db_log_error($stm, $params);
 // 	}
-	if($stm->execute($params) === false){
+	if($types != null){
+		foreach($params as $i=>$v){
+			if(!array_key_exists($i, $types) || is_string($types[$i]) || $types[$i] === null){
+// 				logit("$i " . var_dump_ret($v) . " default(string)");
+				$stm->bindValue($i, $v);
+			}else{
+// 				logit("$i " . var_dump_ret($v) . " {$types[$i]}");
+				$stm->bindValue($i, $v, $types[$i]);
+			}
+		}
+	}else if($params){
+		foreach($params as $i=>$v){
+			$stm->bindValue($i, $v);
+		}
+	}
+	if($stm->execute() === false){
 		db_log_error($stm, $params);
 		return false;
 	}

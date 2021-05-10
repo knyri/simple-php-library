@@ -292,13 +292,15 @@ class LdapResult {
 		return $this->sizeLimitHit;
 	}
 	/**
-	 * ldap_count_entries()
+	 * Number of entries in the result
 	 * @return number
+	 * @see ldap_count_entries()
 	 */
 	function countEntries(){
 		return ldap_count_entries($this->con, $this->result);
 	}
 	/**
+	 * First entry in this result or false
 	 * @return boolean|LdapResultEntry
 	 */
 	function firstEntry(){
@@ -309,8 +311,9 @@ class LdapResult {
 		return new LdapResultEntry($this->con, $entry);
 	}
 	/**
-	 * ldap_get_entries()
+	 * An array of entry arrays or false
 	 * @return array
+	 * @see ldap_get_entries()
 	 */
 	function getEntries(){
 		return ldap_get_entries($this->con, $this->result);
@@ -323,6 +326,7 @@ class LdapResult {
 	 * Error message
 	 * Referrals
 	 * @return boolean
+	 * @see ldap_parse_result()
 	 */
 	function parse(){
 		return ldap_parse_result($this->con, $this->result, $this->errcode, $this->matcheddn, $this->errmsg, $this->referrals);
@@ -356,8 +360,9 @@ class LdapResult {
 		return $this->matcheddn;
 	}
 	/**
-	 * ldap_free_result(...)
+	 * Frees the resources used by the result
 	 * @return boolean
+	 * @see ldap_free_result()
 	 */
 	function close(){
 		return ldap_free_result($this->result);
@@ -409,10 +414,20 @@ class LdapObject{
 	function explodeDn($valuesOnly= false){
 		return ldap_explode_dn($this->dn, $valuesOnly ? 1 : 0);
 	}
-	function add($entry){
+	/**
+	 * @param array $entry An array that specifies the information about the entry. The values in the entries are indexed by individual attributes. In case of multiple values for an attribute, they are indexed using integers starting with 0.
+	 * @return boolean
+	 * @see ldap_add()
+	 */
+	function add(array $entry){
 		return ldap_add($this->con, $this->dn, $entry);
 	}
-	function modify($entry){
+	/**
+	 * @param array $entry
+	 * @return boolean
+	 * @see ldap_modify()
+	 */
+	function modify(array $entry){
 		return ldap_modify($this->con, $this->dn, $entry);
 	}
 	function rename($newrdn, $newparent, $deleteold){
@@ -436,7 +451,9 @@ class LdapObject{
 class LdapResultEntry extends LdapObject{
 	private
 	$entry,
-	$reuse= true;
+		$reuse= true,
+		$attr= false
+	;
 	function __construct($con, $entry){
 		parent::__construct($con, ldap_get_dn($con, $entry));
 		$this->entry= $entry;
@@ -460,48 +477,74 @@ class LdapResultEntry extends LdapObject{
 		if($this->reuse){
 			$this->entry= $entry;
 			$this->dn = ldap_get_dn($this->con, $entry);
+			$this->attr= false;
 			return $this;
 		}
 		return new LdapResultEntry($this->con, $entry);
 	}
 
 	/**
+	 * @param string $name
+	 * @return boolean
+	 */
+	function hasAttribute($name){
+		$attr= $this->getAttributes();
+		return $attr && array_key_exists($name, $attr);
+	}
+
+	/**
 	 * @param string $attribute
-	 * @return array
+	 * @return array an array of values for the attribute on success and false on error. The number of values can be found by indexing "count" in the resultant array. Individual values are accessed by integer index in the array. The first index is 0.
+	 * LDAP allows more than one entry for an attribute, so it can, for example, store a number of email addresses for one person's directory entry all labeled with the attribute "mail" return_value["count"] = number of values for attribute return_value[0] = first value of attribute return_value[i] = ith value of attribute
 	 */
 	function getValues($attribute){
 		return ldap_get_values($this->con, $this->entry, $attribute);
 	}
 	/**
-	 * return ldap_get_values_len(...)
+	 * Get all binary values from a result entry
 	 * @param string $attribute
+	 * @return array
+	 * @see ldap_get_values_len(...)
 	 */
 	function getValuesBinary($attribute){
 		return ldap_get_values_len($this->con, $this->entry, $attribute);
 	}
 	/**
-	 * @return string
+	 * @return string|boolean the first attribute in the entry on success and false on error
+	 * @see ldap_first_attribute(...)
 	 */
 	function firstAttribute(){
 		return ldap_first_attribute($this->con, $this->entry);
 	}
 	/**
-	 * @return string
+	 * @return string|boolean the next attribute in the entry on success and false on error
+	 * @see ldap_next_attribute(...)
 	 */
 	function nextAttribute(){
 		return ldap_next_attribute($this->con, $this->entry);
 	}
 	/**
-	 * @return array
+	 * @return array|boolean a complete entry information in a multi-dimensional array on success and false on error.
+	 * @see ldap_get_attributes(...)
 	 */
 	function getAttributes(){
-		return ldap_get_attributes($this->con, $this->entry);
+		if(!$this->attr){
+			$this->attr= ldap_get_attributes($this->con, $this->entry);
 	}
+		return $this->attr;
+	}
+	/**
+	 * @return LdapAttributes|boolean
+	 */
 	function getAttributeIterator(){
-		return new LdapAttributes($this->getAttributes());
+		$attr= $this->getAttributes();
+		if($attr == false){
+			return false;
+		}
+		return new LdapAttributes($attr);
 	}
 	function getDn(){
-		return ($this->dn= ldap_get_dn($this->con, $this->entry));
+		return $this->dn;
 	}
 	/**
 	 * Echos or returns all the attrubutes and values
@@ -595,7 +638,7 @@ class LdapAttributes {
 	}
 }
 class LdapAttribute{
-	private $key, $val, $idx;
+	private $key, $val, $idx=0;
 	function __construct($key, $val){
 		$this->key= $key;
 		$this->val= $val;

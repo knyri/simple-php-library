@@ -109,7 +109,7 @@ class OCIPDO extends PDO{
 			if($argc > 1){
 				if($argc > 2){
 					$args= func_get_args();
-					call_user_method_array('setFetchMode', $ret, array_slice($args, 1, $argc - 1, false));
+					call_user_func_array(array($ret,'setFetchMode'), array_slice($args, 1, $argc - 1, false));
 				}else{
 					$ret->setFetchMode(func_get_arg(1));
 				}
@@ -421,7 +421,7 @@ class OCIPDO extends PDO{
 			if($code >= 1001 && $code <= 1003){
 				return self::makeErrorAry('24000', $ociError);
 			}
-			if($code >= 2091 && $code <= 02092){
+			if($code >= 2091 && $code <= 2092){
 				return self::makeErrorAry('40000', $ociError);
 			}
 			if(
@@ -486,7 +486,7 @@ class OCIPDO extends PDO{
 			){
 						return self::makeErrorAry('66000', $ociError);
 			}
-			if($code >= 00430 && $code <= 00439){
+			if($code >= 430 && $code <= 439){
 				return self::makeErrorAry('67000', $ociError);
 			}
 			if(

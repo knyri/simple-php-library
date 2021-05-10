@@ -3,6 +3,12 @@ PackageManager::requireFunctionOnce('io.file');
 function is_image($file){
 	return getimagesize($file);
 }
+/**
+ * @param resource $dest
+ * @param string $file
+ * @param array $info Image info
+ * @return boolean
+ */
 function image_save(&$dest,$file,array $info){
 	$mime = explode('/', $info['mime']);
 	$ext=strtolower(file_extention($file));
@@ -27,12 +33,17 @@ function image_save(&$dest,$file,array $info){
 	}
 	return true;
 }
+/**
+ * @param string $file
+ * @param array $info return array for image info
+ * @return boolean|resource
+ */
 function image_create($file,array &$info=null){
 	if($info==null)
 		$info=getimagesize($file);
 	if($info===false)return false;
 	$mime=explode('/',$info['mime']);
-	$src=null;
+	$src= false;
 	if($mime[1]=='jpeg' || $mime[1]=='jpg'){
 		$src = imagecreatefromjpeg($file);
 	}elseif($mime[1] == 'gif'){
@@ -42,7 +53,17 @@ function image_create($file,array &$info=null){
 	}
 	return $src;
 }
-function image_crop($file,$destf, $x, $y, $width, $height,array $info = null){
+/**
+ * @param string $file
+ * @param string $destf
+ * @param int $x
+ * @param int $y
+ * @param int $width
+ * @param int $height
+ * @param array $info return array for image info
+ * @return boolean
+ */
+function image_crop($file,$destf, $x, $y, $width, $height,array &$info = null){
 	$src = image_create($file, $info);
 	if(!$src)
 		return false;
@@ -59,7 +80,15 @@ function image_crop($file,$destf, $x, $y, $width, $height,array $info = null){
 	}
 	//bool imagecopyresized ( resource $dst_image , resource $src_image , int $dst_x , int $dst_y , int $src_x , int $src_y , int $dst_w , int $dst_h , int $src_w , int $src_h )
 }
-function image_resize($file,$destf, $new_width = null, $new_height = null,array $info = null){
+/**
+ * @param string $file
+ * @param string $destf
+ * @param int $new_width Pass null to autoscale based on new height
+ * @param int $new_height Pass null to autoscale based on new width
+ * @param array $info return array for image info
+ * @return boolean
+ */
+function image_resize($file,$destf, $new_width = null, $new_height = null,array &$info = null){
 	if($new_width == null && $new_height == null) return false;
 	$src = image_create($file, $info);
 	if(!$src)
@@ -91,7 +120,15 @@ function image_resize($file,$destf, $new_width = null, $new_height = null,array 
 		return false;
 	}
 }
-function image_resize_max($file,$destf, $max_width = null, $max_height = null,array $info = null){
+/**
+ * @param string $file
+ * @param string $destf
+ * @param int $max_width
+ * @param int $max_height
+ * @param array $info
+ * @return boolean
+ */
+function image_resize_max($file,$destf, $max_width = null, $max_height = null,array &$info = null){
 	if($max_width == null && $max_height == null) return false;
 	$src = image_create($file, $info);
 	if(!$src)

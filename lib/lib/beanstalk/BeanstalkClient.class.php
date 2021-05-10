@@ -219,8 +219,8 @@ class BeanstalkClient {
 	 * Reserves a job from the queue. If no timeout is given then it will block
 	 * until a job is ready.
 	 * @param int $timeout (-1)
-	 * @throws BeanstalkTimeoutException
-	 * @throws BeanstalkException
+	 * @throws BeanstalkTimeoutException If a timeout is specified and reached
+	 * @throws BeanstalkCommandException
 	 * @throws BeanstalkProtocolException
 	 * @return BeanstalkJob
 	 */
@@ -234,7 +234,7 @@ class BeanstalkClient {
 			case "TIMED_OUT":
 				throw new BeanstalkTimeoutException("Time out wating for a job");
 			case "DEADLINE_SOON":
-				throw new BeanstalkException("DEADLINE_SOON");
+				throw new BeanstalkCommandException("DEADLINE_SOON");
 			case "RESERVED":
 				break;
 			default:
@@ -246,14 +246,14 @@ class BeanstalkClient {
 	/**
 	 * Deletes a job from the queue
 	 * @param int $jobId
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 */
 	public function delete($jobId){
 		$resp= $this->doCommand("delete " . $jobId);
 		switch($resp){
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			case 'DELETED':
 				break;
 			default:
@@ -265,7 +265,7 @@ class BeanstalkClient {
 	 * @param int $jobId
 	 * @param number $delay (0)
 	 * @param number $priority (1024)
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return PutOrReleaseResponse
 	 */
@@ -277,7 +277,7 @@ class BeanstalkClient {
 			case "BURIED":
 				return new PutOrReleaseResponse(intval($this->getToken(), 10), false);
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -289,6 +289,7 @@ class BeanstalkClient {
 	 * @param number $ttr
 	 * @param number $priority
 	 * @throws BeanstalkProtocolException
+	 * @throws BeanstalkServerException If the server isn't accepting new jobs
 	 * @return PutOrReleaseResponse
 	 */
 	public function put($data, $delay= 0, $ttr= 1, $priority= 1024){
@@ -303,7 +304,7 @@ class BeanstalkClient {
 			case "JOB_TOO_BIG":
 				throw new BeanstalkProtocolException("Job data too large.");
 			case "DRAINING":
-				throw new BeanstalkProtocolException("Server is in drain mode and is not accepting new jobs.");
+				throw new BeanstalkServerException("Server is in drain mode and is not accepting new jobs.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -312,7 +313,7 @@ class BeanstalkClient {
 	 * Takes a job out of the ready queue without deleting it
 	 * @param int $jobId
 	 * @param number $priority
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 */
 	public function bury($jobId, $priority= 1024){
@@ -321,7 +322,7 @@ class BeanstalkClient {
 			case "BURIED":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -329,7 +330,7 @@ class BeanstalkClient {
 	/**
 	 * Refreshes the Time-To-Run timer for a reserved job
 	 * @param int $jobId
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 */
 	public function touch($jobId){
@@ -338,7 +339,7 @@ class BeanstalkClient {
 			case "TOUCHED":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -378,7 +379,7 @@ class BeanstalkClient {
 	/**
 	 * Gets the job's details without reserving it
 	 * @param int $jobId
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return BeanstalkJob
 	 */
@@ -388,7 +389,7 @@ class BeanstalkClient {
 			case "FOUND":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -397,7 +398,7 @@ class BeanstalkClient {
 	}
 	/**
 	 * Get the details of the next read job
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return BeanstalkJob
 	 */
@@ -407,7 +408,7 @@ class BeanstalkClient {
 			case "FOUND":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("No jobs in the ready queue");
+				throw new BeanstalkNotFoundException("No jobs in the ready queue");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -416,7 +417,7 @@ class BeanstalkClient {
 	}
 	/**
 	 * Get the details of the next job in the delayed queue without reserving it
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return BeanstalkJob
 	 */
@@ -426,7 +427,7 @@ class BeanstalkClient {
 			case "FOUND":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("No jobs in the delayed queue");
+				throw new BeanstalkNotFoundException("No jobs in the delayed queue");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -435,7 +436,7 @@ class BeanstalkClient {
 	}
 	/**
 	 * Get the details of the next job in the buried queue without reserving it
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return BeanstalkJob
 	 */
@@ -445,7 +446,7 @@ class BeanstalkClient {
 			case "FOUND":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("No jobs in the buried queue");
+				throw new BeanstalkNotFoundException("No jobs in the buried queue");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -471,7 +472,7 @@ class BeanstalkClient {
 	/**
 	 * Moves a job from the buried or delayed queue to the ready queue
 	 * @param int $jobId
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 */
 	public function kickJob($jobId){
@@ -480,7 +481,7 @@ class BeanstalkClient {
 			case "KICKED":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -513,7 +514,7 @@ class BeanstalkClient {
 
 	/**
 	 * @param unknown $jobId
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return array<string,string>
 	 */
@@ -523,14 +524,14 @@ class BeanstalkClient {
 			case "OK":
 				return $this->readMap();
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Job $jobId does not exist.");
+				throw new BeanstalkNotFoundException("Job $jobId does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
 	}
 	/**
 	 * @param unknown $tube
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return array<string,string>
 	 */
@@ -540,7 +541,7 @@ class BeanstalkClient {
 			case "OK":
 				return $this->readMap();
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Tube $tube does not exist.");
+				throw new BeanstalkNotFoundException("Tube $tube does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -549,7 +550,7 @@ class BeanstalkClient {
 	 * Prevent jobs from being reserved for a while.
 	 * @param string $tube
 	 * @param int $delay The delay in seconds
-	 * @throws BeanstalkException
+	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 */
 	public function pauseTube($tube, $delay){
@@ -558,7 +559,7 @@ class BeanstalkClient {
 			case "PAUSED":
 				break;
 			case 'NOT_FOUND':
-				throw new BeanstalkException("Tube $tube does not exist.");
+				throw new BeanstalkNotFoundException("Tube $tube does not exist.");
 			default:
 				throw new BeanstalkProtocolException("Unexpected response: '" + $resp + "'");
 		}
@@ -631,6 +632,8 @@ class PutOrReleaseResponse {
 	}
 }
 class BeanstalkException extends CustomException{}
+class BeanstalkCommandException extends BeanstalkException{}
+class BeanstalkNotFoundException extends BeanstalkCommandException{}
 class BeanstalkConnectException extends BeanstalkException{}
 class BeanstalkServerException extends BeanstalkException{}
 class BeanstalkProtocolException extends BeanstalkException{}

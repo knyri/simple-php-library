@@ -130,7 +130,7 @@ class PDOTable{
 		$this->trackChanges= $trackChanges;
 		$this->setupCustomTypes();
 		foreach ($this->columns as $name => $type){
-			if($this->customTypes[$type]){
+			if(array_key_exists($type, $this->customTypes)){
 				$this->customTypeColumns[$name]= $type;
 				$this->columns[$name]= $this->customTypes[$type][0];
 			}
@@ -209,6 +209,7 @@ class PDOTable{
 	 * @return int|bool the number of rows in the table or false if the query failed
 	 */
 	public function getTotalRows(){
+		$this->resetError();
 		if($this->rowCountstm == null){
 			$this->rowCountstm= $this->db->prepare('SELECT COUNT(*) FROM '.$this->table);
 			}
@@ -224,6 +225,7 @@ class PDOTable{
 	 * @return int The number of rows matched by the query or false if the query failed
 	 */
 	public function count(){
+		$this->resetError();
 		$where= $this->getWhere();
 		$query= 'SELECT COUNT(*) FROM '.$this->table . $where->toString();
 		$stm= $this->db->prepare($query);
@@ -313,7 +315,7 @@ class PDOTable{
 	 */
 	protected function getPkey($id= null){
 		$where= new WhereBuilder('pkey');
-		if($id != null){
+		if($id !== null){
 			if(is_array($this->pkey)){
 				if(!is_array($id)){
 					throw new IllegalArgumentException('Primary key is an array. Supplied ID is not an array.');
@@ -340,7 +342,7 @@ class PDOTable{
 					$where->andWhere($this->pkey, '=', $id);
 				}
 			}
-		}else{//id==null
+		}else{//id===null
 			if(!$this->isPkeySet()){
 				throw new IllegalStateException('Primary key is not set.');
 			}
@@ -379,10 +381,11 @@ class PDOTable{
 	}
 	/**
 	 * Loads the record. Returns false on error or if no records are found.
-	 * @param mixed $id
+	 * @param mixed $id Can be an array or contain extra values as long as the primary key/keys is/are present
 	 * @return boolean
 	 */
 	public function load($id= null){
+		$this->resetError();
 		if(!$this->beforeLoad()){
 			return false;
 		}
@@ -417,6 +420,7 @@ class PDOTable{
 	 * @return boolean True if successful
 	 */
 	public function loadAll(array $columns=null,array $sortBy=null, $groupBy=null, $limit=0, $offset=0){
+		$this->resetError();
 		if($this->dataset){
 			$this->dataset->closeCursor();
 			$this->dataset= false;
@@ -441,7 +445,7 @@ class PDOTable{
 	 * Returns a WhereBuilder based on the current data values
 	 * @return WhereBuilder
 	 */
-	protected function getWhere(){
+	public function getWhere(){
 		$where= new WhereBuilder('pdotabledata');
 		$data= $this->data->copyTo(array());
 		foreach($data as $key => $value){
@@ -455,6 +459,10 @@ class PDOTable{
 		}
 		return $where;
 	}
+	/**
+	 * Where statement using the primary key(s)
+	 * @return WhereBuilder
+	 */
 	protected function getWherePkey(){
 		$where= new WhereBuilder('pdotablepkey');
 		$pkeys= is_array($this->pkey) ? $this->pkey : array($this->pkey);
@@ -481,6 +489,7 @@ class PDOTable{
 	 * @return boolean True if successful; even if there are 0 results
 	 */
 	public function find(array $columns= null, $where= null, array $sortBy= null, $groupBy= null, $having= null, $limit= 0, $offset= 0){
+		$this->resetError();
 		if(!$this->beforeFind()){
 			return false;
 		}
@@ -524,6 +533,8 @@ class PDOTable{
 			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset);
 		}
 		$stm= $this->db->prepare($query);
+// 		logit($query);
+// 		logit($where->getValues());
 		if(db_run_query($stm, $where->getValues())){
 			$this->dataset= $stm;
 		}else{
@@ -540,6 +551,8 @@ class PDOTable{
 	 * @return boolean
 	 */
 	public function exists($where= null){
+		$res= false;
+		$this->resetError();
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
@@ -549,15 +562,25 @@ class PDOTable{
 		$query= 'SELECT DISTINCT 1 FROM '. $this->table . $where->toString();
 		$stm= db_prepare($this->db, $query);
 		if(db_run_query($stm, $where->getValues())){
-			return is_array($stm->fetch(PDO::FETCH_NUM));
+			$res= is_array($stm->fetch(PDO::FETCH_NUM));
+			$stm->closeCursor();
 		}else{
 			$this->lastError= $stm->errorInfo();
 			$this->lastError['query']= $query;
 			$this->lastError['params']= $where->getValues();
 		}
+		return $res;
+	}
+	/**
+	 * Checks for the existence of this record using the primary keys
+	 * @return boolean
+	 */
+	public function pkeyExists(){
+		if(!$this->isPkeySet()){
 		return false;
 	}
-	public function pkeyExists(){
+		$res= false;
+		$this->resetError();
 		if($this->dataset){
 			$this->dataset->closeCursor();
 		}
@@ -565,13 +588,14 @@ class PDOTable{
 		$query= 'SELECT DISTINCT 1 FROM '. $this->table . $where->toString();
 		$stm= db_prepare($this->db, $query);
 		if(db_run_query($stm, $where->getValues())){
-			return is_array($stm->fetch(PDO::FETCH_NUM));
+			$res= is_array($stm->fetch(PDO::FETCH_NUM));
+			$stm->closeCursor();
 		}else{
 			$this->lastError= $stm->errorInfo();
 			$this->lastError['query']= $query;
 			$this->lastError['params']= $where->getValues();
 		}
-		return false;
+		return $res;
 	}
 	/**
 	 * @return PDOStatement The last PDOStatement or null
@@ -599,6 +623,7 @@ class PDOTable{
 	 * @return bool True on success
 	 */
 	public function delete(){
+		$this->resetError();
 		if(!$this->beforeDelete()){
 			return false;
 		}
@@ -629,14 +654,13 @@ class PDOTable{
 	 */
 	protected function saveShouldUpdate(){
 		return
-			$this->trackChanges ?
-				$this->isOldPkeySet() :
-				$this->isPkeySet() && $this->exists($this->getWherePkey());
+			$this->trackChanges && $this->isOldPkeySet() ||
+			$this->pkeyExists();
 	}
 	/**
 	 * Automatically chooses between insert() and update() based on the availability of the
 	 * primary keys.
-	 * @return string|boolean false on success or the error.
+	 * @return boolean True on success
 	 */
 	public function save(){
 		if(!$this->beforeSave()){
@@ -645,6 +669,8 @@ class PDOTable{
 		$success= false;
 		if($this->saveShouldUpdate()){
 			$success= $this->update();
+		}else if($this->hasError()){
+			$success= false;
 		}else{
 			$success= $this->insert();
 		}
@@ -669,26 +695,34 @@ class PDOTable{
 	 * @return bool True on success
 	 */
 	public function update(){
+		$this->resetError();
 		if(!$this->beforeUpdate()){
 			return false;
 		}
 		$query= 'UPDATE '.$this->table.'  SET ';
 		$update= $this->data->copyTo(array());
 		$data= array();
+		$types= array();
 		if($this->trackChanges()){
 			foreach($update as $k => $v){
 				if($this->data->hasChanged($k)){
 					$placeholder= $this->getPlaceholder($k);
 					$query.= "$k=$placeholder,";
 					$data[':PDT_'.$k]= $v;
+					$types[':PDT_'.$k]= $this->columns[$k];
 				}
 			}
+			if($this->isOldPkeySet()){
 			$where= $this->getOldPkey();
+		}else{
+				$where= $this->getPkey();
+			}
 		}else{
 			foreach($update as $k => $v){
 				$placeholder= $this->getPlaceholder($k);
 				$query.= "$k=$placeholder,";
 				$data[':PDT_'.$k]= $v;
+				$types[':PDT_'.$k]= $this->columns[$k];
 			}
 			$where= $this->getPkey();
 		}
@@ -696,11 +730,11 @@ class PDOTable{
 		$stm= $this->db->prepare($query);
 		$data= array_merge($data, $where->getValues());
 		$this->lastOperation= self::OP_UPDATE;
-		$success= db_run_query($stm, $data);
+		$success= db_run_query($stm, $data, $types);
 		if(!$success){
 			$this->lastError= $stm->errorInfo();
 			$this->lastError['query']= $query;
-			$this->lastError['params']= $data;
+			$this->lastError['params']= var_export($data, true);
 		}
 		$this->afterUpdate($success);
 		return $success;
@@ -710,6 +744,7 @@ class PDOTable{
 	 * @return bool True on success
 	 */
 	public function insert(){
+		$this->resetError();
 		if(!$this->beforeInsert()){
 			return false;
 		}
@@ -766,6 +801,7 @@ class PDOTable{
 	 * @return bool True on success
 	 */
 	public function insertIgnore(){
+		$this->resetError();
 		if(!$this->beforeInsert()){
 			return false;
 		}
@@ -819,6 +855,7 @@ class PDOTable{
 	 * @return bool True on success
 	 */
 	public function insertUpdate(){
+		$this->resetError();
 		$dbType= $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
 		$data= $this->data->copyTo(array());
 		$cols= array_keys($data);
@@ -880,7 +917,7 @@ class PDOTable{
 		}
 		$this->data->initFrom(array());
 		$this->lastOperation=self::OP_NONE;
-		$this->lastError=null;
+		$this->lastError= false;
 		$this->childRecycle();
 	}
 	public function __clone(){
@@ -891,6 +928,12 @@ class PDOTable{
 	 */
 	public function getLastError(){
 		return $this->lastError;
+	}
+	public function getErrorMessage(){
+		return $this->lastError ? $this->lastError[2] : null;
+	}
+	public function getErrorCode(){
+		return $this->lastError ? $this->lastError[1] : null;
 	}
 	public function resetError(){
 		$this->lastError= false;

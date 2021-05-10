@@ -18,6 +18,13 @@ class CachePart extends File{
 		parent::__construct($file);
 		$this->ttl=$ttl;
 	}
+	public function setTimeToLive($ttl){
+		$this->ttl= $ttl;
+		return $this;
+	}
+	public function getTimeToLive(){
+		return $this->ttl;
+	}
 	public function hasExpired(){
 		if(!$this->exists())return true;
 		return ($this->getModTime()+$this->ttl)<time();
