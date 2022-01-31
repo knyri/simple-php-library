@@ -264,7 +264,7 @@ class Ldap {
 /**
  * Result from list, search, and read
  */
-class LdapResult {
+class LdapResult Implements IteratorAggregate{
 	private
 	$con,
 	$result,
@@ -283,6 +283,9 @@ class LdapResult {
 		$this->con= $con;
 		$this->result= $result;
 		$this->sizeLimitHit= $hasMoreResults;
+	}
+	public function getIterator(){
+		return new LdapResultIterator($this->firstEntry());
 	}
 	/**
 	 * True if the max number of entries was reached
@@ -444,6 +447,29 @@ class LdapObject{
 		return ldap_errno($this->con);
 	}
 }
+class LdapResultIterator implements Iterator {
+	private $first, $entry, $idx= 0;
+	public function __construct(LdapResultEntry $first){
+		$this->first= $this->entry= $first;
+	}
+	public function current(){
+		return $this->entry;
+	}
+	public function key(){
+		return $this->idx;
+	}
+	public function next(){
+		$this->entry= $this->entry->next();
+		$this->idx++;
+	}
+	public function valid(){
+		return $this->entry !== false;
+	}
+	public function rewind(){
+		$this->entry= $this->first;
+		$this->idx= 0;
+	}
+}
 /**
  * Entry from an LDAP result
  *
@@ -567,10 +593,22 @@ class LdapResultEntry extends LdapObject{
 		}
 	}
 }
-class LdapAttributes {
+class LdapAttributes implements Iterator{
 	private $attrs, $idx= 0;
 	function __construct(array $attrs){
 		$this->attrs= $attrs;
+	}
+	function current(){
+		return $this->getValue($this->idx);
+	}
+	function valid(){
+		return $this->hasMore();
+	}
+	function key(){
+		return $this->idx;
+	}
+	function rewind(){
+		return $this->first();
 	}
 	function length(){
 		return $this->attrs['count'];
@@ -637,11 +675,20 @@ class LdapAttributes {
 		return $this->getAttribute($this->idx++);
 	}
 }
-class LdapAttribute{
+class LdapAttribute implements Iterator{
 	private $key, $val, $idx=0;
 	function __construct($key, $val){
 		$this->key= $key;
 		$this->val= $val;
+	}
+	function current(){
+		return $this->getValue($this->key);
+	}
+	function valid(){
+		return $this->hasMore();
+	}
+	function rewind(){
+		return $this->first();
 	}
 	/**
 	 * @return string
