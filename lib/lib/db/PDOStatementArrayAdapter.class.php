@@ -11,7 +11,7 @@ class PDOStatementArrayAdapter extends PDOStatement{
 	 * @see PDOStatement::fetch()
 	 */
 	public function fetch($style= null, $orient= PDO::FETCH_ORI_NEXT, $offset= 0){
-		$idx;
+		$idx= 0;
 		switch($orient){
 			case PDO::FETCH_ORI_NEXT:
 				$idx= $this->idx + 1;

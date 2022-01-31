@@ -419,18 +419,18 @@ function is_date($name){
 	if(!between($date['year'],0,10000))		return E_FORM_DATEYEAR;
 	if(!between($date['month'],0,13))		return E_FORM_DATEMONTH;
 	if($date['month']==2){
-		if(0==$year%4&&0!=$year%100||0==$year%400){
+		if(0==$date['year']%4 && 0!=$date['year']%100 || 0==$date['year']%400){
 			if(!between($date['day'],0,30))	return E_FORM_DATEDAY;
 		}else{
 			if(!between($date['day'],0,28))	return E_FORM_DATEDAY;
 		}
 	}elseif($date['month']<8){
-		if($month%2==1){//31 days
+		if($date['month']%2==1){//31 days
 			if(!between($date['day'],0,32))	return E_FORM_DATEDAY;
 		}else{//30 days
 			if(!between($date['day'],0,31))	return E_FORM_DATEDAY;
 		}
-	}elseif($month%2==0){//31 days
+	}elseif($date['month']%2==0){//31 days
 		if(!between($date['day'],0,32))		return E_FORM_DATEDAY;
 	}else{//30 days
 		if(!between($date['day'],0,31))		return E_FORM_DATEDAY;
@@ -461,7 +461,7 @@ function is_phone($value){
  * @param string $value
  * @param int $min
  * @param int $max
- * @return Ambigous <boolean, string>|boolean|Ambigous <string, boolean>|string
+ * @return boolean|string
  */
 function form_regex_test($test,$separator,$value,$min=1,$max=1){
 	if(blank($value))

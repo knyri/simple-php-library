@@ -31,7 +31,7 @@ class WML {
 	}
 	/**
 	 * Enter description here ...
-	 * @param unknown_type $link
+	 * @param string $link
 	 */
 	public static function set_base_href($link) {
 		WML::$base_href = $link;

@@ -73,7 +73,7 @@ class sql_table {
 	 * @param string $format
 	 * @param array $tdattib
 	 */
-	public function addDummyColumn($column,$format,array $tdattib=null){
+	public function addDummyColumn($column,$format,array $tdattrib=null){
 		$this->shown_columns[]=$column;
 		$this->column_format[$column] = $format;
 		if(isset($tdattrib))
@@ -415,7 +415,7 @@ class sql_table_simple {
 	 * @param string $format
 	 * @param array $tdattib (null) name=>key array of HTML attributes to put on TDs in the column
 	 */
-	public function addDummyColumn($column,$format,array $tdattib=null){
+	public function addDummyColumn($column,$format,array $tdattrib=null){
 		$this->shown_columns[]=$column;
 		$this->column_format[$column] = $format;
 		if(isset($tdattrib))
@@ -530,7 +530,6 @@ class sql_table_simple {
 		// DIR CHANGES USES HERE!! IT NO LONGER CONTAINS THE DIRECTION STRING
 		if($this->showHeader){
 			$buf .= "\n<tr>\n";
-			$baseurl = '';//$_SERVER['PHP_SELF'];
 			foreach($this->shown_columns as $column) {
 				$display = isset($this->aliases_columns[$column])?$this->aliases_columns[$column]:$column;
 				$buf.="\t<th>$display</th>\n";

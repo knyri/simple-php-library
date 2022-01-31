@@ -2,7 +2,7 @@
 class Upload {
 	private $files;
 	public function __construct(){
-		$files= array_keys($_FILES);
+		$this->files= array_keys($_FILES);
 	}
 	public function hasError($name){
 		return isset($_FILES[$name]) && $_FILES[$name]['error'] != 0;//UPLOAD_ERR_OK;

@@ -203,8 +203,9 @@ class QueryBuilder {
 	}
 	/**
 	 * Makes a PDOStatementWrapper from the query.
+	 * Be sure to build() the query first
 	 * @param PDO $db
-	 * @param unknown $fetchMode
+	 * @param int $fetchMode
 	 * @return PDOStatementWrapper
 	 */
 	public function getStatement(PDO $db, $fetchMode= PDO::FETCH_ASSOC){
@@ -213,7 +214,7 @@ class QueryBuilder {
 		return $stm;
 	}
 	/**
-	 *
+	 * Be sure to build() the query first
 	 * @param PDO $db
 	 * @param int $fetchMode (PDO::FETCH_ASSOC)
 	 * @return boolean|PDOStatementWrapper

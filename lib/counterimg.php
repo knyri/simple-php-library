@@ -15,11 +15,11 @@ $margin['left'] = 2;
 $margin['right'] = 2;
 $lineheight = imagefontheight($font);
 
-$lines = count($count);
+// $lines = count($count);
 $maxlen = max(array_map('strlen',$count));
 $width = imagefontwidth($font)*$maxlen+$margin['top']+$margin['bottom'];
 $im = imagecreate($width,(imagefontheight($font)+$linespacing)*count($count)+$margin['right']+$margin['left']);//imagecreate($width, imagefontheight($font)+4);
-$black = imagecolorallocate($im, 0,0,0);
+// $black = imagecolorallocate($im, 0,0,0);
 $white = imagecolorallocate($im, 255, 255, 255);
 $top = $margin['top'];
 //imagestring($im, 2, $top, 2, $value, $white);

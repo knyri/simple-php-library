@@ -130,8 +130,8 @@ class PregRegex{
 	}
 
 	/**
-	 * @param unknown $subject
-	 * @param unknown $limit
+	 * @param string $subject
+	 * @param int $limit
 	 * @param number $flags
 	 * @return array an array containing substrings of subject split along boundaries matched by pattern, or false on failure.
 	 */
@@ -152,11 +152,11 @@ class PregRegex{
 	/**
 	 * See preg_quote
 	 *
-	 * @param string $string
+	 * @param string $str
 	 * @param string $delim
 	 * @return string
 	 */
-	public static function quote($string, $delim= null){
+	public static function quote($str, $delim= null){
 		return preg_quote($str, $delim);
 	}
 

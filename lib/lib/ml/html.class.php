@@ -28,7 +28,6 @@ class HTML {
 	 * @param string $raw Raw output appended to the very end.
 	 */
 	public static function echo_header($title='',array $meta=null,array $link=null,$base=null,array $style=null,array $script=null,array $ie=null,$raw=null){
-		$head=false;
 		echo "<head><title>$title</title>";
 		if($meta != null){
 			foreach ($meta as $metaE){
@@ -152,7 +151,7 @@ class HTML {
 		return '<u>'.$text.'</u>';
 	}
 	function embed_refresh($location, $milli){
-	?><script language="javascript">function goto_location(){document.location='<?php echo $location; ?>'}setTimeout('goto_location()',<?php echo $milli; ?>);</script>If your browser does not refresh in <?php echo $milli/1000.0; ?> seconds, click <a href="<?php echo $location; ?>">here</a>.<?php
+	?><script type="text/javascript">function goto_location(){document.location='<?php echo $location; ?>'}setTimeout('goto_location()',<?php echo $milli; ?>);</script>If your browser does not refresh in <?php echo $milli/1000.0; ?> seconds, click <a href="<?php echo $location; ?>">here</a>.<?php
 	}
 }
 class HTML_Header{

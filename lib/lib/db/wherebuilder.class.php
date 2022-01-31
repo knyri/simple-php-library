@@ -106,7 +106,7 @@ class WhereBuilder{
 	/**
 	 * Accepts multiple arguments.
 	 * (col, NULL[, negate])
-	 * (col,'in',vals[,negate])
+	 * (col,'in',array vals[,negate])
 	 * (col,'like',val[,negate])
 	 * (col,'between',start,end[,negate])
 	 * (col,comparator,val)

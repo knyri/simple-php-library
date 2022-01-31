@@ -125,7 +125,7 @@ class ChangeTrackingPropertyList extends PropertyList{
 	public function clear(){
 		foreach($this->data as $k => $v){
 			$this->cleared[$k]=true;
-	}
+		}
 	}
 	/**
 	 * @param string $k

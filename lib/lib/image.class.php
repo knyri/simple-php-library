@@ -6,7 +6,7 @@ class gd_image{
 	public function __construct($file){
 		$this->info=getimagesize($file);
 		$this->file=$file;
-		$mime=explode('/',$info['mime']);
+		$mime=explode('/',$this->info['mime']);
 		if($mime[1]=='jpeg'||$mime[1]=='jpg'){
 			$this->resource=imagecreatefromjpeg($file);
 		}elseif($mime[1]=='gif'){

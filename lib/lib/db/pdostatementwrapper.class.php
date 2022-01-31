@@ -85,7 +85,7 @@ class PDOStatementWrapper extends PropertyList{
 	}
 	public function bindColumn($column, &$param, $type= null, $maxlen= null, $driverdata= null){
 		if(!$this->dataset->bindColumn($column, $param, $type, $maxlen, $driverdata)){
-			throw new PDOBindException("Binding [$key] to [$value] failed");
+			throw new PDOBindException("Binding [$column] to [$param] failed");
 		}
 		return $this;
 	}

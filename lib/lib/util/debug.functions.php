@@ -12,7 +12,7 @@ function dump_session() {
 }
 /**
  * Dumps the variable to the ouput. (for HTML pages)
- * @param unknown_type $var
+ * @param mixed $var
  */
 function print_var($var) {
 	echo '<pre>';

@@ -210,6 +210,7 @@ function is_valid_email_address($email, $options=array()){
 	#
 	# now match what's left
 	#
+	$m= array();
 	if (!preg_match("!^$addr_spec$!", $email, $m)){return false;}
 
 	$bits = array(

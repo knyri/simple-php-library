@@ -12,7 +12,7 @@
  * result automatically.
  * @param int b bytes
  * @param int p precision (0 being Bytes and 8 being YB) Leave blank for auto selection.
- * @return The formatted output
+ * @return string The formatted output
  **/
 function formatBytes($b,$p=null){
 	static $units = array("B","kB","MB","GB","TB","PB","EB","ZB","YB"),
@@ -178,7 +178,7 @@ function getHttpContext($method='GET',array $headers=null,$content=null){
 /**
  * Adds the folder's contents and any sub-folder's contents to the ZIP archive
  * @param string $baseDir Path to the folder to ZIP
- * @param unknown $output Path to the output archive
+ * @param string $output Path to the output archive
  * @return boolean False on failure
  */
 function zipDir($baseDir, $output){

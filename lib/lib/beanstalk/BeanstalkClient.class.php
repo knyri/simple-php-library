@@ -513,7 +513,7 @@ class BeanstalkClient {
 	}
 
 	/**
-	 * @param unknown $jobId
+	 * @param int $jobId
 	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return array<string,string>
@@ -530,7 +530,7 @@ class BeanstalkClient {
 		}
 	}
 	/**
-	 * @param unknown $tube
+	 * @param string $tube
 	 * @throws BeanstalkNotFoundException
 	 * @throws BeanstalkProtocolException
 	 * @return array<string,string>
@@ -632,6 +632,7 @@ class PutOrReleaseResponse {
 	}
 }
 class BeanstalkException extends CustomException{}
+class BeanstalkTimeoutException extends CustomException{}
 class BeanstalkCommandException extends BeanstalkException{}
 class BeanstalkNotFoundException extends BeanstalkCommandException{}
 class BeanstalkConnectException extends BeanstalkException{}

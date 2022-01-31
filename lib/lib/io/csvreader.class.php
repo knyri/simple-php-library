@@ -76,8 +76,6 @@ class CsvReader {
 		$buf='';
 		$quoted=false;
 		$double=($enclosure==$escape);
-		$checkdouble=false;
-		$escaped=false;
 		$colnum= 0;
 		$c='';
 		while(($c = fgetc($this->FILE))!==false) {
@@ -93,10 +91,11 @@ class CsvReader {
 							continue;
 						} else {
 							$quoted= true;
+							fseek($this->FILE, -1, SEEK_CUR);
+						}
+					} else {
+							$quoted= true;
 					}
-				} else {
-						$quoted= true;
-				}
 				} else if ($c==$delim) {
 					if($this->fetch_type == self::FETCH_ASSOC){
 						$return[$this->HEADERS[$colnum]]= $buf;
@@ -122,16 +121,18 @@ class CsvReader {
 						$c2= fgetc($this->FILE);
 						if($c2 === false){
 							break;
-			}
+						}
 						if($c2 == $enclosure){
 							$buf.= $c2;
 							continue;
-		}
+						}
 						$quoted= false;
-					fseek($this->FILE, -1, SEEK_CUR);
-		} else {
-		$quoted=false;
+						fseek($this->FILE, -1, SEEK_CUR);
+					} else {
+						$quoted=false;
 					}
+				}else{
+					$buf.= $c;
 				}
 			}
 		}

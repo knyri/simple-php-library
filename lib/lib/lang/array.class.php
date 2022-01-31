@@ -266,7 +266,7 @@ class ArrayObj{
 	 * @param callable $cb
 	 * @param mixed $userData
 	 * @return boolean
-	 * @see array_walk
+	 * @see array_walk()
 	 */
 	public function walk($cb, $userData= null){
 		return array_walk($this->arr, $cb, $userData);
@@ -276,7 +276,7 @@ class ArrayObj{
 	 * @param callable $cb
 	 * @param mixed $userData
 	 * @return boolean
-	 * @see array_walk_recursive
+	 * @see array_walk_recursive()
 	 */
 	public function walkRecursive($cb, $userData= null){
 		return array_walk_recursive($this->arr, $cb, $userData);
@@ -351,7 +351,7 @@ class ArrayObj{
 	 * Natural sort
 	 * @param boolean $caseSensitive
 	 * @return boolean
-	 * @see natsort and natcasesort
+	 * @see natsort() and natcasesort()
 	 */
 	public function naturalSort($caseSensitive= true){
 		if($caseSensitive){
@@ -365,7 +365,7 @@ class ArrayObj{
 	 * @param string $sort
 	 * @param boolean $reverse
 	 * @return array The original internal array
-	 * @see sort and rsort
+	 * @see sort() and rsort()
 	 */
 	public function sort($sort= SORT_REGULAR, $reverse= false){
 		$o= $this->arr;
@@ -382,7 +382,7 @@ class ArrayObj{
 	 * @param string $sort
 	 * @param boolean $reverse
 	 * @return array The old internal array
-	 * @see arsort and asort
+	 * @see arsort() and asort()
 	 */
 	public function sortAssoc($sort= SORT_REGULAR, $reverse= false){
 		$o= $this->arr;
@@ -398,7 +398,7 @@ class ArrayObj{
 	 * Modifies the internal array.
 	 * @param callable $cb
 	 * @return boolean
-	 * @see uasort
+	 * @see uasort()
 	 */
 	public function userSortAssoc($cb){
 		return uasort($this->arr, $cb);
@@ -408,7 +408,7 @@ class ArrayObj{
 	 * Modifies the internal array.
 	 * @param callable $cb
 	 * @return boolean
-	 * @see usort
+	 * @see usort()
 	 */
 	public function userSort($cb){
 		return usort($this->arr, $cb);
@@ -418,7 +418,7 @@ class ArrayObj{
 	 * Modifies the internal array.
 	 * @param callable $cb
 	 * @return boolean
-	 * @see uksort
+	 * @see uksort()
 	 */
 	public function userKeySort($cb){
 		return uksort($this->arr, $cb);

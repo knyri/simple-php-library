@@ -146,7 +146,7 @@ class mail{
 		return $this;
 	}
 	/**
-	 * @param bolean $html If supplied, set the isHtml flag
+	 * @param boolean $html If supplied, set the isHtml flag
 	 * @return boolean
 	 */
 	public function isHtml($html=-1){

@@ -52,7 +52,7 @@ function file_upload_error_message($error_code) {
 }
 /**
  * @param string|array $name
- * @return string|unknown
+ * @return string
  */
 function file_upload_get_error($name){
 	if (is_array($name)) {
