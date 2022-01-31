@@ -33,15 +33,25 @@ class SDate{
 	 */
 	private $offset;
 	/**
+	 * @var \DateTime
+	 */
+	private $dateObj;
+	/**
 	 * @param int $timestamp
 	 */
-	public function __constructor($timestamp){
+	public function __construct($timestamp){
 		$d=date('Y_m_d|H_i_s|O',$timestamp);
+		$this->dateObj= DateTime::createFromFormat('Y\\_m\\_d\\|H\\_i\\_s\\|O', $d);
+		if($this->dateObj === false){
+			//logit(print_r(DateTime::getLastErrors(), true));
+			throw new Exception($d . " failed to parse");
+		}
 		$d=explode('|',$d);
 		$this->date=array_map('intval',explode('_',$d[0]),array(10,10,10));
 		$this->time=array_map('intval',explode('_',$d[1]),array(10,10,10));
-		$this->offset=array(intval(substr($d[2],0,-2),10),intval($d[2][0].substr($d[2],-2),10));
-		$this->offset[2]=$this->offset[0]*60+$this->offset[1];
+		// offset in minutes; $d[2][0] is to preserve the sign
+		$this->offset= (intval(substr($d[2],0,-2),10)*60) + intval($d[2][0].substr($d[2],-2),10);
+		//logit($this->dateObj->format('Y-m-d\\TH:i:sO'));
 	}
 	/**
 	 * @return int the year
@@ -68,9 +78,9 @@ class SDate{
 	 */
 	public function getSecond(){return $this->time[2];}
 	/**
-	 * @return int The offset from GMT in minutes
+	 * @return int The offset from UTC in minutes
 	 */
-	public function getOffset(){return $this->offset[2];}
+	public function getOffset(){return $this->offset;}
 
 	public function addRange(SDateRange $r){
 		$this->date[0]+=$r->getYear();
@@ -79,9 +89,7 @@ class SDate{
 		$this->time[0]+=$r->getHour();
 		$this->time[1]+=$r->getMinute();
 		$this->time[2]+=$r->getSecond();
-		if($r->getOffset()!=null){
-			$this->time[1]+=$this->offset[2]-$r->getOffset();
-		}
+		$this->normalize();
 	}
 	public function subtractRange(SDateRange $r){
 		$this->date[0]-=$r->getYear();
@@ -90,9 +98,169 @@ class SDate{
 		$this->time[0]-=$r->getHour();
 		$this->time[1]-=$r->getMinute();
 		$this->time[2]-=$r->getSecond();
-		if($r->getOffset()!=null){
-			$this->time[1]-=$this->offset[2]-$r->getOffset();
+		$this->normalize();
+	}
+	public function getDayOfWeek(){
+		return getdate($this->dateObj->getTimestamp())['wday'];
+	}
+	public function getDayOfYear(){
+		return getdate($this->dateObj->getTimestamp())['yday'];
+	}
+	public function setDay($v){
+		$this->date[2]= $v;
+		$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		while($this->date[2] > $lastDay){
+			$this->date[2]-= $lastDay;
+			$this->date[1]++;
+			if($this->date[1] == 13){
+				$this->date[1]= 1;
+				$this->date[0]++;
+			}
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
 		}
+		while($this->date[2] < 1){
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+			$this->date[2]+= $lastDay;
+			$this->date[1]--;
+			if($this->date[1] == 0){
+				$this->date[1]= 12;
+				$this->date[0]--;
+			}
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		//logit('Day changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function setMonth($v){
+		$this->date[1]= $v;
+		while($this->date[1] > 12){
+			$this->date[1]-= 12;
+			$this->date[0]++;
+		}
+		while($this->date[1] < 1){
+			$this->date[1]+= 12;
+			$this->date[0]--;
+		}
+		$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		while($this->date[2] > $lastDay){
+			$this->date[2]-= $lastDay;
+			$this->date[1]++;
+			if($this->date[1] == 13){
+				$this->date[1]= 1;
+				$this->date[0]++;
+			}
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		//logit('Month changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function setYear($v){
+		$this->date[0]= $v;
+		// fix for leap years
+		$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		while($this->date[2] > $lastDay){
+			$this->date[2]-= $lastDay;
+			$this->date[1]++;
+			if($this->date[1] == 13){
+				$this->date[1]= 1;
+				$this->date[0]++;
+			}
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		//logit('Year changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function setSecond($v){
+		$this->time[2]= $v;
+		if($this->time[2] < 0) do{
+			$this->time[1]--;
+			$this->time[2]+= 60;
+		}while($this->time[2] < 0);
+		else{
+			while($this->time[2] > 59){
+				$this->time[2]-= 60;
+				$this->time[1]++;
+			}
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		$this->dateObj->setTime($this->time[0], $this->time[1], $this->time[2]);
+		//logit('Second changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function setMinute($v){
+		$this->time[1]= $v;
+		if($this->time[1] < 0) do{
+			$this->time[0]--;
+			$this->time[1]+= 60;
+		}while($this->time[1] < 0);
+		else{
+			while($this->time[1] > 59){
+				$this->time[1]-= 60;
+				$this->time[0]++;
+			}
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		$this->dateObj->setTime($this->time[0], $this->time[1], $this->time[2]);
+		//logit('Minute changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function setHour($v){
+		$this->time[0]= $v;
+		if($this->time[0] < 0) do{
+			$this->date[2]--;
+			$this->time[0]+= 24;
+		}while($this->time[0] < 0);
+		else{
+			while($this->time[0] > 23){
+				$this->time[0]-= 24;
+				$this->date[2]++;
+			}
+		}
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		$this->dateObj->setTime($this->time[0], $this->time[1], $this->time[2]);
+		//logit('Hour changed: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
+		return $this;
+	}
+	public function toDateTime(){
+		$this->normalize();
+		return $this->dateObj;
+	}
+	public function setDateTimeFrom(SDate $date){
+		$this->time[0]= $date->getHour();
+		$this->time[1]= $date->getMinute();
+		$this->time[2]= $date->getSecond();
+		$this->date[0]= $date->getYear();
+		$this->date[1]= $date->getMonth();
+		$this->date[2]= $date->getDay();
+		$this->offset= $date->getOffset();
+		$offset= intval($this->offset / 60) * 100 + abs($this->offset % 60);
+		if($offset == 0){
+			// doesn't like +0000 for some reason
+			$this->dateObj->setTimezone(new DateTimeZone('UTC'));
+		}else if($offset < 0){
+			if($offset > -10){
+				$this->dateObj->setTimezone(new DateTimeZone('-000' . $offset));
+			}else if($offset > -100){
+				$this->dateObj->setTimezone(new DateTimeZone('-00' . $offset));
+			}else if($offset > -1000){
+				$this->dateObj->setTimezone(new DateTimeZone('-0' . $offset));
+			}else{
+				$this->dateObj->setTimezone(new DateTimeZone('-' . $offset));
+			}
+		}else{
+			if($offset < 10){
+				$this->dateObj->setTimezone(new DateTimeZone('+000' . $offset));
+			}else if($offset < 100){
+				$this->dateObj->setTimezone(new DateTimeZone('+00' . $offset));
+			}else if($offset < 1000){
+				$this->dateObj->setTimezone(new DateTimeZone('+0' . $offset));
+			}else{
+				$this->dateObj->setTimezone(new DateTimeZone('+' . $offset));
+			}
+		}
+		$this->normalize();
 	}
 	/**
 	 * Fixes the date and time
@@ -164,6 +332,9 @@ class SDate{
 				$this->date[0]--;
 			}
 		}
+		$this->dateObj->setTime($this->time[0], $this->time[1], $this->time[2]);
+		$this->dateObj->setDate($this->date[0], $this->date[1], $this->date[2]);
+		//logit('Normalized: ' . $this->dateObj->format('Y-m-d\\TH:i:sO'));
 	}
 	public function daysInMonth(){
 		if($this->date[1]==2){
