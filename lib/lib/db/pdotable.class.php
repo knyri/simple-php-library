@@ -13,6 +13,7 @@ class PDOTable{
 		$columns,
 		$customTypeColumns= array(),
 		$customTypes= array(),
+		$columnWrappers= array(),
 		$data,
 		$dataset= null,
 		$pkey= null,
@@ -57,7 +58,7 @@ class PDOTable{
 	/**
 	 * Clears the value stored for $k
 	 * @param string $k
-	 * @return this
+	 * @return $this
 	 */
 	public function uset($k){
 		$this->data->uset($k);
@@ -66,7 +67,7 @@ class PDOTable{
 	/**
 	 * Merges the changes with the main array and clears the changes. Change tracking must be enabled.
 	 * Does NOT save the changes to the database.
-	 * @return this
+	 * @return $this
 	 */
 	public function mergeChanges(){
 		if($this->trackChanges){
@@ -77,7 +78,7 @@ class PDOTable{
 	/**
 	 * Forgets any changes to the model if set to track changes.
 	 * Will NOT undo changes commited to the database by calling save().
-	 * @return this
+	 * @return $this
 	 */
 	public function forgetChanges(){
 		if($this->trackChanges){
@@ -135,6 +136,7 @@ class PDOTable{
 				$this->columns[$name]= $this->customTypes[$type][0];
 			}
 		}
+		$this->setupColumnWrappers();
 	}
 	/**
 	 * Returns the database connection
@@ -150,6 +152,12 @@ class PDOTable{
 	 * $this->customTypes[name]= array(PDO::PARAM_*, pre-string, post-string)
 	 */
 	protected function setupCustomTypes(){}
+	/**
+	 * Hook for sub-classes to set-up column wrappers. You do not need to add an alias to the post string.
+	 * Populate $this->columnWrappers like so:
+	 * $this->columnWrappers[name]= array(pre-string, post-string)
+	 */
+	protected function setupColumnWrappers(){}
 	/**
 	 * Copies the loaded row to $ary
 	 * @param array $ary
@@ -174,7 +182,7 @@ class PDOTable{
 	 * Set the value for $k
 	 * @param string $k
 	 * @param mixed $v
-	 * @return this
+	 * @return $this
 	 */
 	public function set($k, $v){
 		$this->data->set($k, $v);
@@ -183,7 +191,7 @@ class PDOTable{
 	/**
 	 * Sets all the values from the array.
 	 * @param array $map Map of values to set
-	 * @return this
+	 * @return $this
 	 */
 	public function setAll(array $map){
 		foreach($map as $k => $v){
@@ -194,7 +202,7 @@ class PDOTable{
 	/**
 	 * Sets all the values for columns defined
 	 * @param array $map Map of values to set
-	 * @return this
+	 * @return $this
 	 */
 	public function setAllDefined(array $map){
 		foreach($map as $k => $v){
@@ -362,7 +370,6 @@ class PDOTable{
 	protected function getOldPkey(){
 		$where= new WhereBuilder('oldpkey');
 		if(is_array($this->pkey)){
-			$ret= array();
 			foreach($this->pkey as $key){
 				$where->andWhere($key,'=',$this->data->getPrevious($key));
 			}
@@ -450,11 +457,11 @@ class PDOTable{
 		$data= $this->data->copyTo(array());
 		foreach($data as $key => $value){
 			if(is_array($value)){
-				$where->andWhere($key, 'in', $value);
+				$where->andWhere($this->getColumnWrapped($key), 'in', $value);
 			}else if($value ===  null){
 				$where->andWhere($key, null);
 			}else{
-				$where->andWhere($key, '=', $value);
+				$where->andWhere($this->getColumnWrapped($key), '=', $value);
 			}
 		}
 		return $where;
@@ -469,11 +476,11 @@ class PDOTable{
 		foreach($pkeys as $key){
 			$value= $this->data->get($key);
 			if(is_array($value)){
-				$where->andWhere($key, 'in', $value);
+				$where->andWhere($this->getColumnWrapped($key), 'in', $value);
 			}else if($value ===  null){
 				$where->andWhere($key, null);
 			}else{
-				$where->andWhere($key, '=', $value);
+				$where->andWhere($this->getColumnWrapped($key), '=', $value);
 			}
 		}
 		return $where;
@@ -498,6 +505,10 @@ class PDOTable{
 		}
 		if(!$columns){
 			$columns= array_keys($this->columns);
+		}
+		foreach($columns as $k=>$v){
+			//echo "$k=>$v" . PHP_EOL;
+			$columns[$k]= $this->getColumnAlias($v);
 		}
 		$this->dataset= null;
 		if($where == null){
@@ -532,6 +543,7 @@ class PDOTable{
 		}else{
 			$query= db_make_query($this->table, $columns, $where, $sortBy, $groupBy, $having, $limit, $offset);
 		}
+		//echo $query . PHP_EOL;
 		$stm= $this->db->prepare($query);
 // 		logit($query);
 // 		logit($where->getValues());
@@ -547,7 +559,7 @@ class PDOTable{
 		return $this->dataset != null;
 	}
 	/**
-	 * @param array|WhereBuilder $where (null)
+	 * @param WhereBuilder $where (null)
 	 * @return boolean
 	 */
 	public function exists($where= null){
@@ -653,6 +665,11 @@ class PDOTable{
 	 * @return boolean True if the save function should perform an update
 	 */
 	protected function saveShouldUpdate(){
+// 		logit('saveShouldUpdate');
+// 		if($this->trackChanges){
+// 			logit('old pkey: ' . ($this->isOldPkeySet() ? 'set' : 'not set'));
+// 		}
+// 		logit('pkey exists: ' . ($this->pkeyExists()  ? 'yes' : 'no'));
 		return
 			$this->trackChanges && $this->isOldPkeySet() ||
 			$this->pkeyExists();
@@ -688,6 +705,32 @@ class PDOTable{
 			return $typeSettings[1] . ":PDT_$column" . $typeSettings[2];
 		}else{
 			return ":PDT_$column";
+		}
+	}
+	/**
+	 * Gets the column wrapped in any defined custom wrapper for the column list
+	 * @param string $column
+	 * @return string
+	 */
+	protected function getColumnAlias($column){
+		if($this->columnWrappers[$column]){
+			$typeSettings= $this->columnWrappers[$column];
+			return $typeSettings[0] . $column . $typeSettings[1] . ' AS ' . $column;
+		}else{
+			return $column;
+		}
+	}
+	/**
+	 * Gets the column wrapped in any defined custom wrapper
+	 * @param string $column
+	 * @return string
+	 */
+	public function getColumnWrapped($column){
+		if($this->columnWrappers[$column]){
+			$typeSettings= $this->columnWrappers[$column];
+			return $typeSettings[0] . $column . $typeSettings[1];
+		}else{
+			return $column;
 		}
 	}
 	/**
