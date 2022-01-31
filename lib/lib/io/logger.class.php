@@ -31,4 +31,16 @@ class Logger extends File{
 			}
 		}
 	}
+	public function info($str){
+		$this->log($str, self::INFO);
+	}
+	public function warn($str){
+		$this->log($str, self::WARN);
+	}
+	public function error($str){
+		$this->log($str, self::ERR);
+	}
+	public function debug($str){
+		$this->log($str, self::DEBUG);
+	}
 }
