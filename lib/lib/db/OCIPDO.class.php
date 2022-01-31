@@ -43,7 +43,7 @@ class OCIPDO extends PDO{
 		}
 
 		$affected= false;
-		if(oci_execute($stm, $this->shouldCommit() ? OCI_NO_AUTO_COMMIT : OCI_COMMIT_ON_SUCCESS)){
+		if(oci_execute($stm, $this->shouldCommit() ? OCI_COMMIT_ON_SUCCESS : OCI_NO_AUTO_COMMIT)){
 			$affected= oci_num_rows($stm);
 		}
 		$this->stopListeningForErrors($affected !== false);
@@ -56,6 +56,10 @@ class OCIPDO extends PDO{
 		$this->outOfTransaction= $this->autocommit ? false : $this->commit();
 		return !$this->outOfTransaction;
 	}
+	/**
+	 * Whether a statement should commit after running
+	 * @return boolean
+	 */
 	public function shouldCommit(){
 		return $this->autocommit && $this->outOfTransaction;
 	}
@@ -149,7 +153,7 @@ class OCIPDO extends PDO{
 			case PDO::ATTR_TIMEOUT:
 				return -1;
 			case PDO::ATTR_DEFAULT_FETCH_MODE:
-				$this->fetchMode;
+				return $this->fetchMode;
 			case PDO::ATTR_EMULATE_PREPARES:
 				return false;
 			default:
@@ -161,17 +165,31 @@ class OCIPDO extends PDO{
 		 * case PDO::ATTR_CASE:
 		 */
 		switch($attribute){
+			case PDO::ATTR_PREFETCH:
+				if(!is_int($value) || $value < 1){
+					return false;
+				}
+				$this->rowPrefetch= $value;
+				break;
+			case PDO::ATTR_AUTOCOMMIT:
+				$this->autocommit= $value == true;
+				break;
 			case PDO::ATTR_DEFAULT_FETCH_MODE:
+				if($value != null){
 				$this->fetchMode= $value;
-				return true;
+				}
+				break;
 			case PDO::ATTR_ERRMODE:
 				if($value > -1 && $value < 4){
 					$this->errorMode= $value;
 					return true;
 				}
+				return false;
 			break;
+			default:
+				return false;
 		}
-		return false;
+		return true;
 	}
 	public function quote($string, $parameterType= null){
 		return false;
@@ -520,7 +538,7 @@ class OCIPDO extends PDO{
 
 class OCIPDOStatement extends PDOStatement{
 	private static function pdoToSqlType($pdoType){
-		switch($pdoType){
+		switch($pdoType){//5,1,2
 			case PDO::PARAM_BOOL:
 			case PDO::PARAM_INT:
 				return SQLT_INT;
@@ -643,12 +661,14 @@ class OCIPDOStatement extends PDOStatement{
 	}
 	public function execute($params= null){
 		$lobs= array();
-		if($this->resultSet){
-			trigger_error("Potential memory leak: execute called while current result set still open", E_USER_WARNING);
-		}
+// 		if($this->resultSet){
+// 			trigger_error("Potential memory leak: execute called while current result set still open", E_USER_WARNING);
+// 		}
 
 		$this->listenForErrors();
 		$this->resultSet= $resultSet= $this->db->_parse($this->stm);
+		oci_set_prefetch($resultSet, $this->db->getAttribute(PDO::ATTR_PREFETCH));
+// 		logit($this->stm);
 		if($params){
 			foreach($params as $param=>$val){
 				if(!is_array($val)){
@@ -659,6 +679,7 @@ class OCIPDOStatement extends PDOStatement{
 		}else{
 			$params= $this->binds;
 		}
+// 		logit($params);
 
 		foreach($params as $param => $val){
 			$type= $val[1];
@@ -673,7 +694,8 @@ class OCIPDOStatement extends PDOStatement{
 					return false;
 				}
 				$lobs[]= array($lob, $val[0]);
-				$value= $lob;
+				// maybe need to unset the param?
+// 				$value= $lob;
 			}
 			if(!
 				($type === false ? oci_bind_by_name($resultSet, $param, $val[0]) : oci_bind_by_name($resultSet, $param, $val[0], -1, $type))
@@ -730,7 +752,7 @@ class OCIPDOStatement extends PDOStatement{
 				$fetchStyle= OCI_NUM;
 			break;
 			default:
-				throw new PDOException("Fetch style not supported");
+				throw new PDOException("Fetch style not supported: $fetchStyle");
 		}
 		$this->listenForErrors();
 		$row= oci_fetch_array($this->resultSet, $fetchStyle + OCI_RETURN_NULLS + OCI_RETURN_LOBS);

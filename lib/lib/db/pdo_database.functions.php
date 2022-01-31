@@ -117,9 +117,9 @@ function &db_get_connection($forcenew = false, $db = 'default') {
 function db_make_connection($engine, $host, $dbname, $user, $password){
 	if($engine == 'oci'){
 		if($host){
-			return new PDOOCI\PDO('oci:dbname=//'. $host .'/'. $dbname, $user, $password);
+			return new OCIPDO('oci:dbname=//'. $host .'/'. $dbname, $user, $password);
 		}else{
-			return new PDOOCI\PDO('oci:dbname='. $dbname, $user, $password);
+			return new OCIPDO('oci:dbname='. $dbname, $user, $password);
 		}
 	}else{
 		return new PDO($engine .':host='. $host .';dbname=' .$dbname, $user, $password, array());
