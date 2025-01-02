@@ -16,7 +16,7 @@ PackageManager::requireFunctionOnce('lang.string');
  *
  */
 class CacheFile extends CachePart{
-	private static $gz=null;
+	private static $gz= null;
 	private $etag;
 	/**
 	 * @param string $file '.gz' is appended to the file if the zlib extension is found, the client supports it and $gzip is not specified or set to true
@@ -33,28 +33,28 @@ class CacheFile extends CachePart{
 		if(self::$gz && ($gzip === 0 || $gzip === true)){
 			$file.='.gz';
 		}
-		parent::__construct($file,$ttl);
+		parent::__construct($file, $ttl);
 		if($etag == null) {
-			$this->etag=md5($file);
+			$this->etag= md5($file);
 		} else {
-			$this->etag=$etag;
-	}
+			$this->etag= $etag;
+		}
 	}
 	public function setEtag($etag){
-		$this->etag=$etag;
+		$this->etag= $etag;
 	}
 	public function getEtag(){
 		return $this->etag;
 	}
 	public function open($mode){
 		if(self::$gz){
-			$this->handle=gzopen($this->uri,$mode);
+			$this->handle= gzopen($this->uri, $mode);
 		}else{
-			$this->handle=fopen($this->uri,$mode);
+			$this->handle= fopen($this->uri, $mode);
 		}
 		if($this->handle){
-			$this->open=true;
-			$this->closed=false;
+			$this->open= true;
+			$this->closed= false;
 		}
 		return $this->open;
 	}
@@ -63,36 +63,36 @@ class CacheFile extends CachePart{
 			$this->unlock();
 		}
 		if(self::$gz){
-			$this->closed=gzclose($this->handle);
+			$this->closed= gzclose($this->handle);
 		}else{
-			$this->closed=fclose($this->handle);
+			$this->closed= fclose($this->handle);
 		}
-		$this->open=!$this->closed;
+		$this->open= !$this->closed;
 		return $this->closed;
 	}
 	public function isEof(){
 		if(self::$gz){
 			return gzeof($this->handle);
 		}
-		return feof($this->handle) || $this->getPosition()>=$this->getLength();
+		return feof($this->handle) || $this->getPosition() >= $this->getLength();
 	}
-	public function write($string,$len=-1){
+	public function write($string, $len= -1){
 		if(self::$gz){
 			if($len == -1){
-				return gzwrite($this->handle,$string);
+				return gzwrite($this->handle, $string);
 			}else{
-				return gzwrite($this->handle,$string,$len);
+				return gzwrite($this->handle, $string, $len);
 			}
 		}else{
-			return parent::write($string,$len);
+			return parent::write($string, $len);
+		}
 	}
-	}
-	public function read($len=1){
+	public function read($len= 1){
 		if(self::$gz){
-			return gzread($this->handle,$len);
+			return gzread($this->handle, $len);
 		}else{
-			return fread($this->handle,$len);
-	}
+			return fread($this->handle, $len);
+		}
 	}
 	/* (non-PHPdoc)
 	 * $flags and $ctx are ignored if using gzip.
@@ -124,7 +124,7 @@ class CacheFile extends CachePart{
 	 */
 	public function readToOutput(){
 		clearstatcache();
-		$modTime=filemtime($this->uri);
+		$modTime= filemtime($this->uri);
 		header('Cache-Control: public,max-age='.$this->ttl,true);
 		header('Pragma:',true);
 		header('Last-Modified: '. gmdate('D, d M Y H:i:s',$modTime).' GMT' ,true);
@@ -135,6 +135,7 @@ class CacheFile extends CachePart{
 			header('Content-Encoding: gzip',true);
 		}
 		header('Expires: '.gmdate('D, d M Y H:i:s',$modTime+$this->ttl) .' GMT',true);
+		ob_end_flush();
 		return readfile($this->uri);
 	}
 }
