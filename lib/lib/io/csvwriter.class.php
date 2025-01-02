@@ -27,7 +27,7 @@ class CsvWriter {
 		}
 	}
 	public function open(){
-		if(!$this->file->exists()){
+		if(strpos($this->file->getFile(), '://') === false && !$this->file->exists()){
 			$this->file->ensureDir();
 		}
 		$this->ROW_CCOUNT= 0;
@@ -58,6 +58,7 @@ class CsvWriter {
 		$this->file->write($this->eol);
 		$this->ROW_COUNT++;
 		$this->onNewLine= true;
+		return $this;
 	}
 	public function write($v){
 		if(func_num_args() > 1){
@@ -72,6 +73,7 @@ class CsvWriter {
 		}else{
 			$this->writeValue($v);
 		}
+		return $this;
 	}
 	private function writeValue($v){
 		if($this->onNewLine){
