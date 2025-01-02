@@ -24,9 +24,9 @@ class CsvReader {
 	private $delimeter, $enclosure, $escape;
 	private $line_type = null;
 	private $fetch_type=0;
-	const LINE_UNIX = 1, LINE_WIN = 2, LINE_MAC = 3;
-	const STATE_OK = 0, STATE_EOF = 1;
-	const FETCH_NUM=0,FETCH_ASSOC=1;
+	const LINE_UNIX= 1, LINE_WIN= 2, LINE_MAC= 3;
+	const STATE_OK= 0, STATE_EOF= 1;
+	const FETCH_NUM= 0, FETCH_ASSOC= 1;
 	/**
 	 * Creates a new CSV reader.
 	 * @param string $delim [optional] single character field delimiter. defaults to ','
@@ -69,67 +69,79 @@ class CsvReader {
 	 */
 	public function next() {
 		if ($this->STATE == self::STATE_EOF) return false;
-		$delim=$this->delimeter;
-		$enclosure=$this->enclosure;
-		$escape=$this->escape;
-		$return=array();
-		$buf='';
-		$quoted=false;
-		$double=($enclosure==$escape);
+		$delim= $this->delimeter;
+		$enclosure= $this->enclosure;
+		$escape= $this->escape;
+		$return= array();
+		$buf= '';
+		$quoted= false;
+		$double= ($enclosure==$escape);
 		$colnum= 0;
-		$c='';
-		while(($c = fgetc($this->FILE))!==false) {
+		$c= '';
+		while(($c = fgetc($this->FILE)) !== false){
 			if(!$quoted){
 				if($c == $enclosure){
-					if($double) {
+// 					echo 'Quote: ';
+					if($double){
 						$c2= fgetc($this->FILE);
 						if($c2 === false){
+// 							echo 'EOF checking for double' . PHP_EOL;
 							break;
 						}
 						if($c2 == $enclosure){
+// 							echo 'escaped quote appended' . PHP_EOL;
 							$buf.= $c2;
 							continue;
-						} else {
+						}else{
+// 							echo 'start' . PHP_EOL;
 							$quoted= true;
 							fseek($this->FILE, -1, SEEK_CUR);
 						}
-					} else {
-							$quoted= true;
+					}else{
+// 						echo 'start' . PHP_EOL;
+						$quoted= true;
 					}
-				} else if ($c==$delim) {
+				}elseif($c == $delim){
+// 					echo 'delim' . PHP_EOL;
 					if($this->fetch_type == self::FETCH_ASSOC){
 						$return[$this->HEADERS[$colnum]]= $buf;
 						$colnum++;
 					}else{
-					$return[] = $buf;
+						$return[]= $buf;
 					}
-					$buf = '';
+					$buf= '';
 				}elseif($c == "\n" || $c == "\r"){
+// 					echo 'EOL' . PHP_EOL;
 					$this->setFileType($c);
 					if($this->fetch_type == self::FETCH_ASSOC){
 						$return[$this->HEADERS[$colnum]]= $buf;
 					}else{
-					$return[] = $buf;
+						$return[]= $buf;
 					}
 					break;
-				} else {
-					$buf .= $c;
+				}else{
+					$buf.= $c;
 				}
 			}else{//quoted
 				if($c == $enclosure){
+// 					echo 'Quote: ';
 					if($double){
 						$c2= fgetc($this->FILE);
 						if($c2 === false){
+// 							echo 'EOF checking for double' . PHP_EOL;
 							break;
 						}
 						if($c2 == $enclosure){
+// 							echo 'escaped quote appended' . PHP_EOL;
 							$buf.= $c2;
 							continue;
 						}
+// 						echo 'end' . PHP_EOL;
 						$quoted= false;
 						fseek($this->FILE, -1, SEEK_CUR);
-					} else {
-						$quoted=false;
+					}else{
+// 						echo 'end' . PHP_EOL;
+						$quoted= false;
 					}
 				}else{
 					$buf.= $c;
@@ -143,10 +155,10 @@ class CsvReader {
 	}
 	private function setFileType($c) {
 		if(empty($this->line_type)){
-			if($c=="\n"){
+			if($c == "\n"){
 				$this->line_type= self::LINE_UNIX;
-			}elseif($c=="\r"){
-				if(fgetc($this->FILE)=="\n"){
+			}elseif($c == "\r"){
+				if(fgetc($this->FILE) == "\n"){
 					$this->line_type= self::LINE_WIN;
 				}else{
 					$this->line_type= self::LINE_MAC;
@@ -165,7 +177,7 @@ class CsvReader {
 	 */
 	private function clearEmptyValues($row){
 		foreach($row as $key => $datum){
-		if (($datum==='' || $datum===null)) $row[$key] = $this->default_value;
+			if (($datum === '' || $datum === null)) $row[$key]= $this->default_value;
 		}
 		return $row;
 	}
@@ -186,8 +198,8 @@ class CsvReader {
 		if($this->fetch_type == self::FETCH_ASSOC){
 			$this->HEADERS=$this->next();
 			if ($this->HEADERS===false) {$this->STATE=self::STATE_EOF; throw new IOException("Error reading the headers.");}
-		$this->header_count = count($this->HEADERS);
-		$this->DEFAULTS = array_fill(0, $this->header_count, $this->default_value);
+			$this->header_count = count($this->HEADERS);
+			$this->DEFAULTS = array_fill(0, $this->header_count, $this->default_value);
 		}
 		return true;
 	}
@@ -224,10 +236,10 @@ class CsvReader {
 	 */
 	public function getRow($row = null) {
 		if (!$this->isOpen()) return false;
-		if ($row==null) {
+		if ($row == null) {
 			if ($this->STATE===self::STATE_EOF) return false;
 			$row = $this->next();
-			if ($row===false) return false;
+			if ($row === false) return false;
 			return $row == null ? array() : $this->clearEmptyValues($row);
 		} else {
 			if (!$this->cache_rows) return false;
