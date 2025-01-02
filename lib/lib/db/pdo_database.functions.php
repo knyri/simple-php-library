@@ -1,8 +1,8 @@
 <?php
 /**
  * @author Kenneth Pierce kcpiercejr@gmail.com
-* @package database
-*/
+ * @package database
+ */
 // TODO: remove these. Kept for backwards compatability
 require_once 'pdotable.class.php';
 require_once 'pdostatementwrapper.class.php';
@@ -34,11 +34,11 @@ class DBProfile{
 		return self::$queries[$type];
 	}
 	public static function getTotal(){
-		$sum=0;
+		$sum= 0;
 		foreach(self::$queries as $v){
-			$sum+=$v;
+			$sum+= $v;
 		}
-			return $sum;
+		return $sum;
 	}
 }
 
@@ -47,12 +47,20 @@ class DBProfile{
  * @param boolean $toggle (null) Optional.
  * @return boolean If the db_* functions provide debugging info.
  */
-function db_debug($toggle=null){
-	$conf=&LibConfig::getConfig('db');
-	if($toggle!==null){
+function db_debug($toggle= null){
+	$conf= &LibConfig::getConfig('db');
+	if($toggle !== null){
 		$conf['debug']= $toggle;
 	}
 	return $conf['debug'] == true;
+}
+
+/**
+ * Get the names of the DBs in the config file
+ * @return array
+ */
+function db_get_names(){
+	return array_keys(LibConfig::getConfig('db'));
 }
 /**
  * creates a connection to the database if none exists
@@ -69,7 +77,7 @@ function db_debug($toggle=null){
  *    Host is optional for OCI.
  * @return NULL|PDO Returns a PDO object on success, null on failure. Throws a PDOException if database debug is on.
  */
-function &db_get_connection($forcenew = false, $db = 'default') {
+function &db_get_connection($forcenew= false, $db= 'default') {
 	global $_DB, $_DB_OPEN_CON;
 	if(is_string($forcenew) || is_array($forcenew)){
 		// because lazy
@@ -93,21 +101,19 @@ function &db_get_connection($forcenew = false, $db = 'default') {
 
 	if ($forcenew || !$_DB_OPEN_CON[$db] || $_DB[$db] == null) {
 		try{
-			if($conf['engine'] == 'oci'){
-				if($conf['host']){
+		if($conf['engine'] == 'oci'){
+			if($conf['host']){
 				$_DB[$db] = new OCIPDO('oci:dbname=//'. $conf['host'] .'/'. $conf['dbname'], $conf['user'], $conf['password']);
-				}else{
-				$_DB[$db] = new OCIPDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
-				}
 			}else{
+				$_DB[$db] = new OCIPDO('oci:dbname='. $conf['dbname'], $conf['user'], $conf['password']);
+			}
+		}else{
 				$_DB[$db] = new PDO($conf['engine'].':host='.$conf['host'].';dbname='.$conf['dbname'],$conf['user'],$conf['password'], array());
-			}
-			$_DB_OPEN_CON[$db]= true;
-			//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
+		}
+		$_DB_OPEN_CON[$db]= true;
+		//$_DB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 		}catch(PDOException $e){
-			if(db_debug()){
-				throw $e;
-			}
+			throw $e;
 			$_DB[$db]= null;
 			$_DB_OPEN_CON[$db]= false;
 		}
@@ -142,14 +148,14 @@ function db_close_connection($db= 'default') {
  * @param array $args (null) Arguments used
  * @return string string form of the error
  */
-function db_log_error($statement,array $args=null) {
-	static $stm=null;
-	if($stm==null){
-		$db = db_get_connection();
+function db_log_error($statement, array $args= null) {
+	static $stm= null;
+	if($stm == null){
+		$db= db_get_connection();
 		if(!$db){
 			throw new IllegalStateException('Failed to get a database object.');
 		}
-		$stm=$db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
+		$stm= $db->prepare('INSERT INTO errors (err_date, err_msg, err_query) VALUES (NOW(),:message,:query)');
 		if(!$stm){
 			throw new IllegalStateException('Failed to prepare the error statement.');
 		}
@@ -157,11 +163,12 @@ function db_log_error($statement,array $args=null) {
 	if(!is_object($statement)){
 		throw new IllegalArgumentException('$statement is not an object.');
 	}
-	$err=$statement->errorInfo();
-	$params=array(
-			':query'=>db_stm_to_string($statement->queryString,$args),
-			':message'=>'Err array:'.var_export($err,true)
+	$err= $statement->errorInfo();
+	$params= array(
+		':query'  => db_stm_to_string($statement->queryString, $args),
+		':message'=> 'Err array:' . var_export($err, true)
 	);
+	$err['extra']= $params;
 	try{
 		$stm->execute($params);
 	}catch(PDOException $e){
@@ -197,13 +204,13 @@ function db_record_exist($db, $table, $condition) {
  */
 function _db_validate_value($var) {
 	if (is_null($var)){
-		return 'NULL';
-	}elseif (is_string($var)){
-		if ($var == "NOW()")return $var;
-		return "'" . clean_text($var) . "'";
-	}else{
-		return (is_bool($var)) ? intval($var) : $var;
-	}
+			return 'NULL';
+		}elseif (is_string($var)){
+			if ($var == "NOW()") return $var;
+			return "'" . clean_text($var) . "'";
+		}else{
+			return (is_bool($var)) ? intval($var) : $var;
+		}
 }
 /** Builds the WHERE clause.
  * @param array $where Array of conditions to be met. Each element must be array(column, value[, 'AND'|'OR'|negate[, negate]]) (negate is optional).
@@ -219,71 +226,71 @@ function _db_validate_value($var) {
  * @return array the resulting where string and array of values for a PDOStatement
  */
 function _db_build_where(array $where) {
-	if($where==null || count($where)==0){
+	if($where == null || count($where) == 0){
 		return '';
 	}
-	$ret=array('',array());
-	$wcount=0;
-	$where_2 = array();
+	$ret= array('',array());
+	$wcount= 0;
+	$where_2= array();
 	foreach($where as $arg){
 		if(count($arg) > 3){
 			if($arg[1] == 'IN'){
-				$ret[1][':where'.($wcount)]=$arg[2];
+				$ret[1][':where'.($wcount)]= $arg[2];
 				$where_2[]= "$arg[0]" . ($arg[3]?' NOT IN (':' IN (') . ':where'.($wcount) . ')' . ((count($arg)==5)?' '.$arg[4].' ' : '');
 				$wcount++;
 			}elseif($arg[1] == 'LIKE'){
-				$ret[1][':where'.($wcount)]=$arg[2];
+				$ret[1][':where'.($wcount)]= $arg[2];
 				$where_2[] = "$arg[0]" . ($arg[3]?' NOT LIKE ':' LIKE ') .':where'.($wcount) . ((count($arg)==5)?' '.$arg[4].' ' : '');
 				$wcount++;
 			}elseif($arg[1] == 'BETWEEN'){
-				$ret[1][':where'.($wcount)]=$arg[2];
-				$ret[1][':where'.($wcount+1)]=$arg[3];
+				$ret[1][':where'.($wcount)]=   $arg[2];
+				$ret[1][':where'.($wcount+1)]= $arg[3];
 				$where_2[]= "$arg[0]" . ($arg[4]?' NOT BETWEEN ':' BETWEEN ') . ':where'.($wcount) . ' AND ' . ':where'.($wcount+1) . ((count($arg)==6)?' '.$arg[5].' ' : '');
 				$wcount+=2;
-			}elseif($arg[1]===null){
+			}elseif($arg[1] === null){
 				if($arg[3])
-					$where_2[] ="$arg[0] IS NOT NULL $arg[2] ";
-					else
-						$where_2[] ="$arg[0] IS NULL $arg[2] ";
+					$where_2[]= "$arg[0] IS NOT NULL $arg[2] ";
+				else
+					$where_2[]= "$arg[0] IS NULL $arg[2] ";
 			}else{//What case is this?
-				$ret[1][':where'.$wcount]=$arg[1];
+				$ret[1][':where'.$wcount]= $arg[1];
 				if($arg[4])
-					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
-					else
-						$where_2[] ="$arg[0]!=:where$wcount $arg[2] ";
-						$wcount++;
+					$where_2[]= "$arg[0]=:where$wcount $arg[2] ";
+				else
+					$where_2[]= "$arg[0]!=:where$wcount $arg[2] ";
+				$wcount++;
 			}
 		}else{
 			if(count($arg) == 3){
-				if ($arg[0]=='LITERAL'){
-					$where_2[] = $arg[1] . ' '.$arg[2].' ';
-				}elseif($arg[1]===null){
+				if ($arg[0] == 'LITERAL'){
+					$where_2[]= $arg[1] . ' '.$arg[2].' ';
+				}elseif($arg[1] === null){
 					if(is_bool($arg[2])){
 						if($arg[2])
-							$where_2[] ="$arg[0] IS NOT NULL";
-							else
-								$where_2[] ="$arg[0] IS NULL";
+							$where_2[]= "$arg[0] IS NOT NULL";
+						else
+							$where_2[]= "$arg[0] IS NULL";
 					}else
-						$where_2[] ="$arg[0] IS NULL $arg[2] ";
+						$where_2[]= "$arg[0] IS NULL $arg[2] ";
 				}else{
-					$ret[1][':where'.$wcount]=$arg[1];
-					$where_2[] ="$arg[0]=:where$wcount $arg[2] ";
+					$ret[1][':where'.$wcount]= $arg[1];
+					$where_2[]= "$arg[0]=:where$wcount $arg[2] ";
 					$wcount++;
 				}
 			}else{
-				if($arg[0]=='LITERAL'){
-					$where_2[] = $arg[1];
-				}elseif($arg[1]===null){
-					$where_2[] ="$arg[0] IS NULL ";
+				if($arg[0] == 'LITERAL'){
+					$where_2[]=  $arg[1];
+				}elseif($arg[1] === null){
+					$where_2[]= "$arg[0] IS NULL ";
 				}else{
-					$ret[1][':where'.($wcount)]=$arg[1];
-					$where_2[] = "$arg[0]=:where$wcount";
+					$ret[1][':where'.($wcount)]= $arg[1];
+					$where_2[]= "$arg[0]=:where$wcount";
 					$wcount++;
 				}
 			}
 		}
 	}
-	$ret[0]=' WHERE '.implode('', $where_2);
+	$ret[0]= ' WHERE '.implode('', $where_2);
 	return $ret;
 }
 /**
@@ -388,7 +395,7 @@ function _db_build_where_obj(array $where) {
  * @return PDOStatement The resulting PDOStatement
  * @throws PDOException If the statement couldn't be prepared
  */
-function db_query($db, $table, array $columns= null, $where= null, array $sortBy= null, $groupBy= null, $having= null,$limit= 0,$offset= 0){
+function db_query($db, $table, array $columns= null,$where= null,array $sortBy= null, $groupBy= null, $having= null,$limit= 0,$offset= 0){
 	DBProfile::query('select');
 	if($db === null){
 		$db= db_get_connection();
@@ -439,29 +446,29 @@ function db_make_query($table, array $columns= null, WhereBuilder $where= null, 
 	if($columns !== null){
 		$query.= implode(',', $columns);
 	}else{
-		$query .= '*';
+		$query.= '*';
 	}
 
 	if(!empty($table)){
-		$query .= ' FROM '.$table;
+		$query.= ' FROM '.$table;
 	}
 
 	if($where){
-		$query .= $where->toString();
+		$query.= $where->toString();
 	}
 	if($groupBy != null){
-		$query .= ' GROUP BY '.$groupBy;
+		$query.= ' GROUP BY '.$groupBy;
 		if($having != null){
-			$query .=  'HAVING '.$having;
+			$query.=  'HAVING '.$having;
 		}
 	}
 	if($sortBy != null){
-		$query .= db_build_order_by($sortBy);
+		$query.= db_build_order_by($sortBy);
 	}
 	if($limit > 0){
-		$query.=" LIMIT $limit";
+		$query.= " LIMIT $limit";
 		if($offset > 0){
-			$query.=" OFFSET $offset";
+			$query.= " OFFSET $offset";
 		}
 	}
 	return $query;
@@ -480,14 +487,15 @@ function db_multi_insert($db, $table, array $columns, array $data) {
 	if ($db===null){
 		$db=db_get_connection();
 	}
-	$query = "INSERT INTO $table (".implode(',',$columns).') VALUES ';
-	$values = array();
+	$query= "INSERT INTO $table (".implode(',',$columns).') VALUES ';
+	$values= array();
 	foreach ($data as $datum){
 		$values[]= '('.implode(', ',array_map('_db_validate_value',$datum)).')';
 	}
 	$query.= implode(',', $values);
 	unset($values);
-	$res = mysql_query($query,$db);
+	// TODO: Why is this still here?!
+	$res= mysql_query($query,$db);
 	if(!$res){
 		return mysql_error();
 	}else{
@@ -514,7 +522,7 @@ function db_delete($db, $table, $conditions = null) {
 		$conditions= $conditions->getValues();
 	}
 	try{
-		$stm = $db->prepare($stm);
+		$stm= $db->prepare($stm);
 	}catch(PDOException $e){
 		if(db_debug()){
 			throw $e;
@@ -543,11 +551,11 @@ function db_num_rows(PDO $db,$table, $conditions=null){
 		if(is_array($conditions)){
 			$conditions= _db_build_where_obj($conditions);
 		}
-		$stm = "SELECT COUNT(*) FROM $table".$conditions->toString();
+		$stm= "SELECT COUNT(*) FROM $table".$conditions->toString();
 		$conditions= $conditions->getValues();
 	}
 	try{
-		$stm = db_prepare($db, $stm);
+		$stm= db_prepare($db, $stm);
 	}catch(PDOException $e){
 		if(db_debug()){
 			throw $e;
@@ -558,7 +566,7 @@ function db_num_rows(PDO $db,$table, $conditions=null){
 	if(!db_run_query($stm, $conditions)){
 		return false;
 	}
-	$ret = $stm->fetch(PDO::FETCH_NUM);
+	$ret= $stm->fetch(PDO::FETCH_NUM);
 	$stm->closeCursor();
 	return $ret[0];
 }
@@ -596,7 +604,7 @@ function db_exists($db,$table, $conditions=null){
 	if(!db_run_query($stm, $conditions)){
 		return false;
 	}
-	$ret = $stm->fetch(PDO::FETCH_NUM);
+	$ret= $stm->fetch(PDO::FETCH_NUM);
 	$stm->closeCursor();
 	return $ret[0];
 }
@@ -643,7 +651,7 @@ function db_run_query($stm, array $params= null, array $types= null){
  * @param array $params (null)
  * @return string
  */
-function db_stm_to_string($stm, array $params=null){
+function db_stm_to_string($stm, array $params= null){
 	if($params == null){
 		return is_object($stm) ? $stm->queryString : $stm;
 	}
@@ -659,14 +667,15 @@ function db_stm_to_string($stm, array $params=null){
  * Attempts to prepare the statement.
  * @param PDO $db
  * @param string $query
+ * @param boolean $throw If true, throws an error instead of returning false
  * @throws PDOException on error if db_debug() returns true
  * @return boolean|PDOStatement false on error
  */
-function db_prepare(PDO $db, $query){
+function db_prepare(PDO $db, $query, $throw= false){
 	try{
 		$query= $db->prepare($query);
 	}catch(PDOException $e){
-		if(db_debug()){
+		if($throw || db_debug()){
 			throw $e;
 		}else{
 			return false;
