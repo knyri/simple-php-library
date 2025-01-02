@@ -48,8 +48,8 @@ class Stream{
 		else
 			$this->handle=fopen($this->uri,$mode,$this->use_include_path);
 		if(is_resource($this->handle)){
-			$this->open=true;
-			$this->closed=false;
+			$this->open= true;
+			$this->closed= false;
 		}else{
 			$this->open= false;
 		}
@@ -73,10 +73,10 @@ class Stream{
 	/**
 	 * flock()
 	 * @param int $operation
-	 * 		LOCK_SH to acquire a shared lock (reader).
-	 * 		LOCK_EX to acquire an exclusive lock (writer).
+	 *		LOCK_SH to acquire a shared lock (reader).
+	 *		LOCK_EX to acquire an exclusive lock (writer).
 	 * Do not pass LOCK_UN. Use unlock()
-	 * 		LOCK_UN to release a lock (shared or exclusive).
+	 *		LOCK_UN to release a lock (shared or exclusive).
 	 * @param int $wouldBlock
 	 * @return boolean
 	 */
@@ -185,7 +185,7 @@ class Stream{
 	 * filetype(...)
 	 * @return string
 	 */
-	public 	function getType(){return filetype($this->uri);}
+	public	function getType(){return filetype($this->uri);}
 	/* ********************************
 	 * stream_* functions
 	 * ********************************/

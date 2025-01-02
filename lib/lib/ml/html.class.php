@@ -17,14 +17,14 @@ class HTML {
 	 * @param string $title The content of the TITLE tag.
 	 * @param array $meta An array of array('attrib'=>'value',...)
 	 * @param array $link An array of array('attrib'=>'value',...). Common attribute value pairs are
-	 * 	rel=>stylesheet,href=>url,media=>media type
+	 *	rel=>stylesheet,href=>url,media=>media type
 	 * @param string|array $base
-	 * 	If a string the will set the base href.
-	 * 	If an array it should be an array of ('attrib'=>'value',...)
+	 *	If a string the will set the base href.
+	 *	If an array it should be an array of ('attrib'=>'value',...)
 	 * @param array $style An array of array('attrib'=>'value',...). A special index 'content' can be set to specify the content between the STYLE tags
 	 * @param array $script An array of array('attrib'=>'value',...). A special index 'content' can be set to specify the content between the SCRIPT tags
 	 * @param array $ie An array of array('lt'|'gt'|'eq'|'lte'|'gte'|'neq',version,link,style,script) where link,style, and script have the same format as $link,$style, and $script.
-	 * 	All may be null but must be set.
+	 *	All may be null but must be set.
 	 * @param string $raw Raw output appended to the very end.
 	 */
 	public static function echo_header($title='',array $meta=null,array $link=null,$base=null,array $style=null,array $script=null,array $ie=null,$raw=null){

@@ -35,13 +35,13 @@ function file_extention($file){
  * Examines the first 256 bytes of a file and attempts to identify it. Returns the common MIME type for the file.
  * Can currently identify
  * <ul>
- * 	<li>3gp	video/3gpp
- * 	<li>mov	video/quicktime
- * 	<li>mpeg	video/mpeg
- * 	<li>mpeg2	video/mpeg
- * 	<li>mp3	audio/mpeg
- * 	<li>mp4	video/mp4
- * 	<li>webm	video/webm
+ *	<li>3gp	video/3gpp
+ *	<li>mov	video/quicktime
+ *	<li>mpeg	video/mpeg
+ *	<li>mpeg2	video/mpeg
+ *	<li>mp3	audio/mpeg
+ *	<li>mp4	video/mp4
+ *	<li>webm	video/webm
  *	<li>asf container(wmv,wma,asf)	video/x-ms-asf
  *	<li>mkv container	video/x-matroska
  *	<li>flv	video/x-flv
@@ -62,7 +62,7 @@ function file_get_type($file,$default='application/octet-stream'){
 	mpeg	00 00 01
 	mpeg2	00 00 01 BA 44
 	mkv		1A 45 DF A3 .. .. .. .. 6D 61 74 72 6F 73 6B 61
-	webm 	1A 45 DF A3 ... pos(31) 77 65 62 6D
+	webm  1A 45 DF A3 ... pos(31) 77 65 62 6D
 	asf		30 26 B2 75 8E 66 CF 11 A6 D9 00 AA 00 62 CE 6C	//video/x-ms-wmv
 	flv		46 4C 56 01
 	ogg		4F 67 67 53

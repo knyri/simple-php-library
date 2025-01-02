@@ -33,12 +33,17 @@ class mail{
 	 * @param string $file Path to the file
 	 * @param string $type MIME type of the file
 	 * @param boolean $deleteonsend default is false
+	 * @return $this
 	 */
 	public function addAttachment($file, $type, $deleteonsend=false){
 		$this->attachments[$file]=array($type, $deleteonsend);
 		$this->generated=false;
 		return $this;
 	}
+	/**
+	 * @param string $addr
+	 * @return mail
+	 */
 	public function setReplyTo($addr){
 		if(is_array($addr)){
 			$this->replyTo= array_merge($this->replyTo, $addr);
@@ -50,6 +55,7 @@ class mail{
 	/**
 	 * Add one or more recipients
 	 * @param string|array $addr
+	 * @return $this
 	 */
 	public function addTo($addr){
 		if(is_array($addr)){
@@ -75,6 +81,7 @@ class mail{
 	/**
 	 * Add a carbon copy recipient
 	 * @param string $to
+	 * @return $this
 	 */
 	public function addCC($to){
 		$this->cc[]=$to;
@@ -83,6 +90,7 @@ class mail{
 	/**
 	 * Add a blind carbon copy recipient
 	 * @param string $to
+	 * @return $this
 	 */
 	public function addBCC($to){
 		$this->bcc[]=$to;
@@ -91,6 +99,7 @@ class mail{
 	/**
 	 * Set the fron address
 	 * @param string $from
+	 * @return $this
 	 */
 	public function setFrom($from){
 		$this->from= $from;
@@ -99,6 +108,7 @@ class mail{
 	/**
 	 * Set the subject
 	 * @param string $subject
+	 * @return $this
 	 */
 	public function setSubject($subject){
 		$this->subject= $subject;
@@ -107,6 +117,7 @@ class mail{
 	/**
 	 * Set the message
 	 * @param string $message
+	 * @return $this
 	 */
 	public function setMessage($message){
 		$this->message=$message;
@@ -173,6 +184,7 @@ class mail{
 				$this->message.="Content-Type: text/html\r\n\r\n";
 			}else{
 				$this->message.="Content-Type: text/plain\r\n\r\n";
+				$mtmp= str_replace("\r\n", "\r\n\r\n", $mtmp);
 			}
 			$this->message.= trim($mtmp) . "\r\n";
 			unset($mtmp);
@@ -180,18 +192,22 @@ class mail{
 				if(substr($file,0,4)=='http'){
 					$this->message .= "--{$mime_boundary}\r\n";
 					$data = chunk_split(base64_encode(file_get_contents($file,false,self::$httpctx)), 76, "\r\n");
-					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
-							"Content-Description: ".basename($file)."\r\n" .
-							"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
-							"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n";
+					$this->message .=
+						"Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
+						"Content-Description: ".basename($file)."\r\n" .
+						"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
+						"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n"
+					;
 				}else
 				if(is_file($file)){
 					$this->message .= "--{$mime_boundary}\r\n";
 					$data = chunk_split(base64_encode(file_get_contents($file)), 76, "\r\n");
-					$this->message .= "Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
-								"Content-Description: ".basename($file)."\r\n" .
-								"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
-								"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n";
+					$this->message .=
+						"Content-Type: $mime[0]; name=\"".basename($file)."\"\r\n" .
+						"Content-Description: ".basename($file)."\r\n" .
+						"Content-Disposition: attachment; filename=\"".basename($file)."\"; size=".strlen($data).";\r\n" .
+						"Content-Transfer-Encoding: base64\r\n\r\n" . $data . "\r\n\r\n"
+					;
 					if($mime[1]===true){
 						// delete on send flag
 						@unlink($file);

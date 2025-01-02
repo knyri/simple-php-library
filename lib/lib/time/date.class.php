@@ -7,27 +7,27 @@ include_once 'date.functions.php';
 class SDate{
 	/**
 	 * array(
-	 * 	0=> Year
-	 * 	1=> Month
-	 * 	2=> Day
+	 *	0=> Year
+	 *	1=> Month
+	 *	2=> Day
 	 * )
 	 * @var array
 	 */
 	private $date;
 	/**
 	 * array(
-	 * 	0=> hour
-	 * 	1=> minute
-	 * 	2=> second
+	 *	0=> hour
+	 *	1=> minute
+	 *	2=> second
 	 * )
 	 * @var array
 	 */
 	private $time;
 	/**
 	 * array(
-	 * 	0=> hour offset
-	 * 	1=> minute offset
-	 * 	2=> total offest in minutes
+	 *	0=> hour offset
+	 *	1=> minute offset
+	 *	2=> total offest in minutes
 	 * )
 	 * @var array
 	 */
@@ -270,65 +270,65 @@ class SDate{
 		 * Fix the time
 		 */
 		//Seconds
-		if($this->time[2]<0) do{
+		if($this->time[2] < 0) do{
 				$this->time[1]--;
-				$this->time[2]+=60;
-			}while($this->time[2]<0);
+				$this->time[2]+= 60;
+			}while($this->time[2] < 0);
 		else{
-			while($this->time[2]>59){
-				$this->time[2]-=60;
+			while($this->time[2] > 59){
+				$this->time[2]-= 60;
 				$this->time[1]++;
 			}
 		}
 		//minutes
-		if($this->time[1]<0) do{
+		if($this->time[1] < 0) do{
 				$this->time[0]--;
-				$this->time[1]+=60;
-			}while($this->time[1]<0);
+				$this->time[1]+= 60;
+			}while($this->time[1] < 0);
 		else{
-			while($this->time[1]>59){
-				$this->time[1]-=60;
+			while($this->time[1] > 59){
+				$this->time[1]-= 60;
 				$this->time[0]++;
 			}
 		}
 		//hours
-		if($this->time[0]<0) do{
+		if($this->time[0] < 0) do{
 				$this->date[2]--;
-				$this->time[0]+=24;
-			}while($this->time[0]<0);
+				$this->time[0]+= 24;
+			}while($this->time[0] < 0);
 		else{
-			while($this->time[0]>23){
-				$this->time[0]-=24;
+			while($this->time[0] > 23){
+				$this->time[0]-= 24;
 				$this->date[2]++;
 			}
 		}
 		/*
 		 * Fix the date
 		 */
-		while($this->date[1]>12){
-			$this->date[1]-=12;
+		while($this->date[1] > 12){
+			$this->date[1]-= 12;
 			$this->date[0]++;
 		}
-		while($this->date[1]<1){
-			$this->date[1]+=12;
+		while($this->date[1] < 1){
+			$this->date[1]+= 12;
 			$this->date[0]--;
 		}
-		$lastDay=date_get_last_day($this->date[1],$this->date[0]);
-		while($this->date[2]>$lastDay){
-			$this->date[2]-=$lastDay;
+		$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+		while($this->date[2] > $lastDay){
+			$this->date[2]-= $lastDay;
 			$this->date[1]++;
-			if($this->date[1]==13){
-				$this->date[1]=1;
+			if($this->date[1] == 13){
+				$this->date[1]= 1;
 				$this->date[0]++;
 			}
-			$lastDay=date_get_last_day($this->date[1],$this->date[0]);
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
 		}
-		while($this->date[2]<1){
-			$lastDay=date_get_last_day($this->date[1],$this->date[0]);
-			$this->date[2]+=$lastDay;
+		while($this->date[2] < 1){
+			$lastDay= date_get_last_day($this->date[1], $this->date[0]);
+			$this->date[2]+= $lastDay;
 			$this->date[1]--;
-			if($this->date[1]==0){
-				$this->date[1]=12;
+			if($this->date[1] == 0){
+				$this->date[1]= 12;
 				$this->date[0]--;
 			}
 		}
@@ -349,17 +349,17 @@ class SDate{
 class SDateRange{
 	/**
 	 * array(
-	 * 	0=> Year
-	 * 	1=> Month
-	 * 	2=> Day
-	 * 	3=> hour
-	 * 	4=> minute
-	 * 	5=> second
-	 * 	6=> array{
-	 * 		0=> hour offset
-	 * 		1=> minute offset
-	 * 		2=> offset in minutes
-	 * 	)
+	 *	0=> Year
+	 *	1=> Month
+	 *	2=> Day
+	 *	3=> hour
+	 *	4=> minute
+	 *	5=> second
+	 *	6=> array{
+	 *		0=> hour offset
+	 *		1=> minute offset
+	 *		2=> offset in minutes
+	 *	)
 	 * )
 	 * @var array
 	 */

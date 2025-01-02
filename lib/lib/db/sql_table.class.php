@@ -186,7 +186,7 @@ class sql_table {
 				foreach($this->defaultSort as $dsort)
 					$sort.= $dsort[0].' '.$dsort[1].',';
 				$sort=substr($sort,0,-1);
-		}
+			}
 		}else{
 			$sort.=" $sortDir";
 		}
@@ -495,15 +495,15 @@ class sql_table_simple {
 	 * @return string The table.
 	 */
 	public function printTable($db, $conditions = null, $extra = '') {
-		$row_count=0;
-		$row_count=db_num_rows($db,$this->table,$conditions);
-		if($row_count==0){
+		$row_count= 0;
+		$row_count= db_num_rows($db, $this->table, $conditions);
+		if($row_count == 0){
 			return 'Nothing found.';
 		}
-		$buf = '';
-		$shown_columns = array_diff($this->select_columns, $this->hidden_columns);
-		if ($this->sort==null){
-			$this->sort = $this->select_columns[0];
+		$buf= '';
+		$shown_columns= array_diff($this->select_columns, $this->hidden_columns);
+		if ($this->sort == null){
+			$this->sort= $this->select_columns[0];
 		}
 		$sql = 'SELECT SQL_CACHE ';
 		$sql .= implode(',', $this->select_columns);
@@ -546,7 +546,7 @@ class sql_table_simple {
 		$column_format = array();
 		*/
 		while ($row= $res->fetch()) {
-			$rowBuf = "<tr>\n";
+			$rowBuf= "<tr>\n";
 			foreach($this->shown_columns as $scolumn) {
 				if(isset($this->quirk_col[$scolumn])){
 					$column= $this->quirk_col[$scolumn];
@@ -554,57 +554,57 @@ class sql_table_simple {
 					$column= $scolumn;
 				}
 				if(isset($this->column_attributes[$scolumn])){
-					$rowBuf .= "\t<td";
+					$rowBuf.= "\t<td";
 					foreach($this->column_attributes[$scolumn] as $key=>$value){
-						$rowBuf.=" $key=\"$value\"";
+						$rowBuf.= " $key=\"$value\"";
 					}
-					$rowBuf.=">";
+					$rowBuf.= ">";
 				}else{
-					$rowBuf .= "\t<td>";
+					$rowBuf.= "\t<td>";
 				}
 				if(isset($this->col_callback[$scolumn])){
-					$row[$column]=call_user_func($this->col_callback[$scolumn],$row[$column]);
+					$row[$column]= call_user_func($this->col_callback[$scolumn], $row[$column]);
 				}
 				if (isset($this->column_format[$scolumn])){
 					if(isset($row[$column])){
-						$cvalue=str_replace('$value$',$row[$column],$this->column_format[$scolumn]);
+						$cvalue= str_replace('$value$', $row[$column], $this->column_format[$scolumn]);
 					}else{
-						$cvalue=$this->column_format[$scolumn];
+						$cvalue= $this->column_format[$scolumn];
 					}
-					$idx=-1;
-					while(($idx=strpos($cvalue,'$',$idx+1))!==false){
-						$idx2=strpos($cvalue,'$',$idx+1);
+					$idx= -1;
+					while(($idx= strpos($cvalue, '$', $idx + 1)) !== false){
+						$idx2= strpos($cvalue, '$', $idx+1);
 						if($idx2 === false){
 							break;
 						}
-						$sidx=substr($cvalue,$idx+1,$idx2-$idx-1);
-						if(isset($this->aliases_columns[$sidx])&&isset($row[$this->aliases_columns[$sidx]])){
-							$cbvalue=$row[$this->aliases_columns[$sidx]];
+						$sidx= substr($cvalue, $idx + 1, $idx2 - $idx - 1);
+						if(isset($this->aliases_columns[$sidx]) && isset($row[$this->aliases_columns[$sidx]])){
+							$cbvalue= $row[$this->aliases_columns[$sidx]];
 							if(isset($this->col_callback[$sidx])){
-								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$this->aliases_columns[$sidx]]);
+								$cbvalue= call_user_func($this->col_callback[$sidx], $row[$this->aliases_columns[$sidx]]);
 							}
-							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
-							$idx+=strlen($cbvalue);
+							$cvalue= str_replace('$'.$sidx.'$', $cbvalue, $cvalue);
+							$idx+= strlen($cbvalue);
 						}elseif(isset($row[$sidx])){
-							$cbvalue=$row[$sidx];
+							$cbvalue= $row[$sidx];
 							if(isset($this->col_callback[$sidx])){
-								$cbvalue=call_user_func($this->col_callback[$sidx],$row[$sidx]);
+								$cbvalue= call_user_func($this->col_callback[$sidx], $row[$sidx]);
 							}
-							$cvalue=str_replace('$'.$sidx.'$',$cbvalue,$cvalue);
-							$idx+=strlen($cbvalue);
+							$cvalue= str_replace('$'.$sidx.'$', $cbvalue, $cvalue);
+							$idx+= strlen($cbvalue);
 						}else{
 							$idx= $idx2 - 1;
 						}
 					}
-					$rowBuf.=$cvalue;
+					$rowBuf.= $cvalue;
 				}else
-					$rowBuf .= $row[$column];
-				$rowBuf .= "</td>\n";
+					$rowBuf.= $row[$column];
+				$rowBuf.= "</td>\n";
 			}
-			$buf .= $rowBuf."</tr>\n";
+			$buf.= $rowBuf."</tr>\n";
 		}
-		$buf .= '</table>';
-//		$buf .= '<span style="font-size:smaller;">'.getElapsed('query').' seconds</span>';
+		$buf.= '</table>';
+//		$buf.= '<span style="font-size:smaller;">'. getElapsed('query') .' seconds</span>';
 		return $buf;
 	}
 }// -- end class sql_table

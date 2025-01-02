@@ -174,7 +174,7 @@ class File extends Stream{
 		if($atime == 0){
 			$atime= $time;
 		}
-		return touch($this->uri,$time,$atime);
+		return touch($this->uri, $time, $atime);
 	}
 	/**
 	 * filemtime()

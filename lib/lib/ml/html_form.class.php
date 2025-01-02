@@ -84,7 +84,7 @@ class HTML_form {
 	}
 	/**
 	 * Adds an element to the form.<br>
-	 * 		Formatted like so: array(type, text, name, value[, inline])<br>
+	 *		Formatted like so: array(type, text, name, value[, inline])<br>
 	 *		type=one of HTML_form::INPUT_*<br>
 	 *		inline=true or false. defaults to false.<br>
 	 *		LITERAL prints the text and value and adds a hidden field.<br>
