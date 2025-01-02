@@ -106,18 +106,10 @@ class OCIPDO extends PDO{
 		return new OCIPDOStatement($this, $statement);
 	}
 
-	public function query($statement){
+	public function query($statement, $fetchMode=null, ...$fetchModeArgs){
 		$ret= new OCIPDOStatement($this, $statement);
 		if($ret->execute()){
-			$argc= func_num_args();
-			if($argc > 1){
-				if($argc > 2){
-					$args= func_get_args();
-					call_user_func_array(array($ret,'setFetchMode'), array_slice($args, 1, $argc - 1, false));
-				}else{
-					$ret->setFetchMode(func_get_arg(1));
-				}
-		}
+			$ret->setFetchMode($fetchMode, $fetchModeArgs);
 			return $ret;
 		}
 		return false;
@@ -225,8 +217,14 @@ class OCIPDO extends PDO{
 		$error= explode(':', $string, 3);
 		$this->caughtError= true;
 		$this->lastError= OCIPDO::makeErrorInfo(array('code'=>trim($error[1]),'message'=>trim($error[2])));
+		$this->lastError['query']= $this->stm;
+		$this->lastError['params']= $this->binds;
+		$this->_setLastError($this->lastError);
+
 		if(function_exists('logit')){
 			logit("$string\n$file\n$line\n".print_r($context, true));
+			logit($this->stm);
+			logit($this->binds);
 		}
 		switch($this->getAttribute(PDO::ATTR_ERRMODE)){
 			case PDO::ERRMODE_EXCEPTION:
@@ -246,19 +244,17 @@ class OCIPDO extends PDO{
 	private function stopListeningForErrors($operationSuccess){
 		restore_error_handler();
 		if($this->caughtError){
-			$this->_setLastError($this->lastError);
 			$this->caughtError= false;
 		}else if(!$operationSuccess){
 			if($this->resultSet){
 				$this->lastError= OCIPDO::makeErrorInfo(oci_error($this->resultSet));
 				$this->lastError['query']= $this->stm;
 				$this->lastError['params']= $this->binds;
-				$this->_setLastError($this->lastError);
-
 			}else{
 				$this->lastError= $this->_errorInfo();
 			}
 		}
+		$this->_setLastError($this->lastError);
 	}
 
 	private static function makeErrorAry($code, $ociError){
@@ -502,7 +498,7 @@ class OCIPDO extends PDO{
 				$code >= 12100 && $code <= 12299 ||
 				$code >= 12500 && $code <= 12599
 			){
-						return self::makeErrorAry('66000', $ociError);
+				return self::makeErrorAry('66000', $ociError);
 			}
 			if($code >= 430 && $code <= 439){
 				return self::makeErrorAry('67000', $ociError);
@@ -573,6 +569,9 @@ class OCIPDOStatement extends PDOStatement{
 	private function stopListeningForErrors($operationSuccess, $message= null){
 		restore_error_handler();
 		if($this->caughtError){
+			if($message){
+				$this->lastError['extraDetail']= $message;
+			}
 			$this->db->_setLastError($this->lastError);
 			$this->caughtError= false;
 		}else if(!$operationSuccess){
@@ -587,6 +586,11 @@ class OCIPDOStatement extends PDOStatement{
 
 			}else{
 				$this->lastError= $this->db->_errorInfo();
+				$this->lastError['query']= $this->stm;
+				$this->lastError['params']= $this->binds;
+				if($message){
+					$this->lastError['extraDetail']= $message;
+				}
 			}
 		}
 	}
@@ -595,7 +599,18 @@ class OCIPDOStatement extends PDOStatement{
 		$error= explode(':', $string, 3);
 		$this->caughtError= true;
 		$this->lastError= OCIPDO::makeErrorInfo(array('code'=>trim($error[1]),'message'=>trim($error[2])));
+		$this->lastError['query']= $this->stm;
+		$this->lastError['params']= $this->binds;
+		$this->db->_setLastError($this->lastError);
 
+		if(function_exists('logit')){
+			ob_start();
+			var_dump($context);
+			$ctx= ob_get_clean();
+			logit("$string\n$file\n$line\n".$ctx);
+			logit($this->stm);
+			logit($this->binds);
+		}
 		switch($this->db->getAttribute(PDO::ATTR_ERRMODE)){
 			case PDO::ERRMODE_EXCEPTION:
 				$exception= new PDOException('OCI error');
@@ -607,7 +622,10 @@ class OCIPDOStatement extends PDOStatement{
 		}
 
 	}
-	public function setFetchMode($mode, $params= null){
+	public function setFetchMode($mode, $params = NULL){
+		if($mode == null){
+			return;
+		}
 		switch($mode){
 			case PDO::FETCH_ASSOC:
 			case PDO::FETCH_BOTH:
@@ -615,7 +633,7 @@ class OCIPDOStatement extends PDOStatement{
 				$this->fetchStyle= $mode;
 			break;
 			default:
-				throw new PDOException("Fetch mode not supported");
+				throw new PDOException("Fetch mode not supported: $mode");
 		}
 	}
 	public function closeCursor(){
@@ -697,6 +715,7 @@ class OCIPDOStatement extends PDOStatement{
 				// maybe need to unset the param?
 // 				$value= $lob;
 			}
+// 			logit($param);
 			if(!
 				($type === false ? oci_bind_by_name($resultSet, $param, $val[0]) : oci_bind_by_name($resultSet, $param, $val[0], -1, $type))
 			){
@@ -805,7 +824,13 @@ class OCIPDOStatement extends PDOStatement{
 		return $this->lastError ? $this->lastError[0] : '00000';
 	}
 	public function errorInfo(){
-		return $this->lastError ? $this->lastError : OCIPDO::makeErrorInfo(false);
+		$error= $this->lastError;
+		if(!$error){
+			$error= OCIPDO::makeErrorInfo(false);
+			$error['query']= $this->stm;
+			$error['params']= $this->binds;
+		}
+		return $error;
 	}
 	public function debugDumpParams(){
 		// TODO: what to dump?
