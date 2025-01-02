@@ -20,6 +20,9 @@ class PDOStatementWrapper extends PropertyList{
 		$this->dataset= $stm;
 		$this->dataset->setFetchMode($fetch_mode);
 	}
+	public function setFetchMode($mode){
+		$this->dataset->setFetchMode($mode);
+	}
 	public function getStatement(){
 		return $this->dataset;
 	}
