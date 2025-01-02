@@ -24,19 +24,60 @@ class PDOTable{
 		$trackChanges= false,
 		$lastOperation= self::OP_NONE,
 		$lastError= false,
-		$doneIterating= true;
+		$doneIterating= true,
+		$differentialUpdate= true,
+		$defaultSort= null
+	;
 	const
 		OP_NONE= 0,
 		OP_LOAD= 1,
 		OP_INSERT= 2,
 		OP_UPDATE= 3,
-		OP_DELETE= 4;
+		OP_DELETE= 4
+	;
+	public function debug(){
+		logit($this->data);
+	}
+
+
+	/**
+	 * Ignore changes to these columns when determining if a change happened. Useful for columns used to track the modified date.
+	 * Only works when track changes is set to true.
+	 * @param array $cols
+	 */
+	public function ignoreUpdateColumns(array $cols){
+		if($this->trackChanges){
+			$this->data->setIgnoredProps($cols);
+		}else{
+			throw new Exception('Track changes must be enabled first to use this.');
+		}
+		return $this;
+	}
+	/**
+	 * Sets if an update statement will send all the columns (false) or just the updated ones (true; default) when track changes is set.
+	 * @param boolean $v Sets the state if supplied
+	 * @return boolean|PDOTable
+	 */
+	public function differentialUpdate($v= null){
+		if($v === null){
+			return $this->differentialUpdate;
+		}
+		$this->differentialUpdate= !!$v;
+		return $this;
+	}
+	/**
+	 * The defined columns
+	 * @return array
+	 */
+	public function getColumns(){
+		return $this->columns;
+	}
 	/**
 	 * If set to TRUE it will keep a second array with the changes made to the model.
 	 * By default, it will not track changes.
 	 * If set to false, any changes made cannot be undone.
 	 * @param boolean $v (null) Sets the state if supplied
-	 * @return boolean
+	 * @return boolean|PDOTable
 	 */
 	public function trackChanges($v= null){
 		if($v === null){
@@ -44,7 +85,7 @@ class PDOTable{
 		}
 		$v= ($v === true);
 		if($v === $this->trackChanges){
-			return;
+			return $this;
 		}
 		if($v){
 			$t= new ChangeTrackingPropertyList();
@@ -54,6 +95,7 @@ class PDOTable{
 		$t->initFrom($this->data->asArray());
 		$this->data= $t;
 		$this->trackChanges= $v;
+		return $this;
 	}
 	/**
 	 * Clears the value stored for $k
@@ -74,6 +116,16 @@ class PDOTable{
 			$this->data->mergeChanges();
 		}
 		return $this;
+	}
+	/**
+	 * Always returns true if track changes is not enabled
+	 * @return boolean
+	 */
+	public function hasChanges(){
+		if(!$this->trackChanges){
+			return true;
+		}
+		return $this->data->hasChanges();
 	}
 	/**
 	 * Forgets any changes to the model if set to track changes.
@@ -121,14 +173,16 @@ class PDOTable{
 	 * @param string|array $pkey The primary key(s) for the table
 	 * @param PDO $db
 	 * @param bool $trackChanges (false)
+	 * @param array $defaultSort An array of arrays with column, direction. E.G. array(array('state','asc'),array('population','desc'))
 	 */
-	public function __construct($table, array $columns, $pkey, $db, $trackChanges= false){
+	public function __construct($table, array $columns, $pkey, $db, $trackChanges= false, array $defaultSort= null){
 		$this->table= $table;
 		$this->columns= $columns;
 		$this->pkey= $pkey;
 		$this->db= $db;
 		$this->data= $trackChanges ? new ChangeTrackingPropertyList : new PropertyList;
 		$this->trackChanges= $trackChanges;
+		$this->defaultSort= $defaultSort;
 		$this->setupCustomTypes();
 		foreach ($this->columns as $name => $type){
 			if(array_key_exists($type, $this->customTypes)){
@@ -147,9 +201,30 @@ class PDOTable{
 	}
 
 	/**
+	 * Hook to add additional custom types. This is the preferred function.
+	 * @param string $typeName
+	 * @param int $pdoType PDO::PARAM_*
+	 * @param string $preStr
+	 * @param string $postStr
+	 * @return PDOTable
+	 */
+	public function addCustomType($typeName, $pdoType, $preStr, $postStr){
+		$this->customTypes[$typeName]= array($pdoType, $preStr, $postStr);
+		foreach ($this->columns as $name => $type){
+			if($type == $typeName){
+				$this->customTypeColumns[$name]= $type;
+				$this->columns[$name]= $pdoType;
+			}
+		}
+		return $this;
+	}
+
+	/**
+	 * Deprecated. Use addCustomType
 	 * Hook for sub-classes to set-up custom data types.
 	 * Populate $this->customTypes like so:
 	 * $this->customTypes[name]= array(PDO::PARAM_*, pre-string, post-string)
+	 * @deprecated
 	 */
 	protected function setupCustomTypes(){}
 	/**
@@ -400,7 +475,7 @@ class PDOTable{
 			$this->dataset->closeCursor();
 		}
 		$where= $this->getPkey($id);
-		$loadstm= $this->db->prepare( 'SELECT * FROM '. $this->table . $where->toString());
+		$loadstm= $this->db->prepare('SELECT * FROM '. $this->table . $where->toString());
 		if(!db_run_query($loadstm, $where->getValues())){
 			$this->lastError= $loadstm->errorInfo();
 			$this->afterLoad(false);
@@ -416,6 +491,9 @@ class PDOTable{
 		}
 		$this->data->initFrom($row);
 		$this->afterLoad(true);
+		if($this->trackChanges){
+			$this->data->commitChanges();
+		}
 		return true;
 	}
 	/**
@@ -499,6 +577,9 @@ class PDOTable{
 		$this->resetError();
 		if(!$this->beforeFind()){
 			return false;
+		}
+		if($sortBy === null){
+			$sortBy= $this->defaultSort;
 		}
 		if($this->dataset){
 			$this->dataset->closeCursor();
@@ -589,8 +670,8 @@ class PDOTable{
 	 */
 	public function pkeyExists(){
 		if(!$this->isPkeySet()){
-		return false;
-	}
+			return false;
+		}
 		$res= false;
 		$this->resetError();
 		if($this->dataset){
@@ -628,6 +709,10 @@ class PDOTable{
 		$this->lastOperation= self::OP_LOAD;
 		$row= $row != false;
 		$this->afterLoad($row);
+		if($row && $this->trackChanges){
+			// prevent data conversions from marking it as changed
+			$this->data->commitChanges();
+		}
 		return $row;
 	}
 	/**
@@ -675,23 +760,48 @@ class PDOTable{
 			$this->pkeyExists();
 	}
 	/**
+	 * Loads the record and sets the data
+	 * @param $data
+	 * @return boolean false on load error
+	 */
+	public function loadAndSetAll($data){
+		$this->recycle();
+		if(!$this->load($data)){
+			return false;
+		}
+		$this->setAll($data);
+		return true;
+	}
+	/**
+	 * Saves only if there are changes
+	 * @return boolean
+	 */
+	public function saveChanges(){
+//		logit($this->data->getChanges());
+		if($this->hasChanges()){
+			return $this->save();
+		}
+		return true;
+	}
+	/**
 	 * Automatically chooses between insert() and update() based on the availability of the
 	 * primary keys.
 	 * @return boolean True on success
 	 */
 	public function save(){
-		if(!$this->beforeSave()){
-			return false;
-		}
 		$success= false;
 		if($this->saveShouldUpdate()){
 			$success= $this->update();
 		}else if($this->hasError()){
+			// check for error while doing pkey lookup
 			$success= false;
 		}else{
 			$success= $this->insert();
 		}
 		$this->afterSave($success);
+		if($this->trackChanges){
+			$this->data->commitChanges();
+		}
 		return $success;
 	}
 	/**
@@ -739,14 +849,17 @@ class PDOTable{
 	 */
 	public function update(){
 		$this->resetError();
-		if(!$this->beforeUpdate()){
+		if(!$this->beforeUpdate() || !$this->beforeSave()){
+			if(!$this->hasError()){
+				$this->_setError('beforeUpdate() or beforeSave() returned false');
+			}
 			return false;
 		}
 		$query= 'UPDATE '.$this->table.'  SET ';
 		$update= $this->data->copyTo(array());
 		$data= array();
 		$types= array();
-		if($this->trackChanges()){
+		if($this->trackChanges() && $this->differentialUpdate()){
 			foreach($update as $k => $v){
 				if($this->data->hasChanged($k)){
 					$placeholder= $this->getPlaceholder($k);
@@ -755,9 +868,12 @@ class PDOTable{
 					$types[':PDT_'.$k]= $this->columns[$k];
 				}
 			}
+			if(count($data) == 0){
+				return true;
+			}
 			if($this->isOldPkeySet()){
-			$where= $this->getOldPkey();
-		}else{
+				$where= $this->getOldPkey();
+			}else{
 				$where= $this->getPkey();
 			}
 		}else{
@@ -780,6 +896,9 @@ class PDOTable{
 			$this->lastError['params']= var_export($data, true);
 		}
 		$this->afterUpdate($success);
+		if($this->trackChanges){
+			$this->data->commitChanges();
+		}
 		return $success;
 	}
 	/**
@@ -788,7 +907,10 @@ class PDOTable{
 	 */
 	public function insert(){
 		$this->resetError();
-		if(!$this->beforeInsert()){
+		if(!$this->beforeInsert() || !$this->beforeSave()){
+			if(!$this->hasError()){
+				$this->_setError('beforeInsert() or beforeSave() returned false');
+			}
 			return false;
 		}
 		$returningClause= $this->pkey && !is_array($this->pkey) && $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) == 'oci';
@@ -830,6 +952,9 @@ class PDOTable{
 			$this->lastError['params']= $data;
 		}
 		$this->afterInsert($success);
+		if($success && $this->trackChanges){
+			$this->data->commitChanges();
+		}
 		return $success;
 	}
 	public function getPkeyColumns(){
@@ -845,7 +970,10 @@ class PDOTable{
 	 */
 	public function insertIgnore(){
 		$this->resetError();
-		if(!$this->beforeInsert()){
+		if(!$this->beforeInsert() || !$this->beforeSave()){
+			if(!$this->hasError()){
+				$this->_setError('beforeInsert() or beforeSave() returned false');
+			}
 			return false;
 		}
 
@@ -888,6 +1016,9 @@ class PDOTable{
 			}
 		}
 		$this->afterInsert($success);
+		if($success && $this->trackChanges){
+			$this->data->commitChanges();
+		}
 		return $success;
 	}
 	/**
@@ -939,6 +1070,9 @@ class PDOTable{
 			$this->lastError= $stm->errorInfo();
 			$this->lastError['query']= $query;
 			$this->lastError['params']= $data;
+		}
+		if($success && $this->trackChanges){
+			$this->data->commitChanges();
 		}
 		return $success;
 	}
@@ -994,7 +1128,7 @@ class PDOTable{
 	 */
 	protected function beforeSave(){return true;}
 	/**
-	 * Called after save.
+	 * Called after save. Any changes to the data in this are not counted as changes if tracking changes.
 	 * Not called if canceled by beforeSave()
 	 * @param boolean $sucess true if it suceeded
 	 */
@@ -1006,7 +1140,7 @@ class PDOTable{
 	 */
 	protected function beforeLoad(){return true;}
 	/**
-	 * Called after load.
+	 * Called after load. Any changes to the data in this are not counted as changes if tracking changes.
 	 * Not called if canceled by beforeLoad()
 	 * @param boolean $sucess true if it suceeded
 	 */
@@ -1061,5 +1195,21 @@ class PDOTable{
 	protected function childRecycle(){}
 	protected function _setError($msg){
 		$this->lastError= array('56000','',$msg);
+	}
+}
+
+/**
+ * Doesn't allow inserts, updates, or deletes
+ *
+ */
+class PDOView extends PDOTable {
+	protected function beforeInsert(){
+		return false;
+	}
+	protected function beforeUpdate(){
+		return false;
+	}
+	protected function beforeDelete(){
+		return false;
 	}
 }
