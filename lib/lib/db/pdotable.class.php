@@ -270,7 +270,7 @@ class PDOTable{
 	 */
 	public function setAll(array $map){
 		foreach($map as $k => $v){
-			$this->data->set($k, $v);
+			$this->set($k, $v);
 		}
 		return $this;
 	}
@@ -282,7 +282,7 @@ class PDOTable{
 	public function setAllDefined(array $map){
 		foreach($map as $k => $v){
 			if(array_key_exists($k, $this->columns)){
-				$this->data->set($k, $v);
+				$this->set($k, $v);
 			}
 		}
 		return $this;
